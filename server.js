@@ -247,7 +247,7 @@ app.use(responseTime());
 function stringToBool(str) {
     if (str === 'true') return true;
     if (str === 'false') return false;
-    return str; // or throw an error
+    return str;
 }
 
 const server_port = cliArguments.port ?? process.env.SILLY_TAVERN_PORT ?? getConfigValue('port', DEFAULT_PORT);
