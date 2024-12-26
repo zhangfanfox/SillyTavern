@@ -257,8 +257,8 @@ const enableAccounts = getConfigValue('enableUserAccounts', DEFAULT_ACCOUNTS);
 
 const uploadsPath = path.join(dataRoot, UPLOADS_DIRECTORY);
 
-const enableIPv6 = cliArguments.enableIPv6 ?? getConfigValue('protocol.ipv6', DEFAULT_ENABLE_IPV6);
-const enableIPv4 = cliArguments.enableIPv4 ?? getConfigValue('protocol.ipv4', DEFAULT_ENABLE_IPV4);
+let enableIPv6 = cliArguments.enableIPv6 ?? getConfigValue('protocol.ipv6', DEFAULT_ENABLE_IPV6);
+let enableIPv4 = cliArguments.enableIPv4 ?? getConfigValue('protocol.ipv4', DEFAULT_ENABLE_IPV4);
 
 const autorunHostname = cliArguments.autorunHostname ?? getConfigValue('autorunHostname', DEFAULT_AUTORUN_HOSTNAME);
 const autorunPortOverride = cliArguments.autorunPortOverride ?? getConfigValue('autorunPortOverride', DEFAULT_AUTORUN_PORT);
@@ -281,7 +281,8 @@ if (dnsPreferIPv6) {
     console.log('Preferring IPv4 for DNS resolution');
 }
 
-const ipOptions = ['enabled', 'auto', 'disabled'];
+
+const ipOptions = [true, 'auto', false];
 
 if (!ipOptions.includes(enableIPv6)) {
     console.error('`protocol: ipv6` option invalid\n use:', ipOptions);
@@ -292,7 +293,7 @@ if (!ipOptions.includes(enableIPv4)) {
     process.exit(1);
 }
 
-if (enableIPv6 == 'disabled' && enableIPv4 == 'disabled') {
+if (enableIPv6 === false  && enableIPv4 === false) {
     console.error('error: You can\'t disable all internet protocols: at least IPv6 or IPv4 must be enabled.');
     process.exit(1);
 }
@@ -924,33 +925,34 @@ async function startHTTPorHTTPS(useIPv6, useIPv4) {
 }
 
 async function startServer() {
-    let useIPv6 = (enableIPv6 === 'enabled');
-    let useIPv4 = (enableIPv4 === 'enabled');
+    let useIPv6 = (enableIPv6 === true);
+    let useIPv4 = (enableIPv4 === true);
+    let hasIPv6, hasIPv4;
 
-    const [hasIPv6, hasIPv4] = await getHasIP();
-    if (enableIPv6 === 'auto') {
-        useIPv6 = hasIPv6;
-    }
-    if (hasIPv6) {
-        if (useIPv6) {
-            console.log(color.green('IPv6 support detected'));
-        } else {
-            console.log('IPv6 support detected');
+
+    if (enableIPv6 === 'auto' || enableIPv4 === 'auto') {
+        [hasIPv6, hasIPv4] = await getHasIP();
+        if (enableIPv6 === 'auto') {
+            useIPv6 = hasIPv6;
         }
-    }
-
-
-    if (enableIPv4 === 'auto') {
-        useIPv4 = hasIPv4;
-        if (useIPv4) {
-            console.log(color.green('IPv4 support detected'));
+        if (hasIPv6) {
+            if (useIPv6) {
+                console.log(color.green('IPv6 support detected'));
+            } else {
+                console.log('IPv6 support detected');
+            }
         }
-    }
-    if (hasIPv4) {
-        if (useIPv4) {
-            console.log(color.green('IPv4 support detected'));
-        } else {
-            console.log('IPv4 support detected');
+
+
+        if (enableIPv4 === 'auto') {
+            useIPv4 = hasIPv4;
+        }
+        if (hasIPv4) {
+            if (useIPv4) {
+                console.log(color.green('IPv4 support detected'));
+            } else {
+                console.log('IPv4 support detected');
+            }
         }
     }
 
