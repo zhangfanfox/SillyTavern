@@ -930,32 +930,41 @@ async function startServer() {
     const [hasIPv6, hasIPv4] = await getHasIP();
     if (enableIPv6 === 'auto') {
         useIPv6 = hasIPv6;
+    }
+    if (hasIPv6) {
         if (useIPv6) {
             console.log(color.green('IPv6 support detected'));
+        } else {
+            console.log('IPv6 support detected');
         }
-    } else if (hasIPv6) {
-        console.log('IPv6 support detected');
     }
+
 
     if (enableIPv4 === 'auto') {
         useIPv4 = hasIPv4;
         if (useIPv4) {
             console.log(color.green('IPv4 support detected'));
         }
-    } else if (hasIPv4) {
-        console.log('IPv4 support detected');
     }
+    if (hasIPv4) {
+        if (useIPv4) {
+            console.log(color.green('IPv4 support detected'));
+        } else {
+            console.log('IPv4 support detected');
+        }
+    }
+
 
     if (enableIPv6 === 'auto' && enableIPv4 === 'auto') {
         if (!hasIPv6 && !hasIPv4) {
             console.error('Both IPv6 and IPv4 are not detected');
-            process.exit(1)
+            process.exit(1);
         }
     }
 
     if (!useIPv6 && !useIPv6) {
         console.error('Both IPv6 and IPv4 are disabled,\nP.S. you should never see this error, at least at one point it was checked for before this, with the rest of the config options');
-        process.exit(1)
+        process.exit(1);
     }
 
     const [v6Failed, v4Failed] = await startHTTPorHTTPS(useIPv6, useIPv4);
