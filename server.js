@@ -68,6 +68,7 @@ import {
     forwardFetchResponse,
     removeColorFormatting,
     getSeparator,
+    stringToBool,
 } from './src/util.js';
 import { UPLOADS_DIRECTORY } from './src/constants.js';
 import { ensureThumbnailCache } from './src/endpoints/thumbnails.js';
@@ -244,11 +245,6 @@ app.use(helmet({
 app.use(compression());
 app.use(responseTime());
 
-function stringToBool(str) {
-    if (str === 'true') return true;
-    if (str === 'false') return false;
-    return str;
-}
 
 const server_port = cliArguments.port ?? process.env.SILLY_TAVERN_PORT ?? getConfigValue('port', DEFAULT_PORT);
 const autorun = (cliArguments.autorun ?? getConfigValue('autorun', DEFAULT_AUTORUN)) && !cliArguments.ssl;
