@@ -394,7 +394,9 @@ async function getHasIP() {
             if (info.family === 'IPv4') {
                 hasIPv4 = true;
             }
+            if (hasIPv6 && hasIPv4) break;
         }
+        if (hasIPv6 && hasIPv4) break;
     }
     return [hasIPv6, hasIPv4];
 }
