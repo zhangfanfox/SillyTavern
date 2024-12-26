@@ -244,6 +244,12 @@ app.use(helmet({
 app.use(compression());
 app.use(responseTime());
 
+function stringToBool(str) {
+    if (str === 'true') return true;
+    if (str === 'false') return false;
+    return str; // or throw an error
+}
+
 const server_port = cliArguments.port ?? process.env.SILLY_TAVERN_PORT ?? getConfigValue('port', DEFAULT_PORT);
 const autorun = (cliArguments.autorun ?? getConfigValue('autorun', DEFAULT_AUTORUN)) && !cliArguments.ssl;
 const listen = cliArguments.listen ?? getConfigValue('listen', DEFAULT_LISTEN);
@@ -257,8 +263,9 @@ const enableAccounts = getConfigValue('enableUserAccounts', DEFAULT_ACCOUNTS);
 
 const uploadsPath = path.join(dataRoot, UPLOADS_DIRECTORY);
 
-const enableIPv6 = cliArguments.enableIPv6 ?? getConfigValue('protocol.ipv6', DEFAULT_ENABLE_IPV6);
-const enableIPv4 = cliArguments.enableIPv4 ?? getConfigValue('protocol.ipv4', DEFAULT_ENABLE_IPV4);
+
+const enableIPv6 = stringToBool(cliArguments.enableIPv6) ?? getConfigValue('protocol.ipv6', DEFAULT_ENABLE_IPV6);
+const enableIPv4 = stringToBool(cliArguments.enableIPv4) ?? getConfigValue('protocol.ipv4', DEFAULT_ENABLE_IPV4);
 
 const autorunHostname = cliArguments.autorunHostname ?? getConfigValue('autorunHostname', DEFAULT_AUTORUN_HOSTNAME);
 const autorunPortOverride = cliArguments.autorunPortOverride ?? getConfigValue('autorunPortOverride', DEFAULT_AUTORUN_PORT);
@@ -957,6 +964,7 @@ async function startServer() {
     }
 
 
+
     if (enableIPv6 === 'auto' && enableIPv4 === 'auto') {
         if (!hasIPv6 && !hasIPv4) {
             console.error('Both IPv6 and IPv4 are not detected');
@@ -964,7 +972,7 @@ async function startServer() {
         }
     }
 
-    if (!useIPv6 && !useIPv6) {
+    if (!useIPv6 && !useIPv4) {
         console.error('Both IPv6 and IPv4 are disabled,\nP.S. you should never see this error, at least at one point it was checked for before this, with the rest of the config options');
         process.exit(1);
     }
