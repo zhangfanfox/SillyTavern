@@ -288,11 +288,11 @@ if (dnsPreferIPv6) {
 const ipOptions = [true, 'auto', false];
 
 if (!ipOptions.includes(enableIPv6)) {
-    console.warn('`protocol: ipv6` option invalid\n use:', ipOptions, "\n setting to: auto");
+    console.warn(color.red('`protocol: ipv6` option invalid'), "\n use:", ipOptions, "\n setting to: auto");
     enableIPv6 = 'auto';
 }
 if (!ipOptions.includes(enableIPv4)) {
-    console.warn('`protocol: ipv4` option invalid\n use:', ipOptions, "\n setting to: auto");
+    console.warn(color.red('`protocol: ipv4` option invalid'), "\n use:", ipOptions, "\n setting to: auto");
     enableIPv4 = 'auto';
 }
 
