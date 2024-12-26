@@ -931,15 +931,19 @@ async function startServer() {
     if (enableIPv6 === 'auto') {
         useIPv6 = hasIPv6;
         if (useIPv6) {
-            console.log('IPv6 support detected');
+            console.log(color.green('IPv6 support detected'));
         }
+    } else if (hasIPv6) {
+        console.log('IPv6 support detected');
     }
 
     if (enableIPv4 === 'auto') {
         useIPv4 = hasIPv4;
         if (useIPv4) {
-            console.log('IPv4 support detected');
+            console.log(color.green('IPv4 support detected'));
         }
+    } else if (hasIPv4) {
+        console.log('IPv4 support detected');
     }
 
     if (enableIPv6 === 'auto' && enableIPv4 === 'auto') {
