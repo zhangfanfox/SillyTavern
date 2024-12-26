@@ -950,7 +950,7 @@ async function startServer() {
     }
 
     if (!useIPv6 && !useIPv6) {
-        console.error('Both IPv6 and IPv4 are disabled,\nP.S. you should never see this error, at least at one point it was checked for before this');
+        console.error('Both IPv6 and IPv4 are disabled,\nP.S. you should never see this error, at least at one point it was checked for before this, with the rest of the config options');
         process.exit(1)
     }
 
