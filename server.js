@@ -134,8 +134,8 @@ const DEFAULT_CSRF_DISABLED = false;
 const DEFAULT_BASIC_AUTH = false;
 const DEFAULT_PER_USER_BASIC_AUTH = false;
 
-const DEFAULT_ENABLE_IPV6 = "auto";
-const DEFAULT_ENABLE_IPV4 = "auto";
+const DEFAULT_ENABLE_IPV6 = 'auto';
+const DEFAULT_ENABLE_IPV4 = 'auto';
 
 const DEFAULT_PREFER_IPV6 = false;
 
@@ -281,18 +281,18 @@ if (dnsPreferIPv6) {
     console.log('Preferring IPv4 for DNS resolution');
 }
 
-const ipOptions = ["enabled", "auto", "disabled"];
+const ipOptions = ['enabled', 'auto', 'disabled'];
 
 if (!ipOptions.includes(enableIPv6)) {
-    console.error("`protocol: ipv6` option invalid");
-    process.exit(1)
+    console.error('`protocol: ipv6` option invalid');
+    process.exit(1);
 }
 if (!ipOptions.includes(enableIPv4)) {
-    console.error("`protocol: ipv4` option invalid");
-    process.exit(1)
+    console.error('`protocol: ipv4` option invalid');
+    process.exit(1);
 }
 
-if (enableIPv6 == "disabled" && enableIPv4 == "disabled") {
+if (enableIPv6 == 'disabled' && enableIPv4 == 'disabled') {
     console.error('error: You can\'t disable all internet protocols: at least IPv6 or IPv4 must be enabled.');
     process.exit(1);
 }
@@ -384,7 +384,7 @@ async function getHasIP() {
 
     for (const iface of Object.values(interfaces)) {
         if (iface === undefined) {
-            continue
+            continue;
         }
         for (const info of iface) {
             if (info.family === 'IPv6') {
@@ -924,26 +924,26 @@ async function startHTTPorHTTPS(useIPv6, useIPv4) {
 }
 
 async function startServer() {
-    let useIPv6 = (enableIPv6 == "enabled")
-    let useIPv4 = (enableIPv4 == "enabled")
+    let useIPv6 = (enableIPv6 == 'enabled');
+    let useIPv4 = (enableIPv4 == 'enabled');
 
-    const [hasIPv6, hasIPv4] = await getHasIP()
-    if (enableIPv6 == "auto") {
+    const [hasIPv6, hasIPv4] = await getHasIP();
+    if (enableIPv6 == 'auto') {
         useIPv6 = hasIPv6;
         if (useIPv6) {
-            console.log("IPv6 support detected")
+            console.log('IPv6 support detected');
         }
     }
 
-    if (enableIPv4 == "auto") {
+    if (enableIPv4 == 'auto') {
         useIPv4 = hasIPv4;
         if (useIPv4) {
-            console.log("IPv4 support detected")
+            console.log('IPv4 support detected');
         }
     }
 
     if (!useIPv6 && !useIPv4) {
-        console.log("No IPv6 and no IPv4 enabled")
+        console.log('No IPv6 and no IPv4 enabled');
     }
 
     const [v6Failed, v4Failed] = await startHTTPorHTTPS(useIPv6, useIPv4);
