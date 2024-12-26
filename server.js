@@ -150,12 +150,12 @@ const DEFAULT_PROXY_BYPASS = [];
 
 const cliArguments = yargs(hideBin(process.argv))
     .usage('Usage: <your-start-script> <command> [options]')
-    .option('string', {
-        type: 'boolean',
+    .option('enableIPv6', {
+        type: 'string',
         default: null,
         describe: `Enables IPv6.\n[config default: ${DEFAULT_ENABLE_IPV6}]`,
-    }).option('string', {
-        type: 'boolean',
+    }).option('enableIPv4', {
+        type: 'string',
         default: null,
         describe: `Enables IPv4.\n[config default: ${DEFAULT_ENABLE_IPV4}]`,
     }).option('port', {
