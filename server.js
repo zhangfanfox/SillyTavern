@@ -264,8 +264,8 @@ const enableAccounts = getConfigValue('enableUserAccounts', DEFAULT_ACCOUNTS);
 const uploadsPath = path.join(dataRoot, UPLOADS_DIRECTORY);
 
 
-const enableIPv6 = stringToBool(cliArguments.enableIPv6) ?? getConfigValue('protocol.ipv6', DEFAULT_ENABLE_IPV6);
-const enableIPv4 = stringToBool(cliArguments.enableIPv4) ?? getConfigValue('protocol.ipv4', DEFAULT_ENABLE_IPV4);
+let enableIPv6 = stringToBool(cliArguments.enableIPv6) ?? getConfigValue('protocol.ipv6', DEFAULT_ENABLE_IPV6);
+let enableIPv4 = stringToBool(cliArguments.enableIPv4) ?? getConfigValue('protocol.ipv4', DEFAULT_ENABLE_IPV4);
 
 const autorunHostname = cliArguments.autorunHostname ?? getConfigValue('autorunHostname', DEFAULT_AUTORUN_HOSTNAME);
 const autorunPortOverride = cliArguments.autorunPortOverride ?? getConfigValue('autorunPortOverride', DEFAULT_AUTORUN_PORT);
@@ -292,12 +292,12 @@ if (dnsPreferIPv6) {
 const ipOptions = [true, 'auto', false];
 
 if (!ipOptions.includes(enableIPv6)) {
-    console.error('`protocol: ipv6` option invalid\n use:', ipOptions);
-    process.exit(1);
+    console.warn('`protocol: ipv6` option invalid\n use:', ipOptions, "\n setting to: auto");
+    enableIPv6 = 'auto';
 }
 if (!ipOptions.includes(enableIPv4)) {
-    console.error('`protocol: ipv4` option invalid\n use:', ipOptions);
-    process.exit(1);
+    console.warn('`protocol: ipv4` option invalid\n use:', ipOptions, "\n setting to: auto");
+    enableIPv4 = 'auto';
 }
 
 if (enableIPv6 === false  && enableIPv4 === false) {
