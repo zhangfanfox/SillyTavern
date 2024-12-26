@@ -284,11 +284,11 @@ if (dnsPreferIPv6) {
 const ipOptions = ['enabled', 'auto', 'disabled'];
 
 if (!ipOptions.includes(enableIPv6)) {
-    console.error('`protocol: ipv6` option invalid');
+    console.error('`protocol: ipv6` option invalid\n use:', ipOptions);
     process.exit(1);
 }
 if (!ipOptions.includes(enableIPv4)) {
-    console.error('`protocol: ipv4` option invalid');
+    console.error('`protocol: ipv4` option invalid\n use:', ipOptions);
     process.exit(1);
 }
 
