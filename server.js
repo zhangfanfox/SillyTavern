@@ -281,6 +281,17 @@ if (dnsPreferIPv6) {
     console.log('Preferring IPv4 for DNS resolution');
 }
 
+const ipOptions = ["enabled", "auto", "disabled"];
+
+if (!ipOptions.includes(enableIPv6)) {
+    console.error("`protocol: ipv6` option invalid");
+    process.exit(1)
+}
+if (!ipOptions.includes(enableIPv4)) {
+    console.error("`protocol: ipv4` option invalid");
+    process.exit(1)
+}
+
 if (enableIPv6 == "disabled" && enableIPv4 == "disabled") {
     console.error('error: You can\'t disable all internet protocols: at least IPv6 or IPv4 must be enabled.');
     process.exit(1);
