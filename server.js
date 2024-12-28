@@ -28,6 +28,7 @@ import multer from 'multer';
 import responseTime from 'response-time';
 import helmet from 'helmet';
 import bodyParser from 'body-parser';
+import { getMatch, IPMatch, IPSubnetwork, IPRange, matches } from 'ip-matching';
 
 // net related library imports
 import fetch from 'node-fetch';
@@ -383,26 +384,35 @@ function getSessionCookieAge() {
 
 async function getHasIP() {
     let hasIPv6 = false;
+    let hasIPv6Local = false;
     let hasIPv4 = false;
+    let hasIPv4Local = false;
     const interfaces = os.networkInterfaces();
+    const linkLocalV6 = getMatch('fe80::/10');
 
     for (const iface of Object.values(interfaces)) {
         if (iface === undefined) {
             continue;
         }
         for (const info of iface) {
-            if (info.family === 'IPv6') {
+            if (info.family === 'IPv6' && !linkLocalV6.matches(info.address)) {
                 hasIPv6 = true;
+                if (info.internal === true) {
+                    hasIPv6Local = true;
+                }
             }
 
             if (info.family === 'IPv4') {
                 hasIPv4 = true;
+                if (info.internal === true) {
+                    hasIPv4Local = true;
+                }
             }
-            if (hasIPv6 && hasIPv4) break;
+            if (hasIPv6 && hasIPv4 && hasIPv6Local && hasIPv4Local) break;
         }
-        if (hasIPv6 && hasIPv4) break;
+        if (hasIPv6 && hasIPv4 && hasIPv6Local && hasIPv4Local) break;
     }
-    return [hasIPv6, hasIPv4];
+    return [hasIPv6, hasIPv4, hasIPv6Local, hasIPv4Local];
 }
 
 app.use(cookieSession({
@@ -930,11 +940,13 @@ async function startHTTPorHTTPS(useIPv6, useIPv4) {
 async function startServer() {
     let useIPv6 = (enableIPv6 === true);
     let useIPv4 = (enableIPv4 === true);
-    let hasIPv6, hasIPv4;
+    let hasIPv6, hasIPv4, hasIPv6Local, hasIPv4Local, hasIPv6NonLocal, hasIPv4NonLocal;
 
 
     if (enableIPv6 === 'auto' || enableIPv4 === 'auto') {
-        [hasIPv6, hasIPv4] = await getHasIP();
+        [hasIPv6NonLocal, hasIPv4NonLocal, hasIPv6Local, hasIPv4Local] = await getHasIP();
+
+        hasIPv6 = listen ? hasIPv6NonLocal : hasIPv6Local;
         if (enableIPv6 === 'auto') {
             useIPv6 = hasIPv6;
         }
@@ -947,6 +959,7 @@ async function startServer() {
         }
 
 
+        hasIPv4 = listen ? hasIPv4NonLocal : hasIPv4Local;
         if (enableIPv4 === 'auto') {
             useIPv4 = hasIPv4;
         }
