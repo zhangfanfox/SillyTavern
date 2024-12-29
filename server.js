@@ -396,14 +396,14 @@ async function getHasIP() {
         for (const info of iface) {
             if (info.family === 'IPv6') {
                 hasIPv6 = true;
-                if (info.internal === true) {
+                if (info.address === '::1') {
                     hasIPv6Local = true;
                 }
             }
 
             if (info.family === 'IPv4') {
                 hasIPv4 = true;
-                if (info.internal === true) {
+                if (info.address === '127.0.0.1') {
                     hasIPv4Local = true;
                 }
             }
