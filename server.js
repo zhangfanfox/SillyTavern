@@ -394,7 +394,6 @@ async function getHasIP() {
             continue;
         }
         for (const info of iface) {
-            //! change this if you ever add configurable addresses to bind to
             if (info.family === 'IPv6') {
                 hasIPv6 = true;
                 if (info.internal === true) {
