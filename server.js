@@ -28,7 +28,6 @@ import multer from 'multer';
 import responseTime from 'response-time';
 import helmet from 'helmet';
 import bodyParser from 'body-parser';
-import { getMatch, IPMatch, IPSubnetwork, IPRange, matches } from 'ip-matching';
 
 // net related library imports
 import fetch from 'node-fetch';
@@ -70,6 +69,7 @@ import {
     removeColorFormatting,
     getSeparator,
     stringToBool,
+    urlHostnameToIPv6,
 } from './src/util.js';
 import { UPLOADS_DIRECTORY } from './src/constants.js';
 import { ensureThumbnailCache } from './src/endpoints/thumbnails.js';
@@ -388,14 +388,14 @@ async function getHasIP() {
     let hasIPv4 = false;
     let hasIPv4Local = false;
     const interfaces = os.networkInterfaces();
-    const linkLocalV6 = getMatch('fe80::/10');
 
     for (const iface of Object.values(interfaces)) {
         if (iface === undefined) {
             continue;
         }
         for (const info of iface) {
-            if (info.family === 'IPv6' && !linkLocalV6.matches(info.address)) {
+            //! change this if you ever add configurable addresses to bind to
+            if (info.family === 'IPv6') {
                 hasIPv6 = true;
                 if (info.internal === true) {
                     hasIPv6Local = true;
@@ -878,7 +878,7 @@ function handleServerListenFail(v6Failed, v4Failed, useIPv6, useIPv4) {
  * @returns {Promise<void>} A promise that resolves when the server is listening
  * @throws {Error} If the server fails to start
  */
-function createHttpsServer(url) {
+function createHttpsServer(url, ipVersion) {
     return new Promise((resolve, reject) => {
         const server = https.createServer(
             {
@@ -887,7 +887,15 @@ function createHttpsServer(url) {
             }, app);
         server.on('error', reject);
         server.on('listening', resolve);
-        server.listen(Number(url.port || 443), url.hostname);
+
+        let host = url.hostname
+        if (ipVersion === 6) host = urlHostnameToIPv6(url.hostname);
+        server.listen({
+            host: host,
+            port: Number(url.port || 443),
+            // see https://nodejs.org/api/net.html#serverlisten for why ipv6Only is used
+            ipv6Only: true,
+        });
     });
 }
 
@@ -897,12 +905,20 @@ function createHttpsServer(url) {
  * @returns {Promise<void>} A promise that resolves when the server is listening
  * @throws {Error} If the server fails to start
  */
-function createHttpServer(url) {
+function createHttpServer(url, ipVersion) {
     return new Promise((resolve, reject) => {
         const server = http.createServer(app);
         server.on('error', reject);
         server.on('listening', resolve);
-        server.listen(Number(url.port || 80), url.hostname);
+
+        let host = url.hostname
+        if (ipVersion === 6) host = urlHostnameToIPv6(url.hostname);
+        server.listen({
+            host: host,
+            port: Number(url.port || 80),
+            // see https://nodejs.org/api/net.html#serverlisten for why ipv6Only is used
+            ipv6Only: true,
+        });
     });
 }
 
@@ -914,7 +930,7 @@ async function startHTTPorHTTPS(useIPv6, useIPv4) {
 
     if (useIPv6) {
         try {
-            await createFunc(tavernUrlV6);
+            await createFunc(tavernUrlV6, 6);
         } catch (error) {
             console.error('non-fatal error: failed to start server on IPv6');
             console.error(error);
@@ -925,7 +941,7 @@ async function startHTTPorHTTPS(useIPv6, useIPv4) {
 
     if (useIPv4) {
         try {
-            await createFunc(tavernUrl);
+            await createFunc(tavernUrl, 4);
         } catch (error) {
             console.error('non-fatal error: failed to start server on IPv4');
             console.error(error);
