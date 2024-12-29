@@ -699,7 +699,6 @@ export function urlHostnameToIPv6(hostname) {
     if (hostname.charAt(hostname.length - 1) === ']') {
         hostname = hostname.slice(0, -1);
     }
-    // console.log(hostname)
     return hostname
 }
 
