@@ -289,11 +289,11 @@ if (dnsPreferIPv6) {
 const ipOptions = [true, 'auto', false];
 
 if (!ipOptions.includes(enableIPv6)) {
-    console.warn(color.red('`protocol: ipv6` option invalid'), "\n use:", ipOptions, "\n setting to: auto");
+    console.warn(color.red('`protocol: ipv6` option invalid'), '\n use:', ipOptions, '\n setting to: auto');
     enableIPv6 = 'auto';
 }
 if (!ipOptions.includes(enableIPv4)) {
-    console.warn(color.red('`protocol: ipv4` option invalid'), "\n use:", ipOptions, "\n setting to: auto");
+    console.warn(color.red('`protocol: ipv4` option invalid'), '\n use:', ipOptions, '\n setting to: auto');
     enableIPv4 = 'auto';
 }
 
@@ -887,7 +887,7 @@ function createHttpsServer(url, ipVersion) {
         server.on('error', reject);
         server.on('listening', resolve);
 
-        let host = url.hostname
+        let host = url.hostname;
         if (ipVersion === 6) host = urlHostnameToIPv6(url.hostname);
         server.listen({
             host: host,
@@ -910,7 +910,7 @@ function createHttpServer(url, ipVersion) {
         server.on('error', reject);
         server.on('listening', resolve);
 
-        let host = url.hostname
+        let host = url.hostname;
         if (ipVersion === 6) host = urlHostnameToIPv6(url.hostname);
         server.listen({
             host: host,

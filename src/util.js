@@ -693,13 +693,13 @@ export function isValidUrl(url) {
 }
 
 export function urlHostnameToIPv6(hostname) {
-    if (hostname.startsWith("[")) {
+    if (hostname.startsWith('[')) {
         hostname = hostname.slice(1);
     }
-    if (hostname.endsWith("]")) {
+    if (hostname.endsWith(']')) {
         hostname = hostname.slice(0, -1);
     }
-    return hostname
+    return hostname;
 }
 
 export function stringToBool(str) {
