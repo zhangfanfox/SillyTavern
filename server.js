@@ -955,13 +955,13 @@ async function startHTTPorHTTPS(useIPv6, useIPv4) {
 async function startServer() {
     let useIPv6 = (enableIPv6 === true);
     let useIPv4 = (enableIPv4 === true);
-    let hasIPv6, hasIPv4, hasIPv6Local, hasIPv4Local, hasIPv6NonLocal, hasIPv4NonLocal;
+    let hasIPv6, hasIPv4, hasIPv6Local, hasIPv4Local, hasIPv6Any, hasIPv4Any;
 
 
     if (enableIPv6 === 'auto' || enableIPv4 === 'auto') {
-        [hasIPv6NonLocal, hasIPv4NonLocal, hasIPv6Local, hasIPv4Local] = await getHasIP();
+        [hasIPv6Any, hasIPv4Any, hasIPv6Local, hasIPv4Local] = await getHasIP();
 
-        hasIPv6 = listen ? hasIPv6NonLocal : hasIPv6Local;
+        hasIPv6 = listen ? hasIPv6Any : hasIPv6Local;
         if (enableIPv6 === 'auto') {
             useIPv6 = hasIPv6;
         }
@@ -974,7 +974,7 @@ async function startServer() {
         }
 
 
-        hasIPv4 = listen ? hasIPv4NonLocal : hasIPv4Local;
+        hasIPv4 = listen ? hasIPv4Any : hasIPv4Local;
         if (enableIPv4 === 'auto') {
             useIPv4 = hasIPv4;
         }
