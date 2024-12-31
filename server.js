@@ -385,8 +385,10 @@ function getSessionCookieAge() {
 async function getHasIP() {
     let hasIPv6 = false;
     let hasIPv6Local = false;
+
     let hasIPv4 = false;
     let hasIPv4Local = false;
+
     const interfaces = os.networkInterfaces();
 
     for (const iface of Object.values(interfaces)) {
