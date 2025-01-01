@@ -987,6 +987,8 @@ async function startServer() {
                 console.log('IPv4 support detected');
             }
         }
+    } else {
+        console.log("Neither protocol: ipv6, nor ipv4 are set to auto, skipping detection")
     }
 
 
