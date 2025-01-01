@@ -971,7 +971,7 @@ async function startServer() {
             if (useIPv6) {
                 console.log(color.green('IPv6 support detected'));
             } else {
-                console.log('IPv6 support detected');
+                console.log('IPv6 support detected (but disabled)');
             }
         }
 
@@ -984,7 +984,7 @@ async function startServer() {
             if (useIPv4) {
                 console.log(color.green('IPv4 support detected'));
             } else {
-                console.log('IPv4 support detected');
+                console.log('IPv4 support detected (but disabled)');
             }
         }
     } else {
