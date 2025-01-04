@@ -289,12 +289,12 @@ if (dnsPreferIPv6) {
 const ipOptions = [true, 'auto', false];
 
 if (!ipOptions.includes(enableIPv6)) {
-    console.warn(color.red('`protocol: ipv6` option invalid'), '\n use:', ipOptions, '\n setting to: auto');
-    enableIPv6 = 'auto';
+    console.warn(color.red('`protocol: ipv6` option invalid'), '\n use:', ipOptions, '\n setting to:', DEFAULT_ENABLE_IPV6);
+    enableIPv6 = DEFAULT_ENABLE_IPV6;
 }
 if (!ipOptions.includes(enableIPv4)) {
-    console.warn(color.red('`protocol: ipv4` option invalid'), '\n use:', ipOptions, '\n setting to: auto');
-    enableIPv4 = 'auto';
+    console.warn(color.red('`protocol: ipv4` option invalid'), '\n use:', ipOptions, '\n setting to:', DEFAULT_ENABLE_IPV4);
+    enableIPv4 = DEFAULT_ENABLE_IPV4;
 }
 
 if (enableIPv6 === false  && enableIPv4 === false) {
