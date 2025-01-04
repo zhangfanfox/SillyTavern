@@ -988,7 +988,7 @@ async function startServer() {
             }
         }
     } else {
-        console.log("Neither protocol: ipv6, nor ipv4 are set to auto, skipping detection")
+        console.log('Neither protocol: ipv6, nor ipv4 are set to auto, skipping detection');
     }
 
 
