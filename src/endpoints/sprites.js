@@ -125,8 +125,14 @@ router.get('/get', jsonParser, function (request, response) {
                 .map((file) => {
                     const pathToSprite = path.join(spritesPath, file);
                     const mtime = fs.statSync(pathToSprite).mtime?.toISOString().replace(/[^0-9]/g, '').slice(0, 14);
+
+                    const fileName = path.parse(pathToSprite).name.toLowerCase();
+                    // Extract the label from the filename via regex, which can be suffixed with a sub-name, either connected with a dash or a dot.
+                    // Examples: joy.png, joy-1.png, joy.expressive.png, 美しい-17.png
+                    const label = fileName.match(/^(.+?)(?:[-\\.].*?)?$/)?.[1] ?? fileName;
+
                     return {
-                        label: path.parse(pathToSprite).name.toLowerCase(),
+                        label: label,
                         path: `/characters/${name}/${file}` + (mtime ? `?t=${mtime}` : ''),
                     };
                 });

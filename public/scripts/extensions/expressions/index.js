@@ -17,6 +17,22 @@ import { slashCommandReturnHelper } from '../../slash-commands/SlashCommandRetur
 import { generateWebLlmChatPrompt, isWebLlmSupported } from '../shared.js';
 export { MODULE_NAME };
 
+/**
+ * @typedef {object} Expression Expression definition with label and file path
+ * @property {string} label The label of the expression
+ * @property {string} path The path to the expression image
+ */
+
+/**
+ * @typedef {object} ExpressionImage An expression image
+ * @property {string?} [expression=null] - The expression
+ * @property {boolean?} [isCustom=null] - If the expression is added by user
+ * @property {string} fileName - The filename with extension
+ * @property {string} title - The title for the image
+ * @property {string} imageSrc - The image source / full path
+ * @property {'success' | 'additional' | 'failure'} type - The type of the image
+ */
+
 const MODULE_NAME = 'expressions';
 const UPDATE_INTERVAL = 2000;
 const STREAMING_UPDATE_INTERVAL = 10000;
@@ -61,6 +77,9 @@ const EXPRESSION_API = {
     llm: 2,
     webllm: 3,
 };
+
+/** @type {ExpressionImage} */
+const NO_IMAGE_PLACEHOLDER = { title: 'No Image', type: 'failure', fileName: 'No-Image-Placeholder.svg', imageSrc: '/img/No-Image-Placeholder.svg' };
 
 let expressionsList = null;
 let lastCharacter = undefined;
@@ -1309,8 +1328,35 @@ async function validateImages(character, forceRedrawCached) {
     spriteCache[character] = validExpressions;
 }
 
+/**
+ * Takes a given sprite as returned from the server, and enriches it with additional data for display/sorting
+ * @param {Expression} sprite
+ * @returns {ExpressionImage}
+ */
+function getExpressionImageData(sprite) {
+    const fileName = sprite.path.split('/').pop().split('?')[0];
+    const fileNameWithoutExtension = fileName.replace(/\.[^/.]+$/, '');
+    return {
+        expression: sprite.label,
+        fileName: fileName,
+        title: fileNameWithoutExtension,
+        imageSrc: sprite.path,
+        type: fileNameWithoutExtension == sprite.label ? 'success' : 'additional',
+        isCustom: extension_settings.expressions.custom?.includes(sprite.label),
+    };
+}
+
+/**
+ * Populate the character expression list with sprites for the given character.
+ * @param {string} character - The name of the character to populate the list for
+ * @param {string[]} labels - An array of expression labels that are valid
+ * @param {Expression[]} sprites - An array of sprites
+ * @returns {Promise<Expression[]>} An array of valid expression labels
+ */
 async function drawSpritesList(character, labels, sprites) {
+    /** @type {Expression[]} */
     let validExpressions = [];
+
     $('#no_chat_expressions').hide();
     $('#open_chat_expressions').show();
     $('#image_list').empty();
@@ -1321,33 +1367,45 @@ async function drawSpritesList(character, labels, sprites) {
         return [];
     }
 
-    for (const item of labels.sort()) {
-        const sprite = sprites.find(x => x.label == item);
-        const isCustom = extension_settings.expressions.custom.includes(item);
+    for (const expression of labels.sort()) {
+        const isCustom = extension_settings.expressions.custom?.includes(expression);
+        const images = sprites
+            .filter(s => s.label === expression)
+            .map(getExpressionImageData)
+            .sort((a, b) => a.title.localeCompare(b.title));
 
-        if (sprite) {
-            validExpressions.push(sprite);
-            const listItem = await getListItem(item, sprite.path, 'success', isCustom);
+        if (images.length === 0) {
+            const listItem = await getListItem(expression, {
+                isCustom,
+                images: [{ expression, isCustom, ...NO_IMAGE_PLACEHOLDER }],
+            });
             $('#image_list').append(listItem);
+            continue;
         }
-        else {
-            const listItem = await getListItem(item, '/img/No-Image-Placeholder.svg', 'failure', isCustom);
-            $('#image_list').append(listItem);
-        }
+
+        // TODO: Fix valid expression lists/caching and group them correctly
+        validExpressions.push({ label: expression, paths: images });
+
+        // Render main = first file, additional = rest
+        let listItem = await getListItem(expression, {
+            isCustom,
+            images,
+        });
+        $('#image_list').append(listItem);
     }
     return validExpressions;
 }
 
 /**
  * Renders a list item template for the expressions list.
- * @param {string} item Expression name
- * @param {string} imageSrc Path to image
- * @param {'success' | 'failure'} textClass 'success' or 'failure'
- * @param {boolean} isCustom If expression is added by user
+ * @param {string} expression Expression name
+ * @param {object} args Arguments object
+ * @param {ExpressionImage[]} [args.images] Array of image objects
+ * @param {boolean} [args.isCustom=false] If expression is added by user
  * @returns {Promise<string>} Rendered list item template
  */
-async function getListItem(item, imageSrc, textClass, isCustom) {
-    return renderExtensionTemplateAsync(MODULE_NAME, 'list-item', { item, imageSrc, textClass, isCustom });
+async function getListItem(expression, { images, isCustom = false } = {}) {
+    return renderExtensionTemplateAsync(MODULE_NAME, 'list-item', { expression, images, isCustom: isCustom ?? false });
 }
 
 async function getSpritesList(name) {
