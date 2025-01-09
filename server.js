@@ -9,7 +9,7 @@ import path from 'node:path';
 import util from 'node:util';
 import net from 'node:net';
 import dns from 'node:dns';
-import { promises as dnsPromise } from 'node:dns'
+import { promises as dnsPromise } from 'node:dns';
 import process from 'node:process';
 import { fileURLToPath } from 'node:url';
 
@@ -407,7 +407,7 @@ async function canResolve(name, useIPv6 = true, useIPv4 = true) {
             }
         }
 
-        console.log(v6Resolved, v4Resolved)
+        console.log(v6Resolved, v4Resolved);
         return v6Resolved || v4Resolved;
 
     } catch (error) {
@@ -771,7 +771,7 @@ const preSetupTasks = async function () {
  */
 async function getAutorunHostname(useIPv6, useIPv4) {
     if (autorunHostname === 'auto') {
-        let localhostResolve = await canResolve('localhost', useIPv6, useIPv4)
+        let localhostResolve = await canResolve('localhost', useIPv6, useIPv4);
 
         if (useIPv6 && useIPv4) {
             if (avoidLocalhost || !localhostResolve) return '[::1]';
