@@ -398,7 +398,6 @@ async function canResolve(name, useIPv6 = true, useIPv4 = true) {
             }
         }
 
-        // If we need to check IPv4 resolution
         if (useIPv4) {
             try {
                 await dnsPromise.resolve(name);
@@ -768,7 +767,7 @@ const preSetupTasks = async function () {
 
 /**
  * Gets the hostname to use for autorun in the browser.
- * @returns promise({string} The hostname to use for autorun
+ * @returns Promise<string> The hostname to use for autorun
  */
 async function getAutorunHostname(useIPv6, useIPv4) {
     if (autorunHostname === 'auto') {
