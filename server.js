@@ -382,6 +382,46 @@ function getSessionCookieAge() {
     return undefined;
 }
 
+
+function canResolve(name, useIPv6 = true, useIPv4 = true) {
+    return new Promise((resolve, reject) => {
+        let v6Resolve
+        let v4Resolve
+
+        if (useIPv6) {
+            dns.resolve6(name, (err) => {
+                if (err) {
+                    v6Resolve = false
+                } else {
+                    v6Resolve = true
+                }
+            });
+
+        } else {
+            v6Resolve = false
+        }
+
+        if (useIPv4) {
+            dns.resolve(name, (err) => {
+                if (err) {
+                    v4Resolve = false
+                } else {
+                    v4Resolve = true
+                }
+            });
+
+        } else {
+            v4Resolve = false
+        }
+
+        if (v6Resolve || v4Resolve) {
+            resolve
+        } else {
+            reject
+        }
+    });
+}
+
 async function getHasIP() {
     let hasIPv6 = false;
     let hasIPv6Local = false;
