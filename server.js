@@ -407,7 +407,6 @@ async function canResolve(name, useIPv6 = true, useIPv4 = true) {
             }
         }
 
-        console.log(v6Resolved, v4Resolved);
         return v6Resolved || v4Resolved;
 
     } catch (error) {
