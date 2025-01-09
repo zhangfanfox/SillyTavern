@@ -9,6 +9,7 @@ import path from 'node:path';
 import util from 'node:util';
 import net from 'node:net';
 import dns from 'node:dns';
+import { promises as dnsPromise } from 'node:dns'
 import process from 'node:process';
 import { fileURLToPath } from 'node:url';
 
@@ -383,43 +384,36 @@ function getSessionCookieAge() {
 }
 
 
-function canResolve(name, useIPv6 = true, useIPv4 = true) {
-    return new Promise((resolve, reject) => {
-        let v6Resolve
-        let v4Resolve
+async function canResolve(name, useIPv6 = true, useIPv4 = true) {
+    try {
+        let v6Resolved = false;
+        let v4Resolved = false;
 
         if (useIPv6) {
-            dns.resolve6(name, (err) => {
-                if (err) {
-                    v6Resolve = false
-                } else {
-                    v6Resolve = true
-                }
-            });
-
-        } else {
-            v6Resolve = false
+            try {
+                await dnsPromise.resolve6(name);
+                v6Resolved = true;
+            } catch (error) {
+                v6Resolved = false;
+            }
         }
 
+        // If we need to check IPv4 resolution
         if (useIPv4) {
-            dns.resolve(name, (err) => {
-                if (err) {
-                    v4Resolve = false
-                } else {
-                    v4Resolve = true
-                }
-            });
-
-        } else {
-            v4Resolve = false
+            try {
+                await dnsPromise.resolve(name);
+                v4Resolved = true;
+            } catch (error) {
+                v4Resolved = false;
+            }
         }
 
-        if (v6Resolve || v4Resolve) {
-            resolve
-        } else {
-            reject
-        }
-    });
+        console.log(v6Resolved, v4Resolved)
+        return v6Resolved || v4Resolved;
+
+    } catch (error) {
+        return false;
+    }
 }
 
 async function getHasIP() {
@@ -774,12 +768,14 @@ const preSetupTasks = async function () {
 
 /**
  * Gets the hostname to use for autorun in the browser.
- * @returns {string} The hostname to use for autorun
+ * @returns promise({string} The hostname to use for autorun
  */
-function getAutorunHostname(useIPv6, useIPv4) {
+async function getAutorunHostname(useIPv6, useIPv4) {
     if (autorunHostname === 'auto') {
+        let localhostResolve = await canResolve('localhost', useIPv6, useIPv4)
+
         if (useIPv6 && useIPv4) {
-            if (avoidLocalhost) return '[::1]';
+            if (avoidLocalhost || !localhostResolve) return '[::1]';
             return 'localhost';
         }
 
@@ -792,6 +788,7 @@ function getAutorunHostname(useIPv6, useIPv4) {
         }
     }
 
+
     return autorunHostname;
 }
 
@@ -803,7 +800,7 @@ function getAutorunHostname(useIPv6, useIPv4) {
 const postSetupTasks = async function (v6Failed, v4Failed, useIPv6, useIPv4) {
     const autorunUrl = new URL(
         (cliArguments.ssl ? 'https://' : 'http://') +
-        (getAutorunHostname(useIPv6, useIPv4)) +
+        (await getAutorunHostname(useIPv6, useIPv4)) +
         (':') +
         ((autorunPortOverride >= 0) ? autorunPortOverride : server_port),
     );
@@ -1044,6 +1041,7 @@ async function startServer() {
         console.error('Both IPv6 and IPv4 are disabled,\nP.S. you should never see this error, at least at one point it was checked for before this, with the rest of the config options');
         process.exit(1);
     }
+
 
     const [v6Failed, v4Failed] = await startHTTPorHTTPS(useIPv6, useIPv4);
 
