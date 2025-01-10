@@ -269,9 +269,9 @@ const enableAccounts = getConfigValue('enableUserAccounts', DEFAULT_ACCOUNTS);
 const uploadsPath = path.join(dataRoot, UPLOADS_DIRECTORY);
 
 
-/** @type {boolean|'auto'} */
+/** @type {boolean | "auto"} */
 let enableIPv6 = stringToBool(cliArguments.enableIPv6) ?? getConfigValue('protocol.ipv6', DEFAULT_ENABLE_IPV6);
-/** @type {boolean|'auto'} */
+/** @type {boolean | "auto"} */
 let enableIPv4 = stringToBool(cliArguments.enableIPv4) ?? getConfigValue('protocol.ipv4', DEFAULT_ENABLE_IPV4);
 
 /** @type {string} */
