@@ -696,6 +696,7 @@ export function isValidUrl(url) {
 /**
  * removes starting `[` or ending `]` from hostname.
  * @param {string} hostname hostname to use
+ * @returns {string} hostname plus the modifications
  */
 export function urlHostnameToIPv6(hostname) {
     if (hostname.startsWith('[')) {
@@ -712,6 +713,7 @@ export function urlHostnameToIPv6(hostname) {
  * @param {string} name Domain name to use
  * @param {boolean} useIPv6 If use IPv6
  * @param {boolean} useIPv4 If use IPv4
+ * @returns Promise<boolean> If the URL is valid
  */
 export async function canResolve(name, useIPv6 = true, useIPv4 = true) {
     try {
@@ -747,6 +749,7 @@ export async function canResolve(name, useIPv6 = true, useIPv4 = true) {
 /**
  * converts string to boolean accepts 'true' or 'false' else it returns the string put in
  * @param {string} str Input string
+ * @returns {boolean|string} boolean else original input string
  */
 export function stringToBool(str) {
     if (str === 'true') return true;

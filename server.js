@@ -735,6 +735,8 @@ const preSetupTasks = async function () {
 
 /**
  * Gets the hostname to use for autorun in the browser.
+ * @param {boolean} useIPv6 If use IPv6
+ * @param {boolean} useIPv4 If use IPv4
  * @returns Promise<string> The hostname to use for autorun
  */
 async function getAutorunHostname(useIPv6, useIPv4) {
@@ -861,6 +863,8 @@ function logSecurityAlert(message) {
  * Handles the case where the server failed to start on one or both protocols.
  * @param {boolean} v6Failed If the server failed to start on IPv6
  * @param {boolean} v4Failed If the server failed to start on IPv4
+ * @param {boolean} useIPv6 If use IPv6
+ * @param {boolean} useIPv4 If use IPv4
  */
 function handleServerListenFail(v6Failed, v4Failed, useIPv6, useIPv4) {
     if (v6Failed && !useIPv4) {
@@ -882,6 +886,7 @@ function handleServerListenFail(v6Failed, v4Failed, useIPv6, useIPv4) {
 /**
  * Creates an HTTPS server.
  * @param {URL} url The URL to listen on
+ * @param {number} ipVersion the ip version to use
  * @returns {Promise<void>} A promise that resolves when the server is listening
  * @throws {Error} If the server fails to start
  */
@@ -909,6 +914,7 @@ function createHttpsServer(url, ipVersion) {
 /**
  * Creates an HTTP server.
  * @param {URL} url The URL to listen on
+ * @param {number} ipVersion the ip version to use
  * @returns {Promise<void>} A promise that resolves when the server is listening
  * @throws {Error} If the server fails to start
  */
@@ -929,6 +935,12 @@ function createHttpServer(url, ipVersion) {
     });
 }
 
+
+/**
+ * Starts the server using http or https depending on config
+ * @param {boolean} useIPv6 If use IPv6
+ * @param {boolean} useIPv4 If use IPv4
+ */
 async function startHTTPorHTTPS(useIPv6, useIPv4) {
     let v6Failed = false;
     let v4Failed = false;
