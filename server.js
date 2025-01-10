@@ -419,6 +419,7 @@ async function getHasIP() {
         if (iface === undefined) {
             continue;
         }
+
         for (const info of iface) {
             if (info.family === 'IPv6') {
                 hasIPv6 = true;
@@ -437,7 +438,12 @@ async function getHasIP() {
         }
         if (hasIPv6 && hasIPv4 && hasIPv6Local && hasIPv4Local) break;
     }
-    return [hasIPv6, hasIPv4, hasIPv6Local, hasIPv4Local];
+    return [
+        hasIPv6,
+        hasIPv4,
+        hasIPv6Local,
+        hasIPv4Local,
+    ];
 }
 
 app.use(cookieSession({
@@ -808,11 +814,15 @@ const postSetupTasks = async function (v6Failed, v4Failed, useIPv6, useIPv4) {
     let logListen = 'SillyTavern is listening on';
 
     if (useIPv6 && !v6Failed) {
-        logListen += color.green(' IPv6: ' + tavernUrlV6.host);
+        logListen += color.green(
+            ' IPv6: ' + tavernUrlV6.host
+        );
     }
 
     if (useIPv4 && !v4Failed) {
-        logListen += color.green(' IPv4: ' + tavernUrl.host);
+        logListen += color.green(
+            ' IPv4: ' + tavernUrl.host
+        );
     }
 
     const goToLog = 'Go to: ' + color.blue(autorunUrl) + ' to open SillyTavern';
@@ -824,16 +834,22 @@ const postSetupTasks = async function (v6Failed, v4Failed, useIPv6, useIPv4) {
     console.log('\n' + getSeparator(plainGoToLog.length) + '\n');
 
     if (listen) {
-        console.log('[::] or 0.0.0.0 means SillyTavern is listening on all network interfaces (Wi-Fi, LAN, localhost). If you want to limit it only to internal localhost ([::1] or 127.0.0.1), change the setting in config.yaml to "listen: false". Check "access.log" file in the SillyTavern directory if you want to inspect incoming connections.\n');
+        console.log(
+            '[::] or 0.0.0.0 means SillyTavern is listening on all network interfaces (Wi-Fi, LAN, localhost). If you want to limit it only to internal localhost ([::1] or 127.0.0.1), change the setting in config.yaml to "listen: false". Check "access.log" file in the SillyTavern directory if you want to inspect incoming connections.\n'
+        );
     }
 
     if (basicAuthMode) {
         if (perUserBasicAuth && !enableAccounts) {
-            console.error(color.red('Per-user basic authentication is enabled, but user accounts are disabled. This configuration may be insecure.'));
+            console.error(color.red(
+                'Per-user basic authentication is enabled, but user accounts are disabled. This configuration may be insecure.'
+            ));
         } else if (!perUserBasicAuth) {
             const basicAuthUser = getConfigValue('basicAuthUser', {});
             if (!basicAuthUser?.username || !basicAuthUser?.password) {
-                console.warn(color.yellow('Basic Authentication is enabled, but username or password is not set or empty!'));
+                console.warn(color.yellow(
+                    'Basic Authentication is enabled, but username or password is not set or empty!'
+                ));
             }
         }
     }
@@ -1010,6 +1026,7 @@ async function startServer() {
     if (enableIPv6 === 'auto' || enableIPv4 === 'auto') {
         [hasIPv6Any, hasIPv4Any, hasIPv6Local, hasIPv4Local] = await getHasIP();
 
+
         hasIPv6 = listen ? hasIPv6Any : hasIPv6Local;
         if (enableIPv6 === 'auto') {
             useIPv6 = hasIPv6;
@@ -1059,6 +1076,7 @@ async function startServer() {
     const [v6Failed, v4Failed] = await startHTTPorHTTPS(useIPv6, useIPv4);
 
     handleServerListenFail(v6Failed, v4Failed, useIPv6, useIPv4);
+
     postSetupTasks(v6Failed, v4Failed, useIPv6, useIPv4);
 }
 
