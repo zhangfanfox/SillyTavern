@@ -9,7 +9,6 @@ import path from 'node:path';
 import util from 'node:util';
 import net from 'node:net';
 import dns from 'node:dns';
-import { promises as dnsPromise } from 'node:dns';
 import process from 'node:process';
 import { fileURLToPath } from 'node:url';
 
@@ -71,6 +70,7 @@ import {
     getSeparator,
     stringToBool,
     urlHostnameToIPv6,
+    canResolve,
 } from './src/util.js';
 import { UPLOADS_DIRECTORY } from './src/constants.js';
 import { ensureThumbnailCache } from './src/endpoints/thumbnails.js';
@@ -381,37 +381,6 @@ function getSessionCookieAge() {
     // 0 means session cookie is deleted when the browser session ends
     // (depends on the implementation of the browser)
     return undefined;
-}
-
-
-async function canResolve(name, useIPv6 = true, useIPv4 = true) {
-    try {
-        let v6Resolved = false;
-        let v4Resolved = false;
-
-        if (useIPv6) {
-            try {
-                await dnsPromise.resolve6(name);
-                v6Resolved = true;
-            } catch (error) {
-                v6Resolved = false;
-            }
-        }
-
-        if (useIPv4) {
-            try {
-                await dnsPromise.resolve(name);
-                v4Resolved = true;
-            } catch (error) {
-                v4Resolved = false;
-            }
-        }
-
-        return v6Resolved || v4Resolved;
-
-    } catch (error) {
-        return false;
-    }
 }
 
 async function getHasIP() {
@@ -794,6 +763,8 @@ async function getAutorunHostname(useIPv6, useIPv4) {
  * Tasks that need to be run after the server starts listening.
  * @param {boolean} v6Failed If the server failed to start on IPv6
  * @param {boolean} v4Failed If the server failed to start on IPv4
+ * @param {boolean} useIPv6 If the server is using IPv6
+ * @param {boolean} useIPv4 If the server is using IPv4
  */
 const postSetupTasks = async function (v6Failed, v4Failed, useIPv6, useIPv4) {
     const autorunUrl = new URL(

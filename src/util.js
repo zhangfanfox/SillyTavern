@@ -5,6 +5,7 @@ import process from 'node:process';
 import { Readable } from 'node:stream';
 import { createRequire } from 'node:module';
 import { Buffer } from 'node:buffer';
+import { promises as dnsPromise } from 'node:dns';
 
 import yaml from 'yaml';
 import { sync as commandExistsSync } from 'command-exists';
@@ -692,6 +693,10 @@ export function isValidUrl(url) {
     }
 }
 
+/**
+ * removes starting `[` or ending `]` from hostname.
+ * @param {string} hostname hostname to use
+ */
 export function urlHostnameToIPv6(hostname) {
     if (hostname.startsWith('[')) {
         hostname = hostname.slice(1);
@@ -702,6 +707,47 @@ export function urlHostnameToIPv6(hostname) {
     return hostname;
 }
 
+/**
+ * Test if can resolve a dns name.
+ * @param {string} name Domain name to use
+ * @param {boolean} useIPv6 If use IPv6
+ * @param {boolean} useIPv4 If use IPv4
+ */
+export async function canResolve(name, useIPv6 = true, useIPv4 = true) {
+    try {
+        let v6Resolved = false;
+        let v4Resolved = false;
+
+        if (useIPv6) {
+            try {
+                await dnsPromise.resolve6(name);
+                v6Resolved = true;
+            } catch (error) {
+                v6Resolved = false;
+            }
+        }
+
+        if (useIPv4) {
+            try {
+                await dnsPromise.resolve(name);
+                v4Resolved = true;
+            } catch (error) {
+                v4Resolved = false;
+            }
+        }
+
+        return v6Resolved || v4Resolved;
+
+    } catch (error) {
+        return false;
+    }
+}
+
+
+/**
+ * converts string to boolean accepts 'true' or 'false' else it returns the string put in
+ * @param {string} str Input string
+ */
 export function stringToBool(str) {
     if (str === 'true') return true;
     if (str === 'false') return false;
