@@ -748,8 +748,8 @@ export async function canResolve(name, useIPv6 = true, useIPv4 = true) {
 
 /**
  * converts string to boolean accepts 'true' or 'false' else it returns the string put in
- * @param {string} str Input string
- * @returns {boolean|string} boolean else original input string
+ * @param {string|null} str Input string or null
+ * @returns {boolean|string|null} boolean else original input string or null if input is
  */
 export function stringToBool(str) {
     if (str === 'true') return true;

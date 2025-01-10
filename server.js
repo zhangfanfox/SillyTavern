@@ -248,28 +248,41 @@ app.use(compression());
 app.use(responseTime());
 
 
+/** @type {number} */
 const server_port = cliArguments.port ?? process.env.SILLY_TAVERN_PORT ?? getConfigValue('port', DEFAULT_PORT);
+/** @type {boolean} */
 const autorun = (cliArguments.autorun ?? getConfigValue('autorun', DEFAULT_AUTORUN)) && !cliArguments.ssl;
+/** @type {boolean} */
 const listen = cliArguments.listen ?? getConfigValue('listen', DEFAULT_LISTEN);
+/** @type {boolean} */
 const enableCorsProxy = cliArguments.corsProxy ?? getConfigValue('enableCorsProxy', DEFAULT_CORS_PROXY);
 const enableWhitelist = cliArguments.whitelist ?? getConfigValue('whitelistMode', DEFAULT_WHITELIST);
+/** @type {string} */
 const dataRoot = cliArguments.dataRoot ?? getConfigValue('dataRoot', './data');
+/** @type {boolean} */
 const disableCsrf = cliArguments.disableCsrf ?? getConfigValue('disableCsrfProtection', DEFAULT_CSRF_DISABLED);
 const basicAuthMode = cliArguments.basicAuthMode ?? getConfigValue('basicAuthMode', DEFAULT_BASIC_AUTH);
 const perUserBasicAuth = getConfigValue('perUserBasicAuth', DEFAULT_PER_USER_BASIC_AUTH);
+/** @type {boolean} */
 const enableAccounts = getConfigValue('enableUserAccounts', DEFAULT_ACCOUNTS);
 
 const uploadsPath = path.join(dataRoot, UPLOADS_DIRECTORY);
 
 
+/** @type {boolean|'auto'} */
 let enableIPv6 = stringToBool(cliArguments.enableIPv6) ?? getConfigValue('protocol.ipv6', DEFAULT_ENABLE_IPV6);
+/** @type {boolean|'auto'} */
 let enableIPv4 = stringToBool(cliArguments.enableIPv4) ?? getConfigValue('protocol.ipv4', DEFAULT_ENABLE_IPV4);
 
+/** @type {string} */
 const autorunHostname = cliArguments.autorunHostname ?? getConfigValue('autorunHostname', DEFAULT_AUTORUN_HOSTNAME);
+/** @type {number} */
 const autorunPortOverride = cliArguments.autorunPortOverride ?? getConfigValue('autorunPortOverride', DEFAULT_AUTORUN_PORT);
 
+/** @type {boolean} */
 const dnsPreferIPv6 = cliArguments.dnsPreferIPv6 ?? getConfigValue('dnsPreferIPv6', DEFAULT_PREFER_IPV6);
 
+/** @type {boolean} */
 const avoidLocalhost = cliArguments.avoidLocalhost ?? getConfigValue('avoidLocalhost', DEFAULT_AVOID_LOCALHOST);
 
 const proxyEnabled = cliArguments.requestProxyEnabled ?? getConfigValue('requestProxy.enabled', DEFAULT_PROXY_ENABLED);
