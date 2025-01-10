@@ -998,7 +998,13 @@ async function startHTTPorHTTPS(useIPv6, useIPv4) {
 async function startServer() {
     let useIPv6 = (enableIPv6 === true);
     let useIPv4 = (enableIPv4 === true);
-    let hasIPv6, hasIPv4, hasIPv6Local, hasIPv4Local, hasIPv6Any, hasIPv4Any;
+
+    let /** @type {boolean} */ hasIPv6,
+        /** @type {boolean} */ hasIPv4,
+        /** @type {boolean} */ hasIPv6Local,
+        /** @type {boolean} */ hasIPv4Local,
+        /** @type {boolean} */ hasIPv6Any,
+        /** @type {boolean} */ hasIPv4Any;
 
 
     if (enableIPv6 === 'auto' || enableIPv4 === 'auto') {
@@ -1028,18 +1034,21 @@ async function startServer() {
                 console.log('IPv4 support detected (but disabled)');
             }
         }
+
+
+        if (enableIPv6 === 'auto' && enableIPv4 === 'auto') {
+            if (!hasIPv6 && !hasIPv4) {
+                console.error('Both IPv6 and IPv4 are not detected');
+                process.exit(1);
+            }
+        }
+
     } else {
         console.log('Neither protocol: ipv6, nor ipv4 are set to auto, skipping detection');
     }
 
 
 
-    if (enableIPv6 === 'auto' && enableIPv4 === 'auto') {
-        if (!hasIPv6 && !hasIPv4) {
-            console.error('Both IPv6 and IPv4 are not detected');
-            process.exit(1);
-        }
-    }
 
     if (!useIPv6 && !useIPv4) {
         console.error('Both IPv6 and IPv4 are disabled,\nP.S. you should never see this error, at least at one point it was checked for before this, with the rest of the config options');
