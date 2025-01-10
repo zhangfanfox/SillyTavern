@@ -383,6 +383,16 @@ function getSessionCookieAge() {
     return undefined;
 }
 
+
+/**
+ * Checks the network interfaces to determine the presence of IPv6 and IPv4 addresses.
+ *
+ * @returns {Promise<[boolean, boolean, boolean, boolean]>} A promise that resolves to an array containing:
+ * - [0]: `hasIPv6` (boolean) - Whether the computer has any IPv6 address, including (`::1`).
+ * - [1]: `hasIPv4` (boolean) - Whether the computer has any IPv4 address, including (`127.0.0.1`).
+ * - [2]: `hasIPv6Local` (boolean) - Whether the computer has local IPv6 address (`::1`).
+ * - [3]: `hasIPv4Local` (boolean) - Whether the computer has local IPv4 address (`127.0.0.1`).
+ */
 async function getHasIP() {
     let hasIPv6 = false;
     let hasIPv6Local = false;
