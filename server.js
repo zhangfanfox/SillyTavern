@@ -70,6 +70,7 @@ import {
     getSeparator,
     stringToBool,
     urlHostnameToIPv6,
+    canResolve,
 } from './src/util.js';
 import { UPLOADS_DIRECTORY } from './src/constants.js';
 import { ensureThumbnailCache } from './src/endpoints/thumbnails.js';
@@ -247,28 +248,41 @@ app.use(compression());
 app.use(responseTime());
 
 
+/** @type {number} */
 const server_port = cliArguments.port ?? process.env.SILLY_TAVERN_PORT ?? getConfigValue('port', DEFAULT_PORT);
+/** @type {boolean} */
 const autorun = (cliArguments.autorun ?? getConfigValue('autorun', DEFAULT_AUTORUN)) && !cliArguments.ssl;
+/** @type {boolean} */
 const listen = cliArguments.listen ?? getConfigValue('listen', DEFAULT_LISTEN);
+/** @type {boolean} */
 const enableCorsProxy = cliArguments.corsProxy ?? getConfigValue('enableCorsProxy', DEFAULT_CORS_PROXY);
 const enableWhitelist = cliArguments.whitelist ?? getConfigValue('whitelistMode', DEFAULT_WHITELIST);
+/** @type {string} */
 const dataRoot = cliArguments.dataRoot ?? getConfigValue('dataRoot', './data');
+/** @type {boolean} */
 const disableCsrf = cliArguments.disableCsrf ?? getConfigValue('disableCsrfProtection', DEFAULT_CSRF_DISABLED);
 const basicAuthMode = cliArguments.basicAuthMode ?? getConfigValue('basicAuthMode', DEFAULT_BASIC_AUTH);
 const perUserBasicAuth = getConfigValue('perUserBasicAuth', DEFAULT_PER_USER_BASIC_AUTH);
+/** @type {boolean} */
 const enableAccounts = getConfigValue('enableUserAccounts', DEFAULT_ACCOUNTS);
 
 const uploadsPath = path.join(dataRoot, UPLOADS_DIRECTORY);
 
 
+/** @type {boolean | "auto"} */
 let enableIPv6 = stringToBool(cliArguments.enableIPv6) ?? getConfigValue('protocol.ipv6', DEFAULT_ENABLE_IPV6);
+/** @type {boolean | "auto"} */
 let enableIPv4 = stringToBool(cliArguments.enableIPv4) ?? getConfigValue('protocol.ipv4', DEFAULT_ENABLE_IPV4);
 
+/** @type {string} */
 const autorunHostname = cliArguments.autorunHostname ?? getConfigValue('autorunHostname', DEFAULT_AUTORUN_HOSTNAME);
+/** @type {number} */
 const autorunPortOverride = cliArguments.autorunPortOverride ?? getConfigValue('autorunPortOverride', DEFAULT_AUTORUN_PORT);
 
+/** @type {boolean} */
 const dnsPreferIPv6 = cliArguments.dnsPreferIPv6 ?? getConfigValue('dnsPreferIPv6', DEFAULT_PREFER_IPV6);
 
+/** @type {boolean} */
 const avoidLocalhost = cliArguments.avoidLocalhost ?? getConfigValue('avoidLocalhost', DEFAULT_AVOID_LOCALHOST);
 
 const proxyEnabled = cliArguments.requestProxyEnabled ?? getConfigValue('requestProxy.enabled', DEFAULT_PROXY_ENABLED);
@@ -382,6 +396,16 @@ function getSessionCookieAge() {
     return undefined;
 }
 
+
+/**
+ * Checks the network interfaces to determine the presence of IPv6 and IPv4 addresses.
+ *
+ * @returns {Promise<[boolean, boolean, boolean, boolean]>} A promise that resolves to an array containing:
+ * - [0]: `hasIPv6` (boolean) - Whether the computer has any IPv6 address, including (`::1`).
+ * - [1]: `hasIPv4` (boolean) - Whether the computer has any IPv4 address, including (`127.0.0.1`).
+ * - [2]: `hasIPv6Local` (boolean) - Whether the computer has local IPv6 address (`::1`).
+ * - [3]: `hasIPv4Local` (boolean) - Whether the computer has local IPv4 address (`127.0.0.1`).
+ */
 async function getHasIP() {
     let hasIPv6 = false;
     let hasIPv6Local = false;
@@ -395,6 +419,7 @@ async function getHasIP() {
         if (iface === undefined) {
             continue;
         }
+
         for (const info of iface) {
             if (info.family === 'IPv6') {
                 hasIPv6 = true;
@@ -413,7 +438,12 @@ async function getHasIP() {
         }
         if (hasIPv6 && hasIPv4 && hasIPv6Local && hasIPv4Local) break;
     }
-    return [hasIPv6, hasIPv4, hasIPv6Local, hasIPv4Local];
+    return [
+        hasIPv6,
+        hasIPv4,
+        hasIPv6Local,
+        hasIPv4Local,
+    ];
 }
 
 app.use(cookieSession({
@@ -734,12 +764,16 @@ const preSetupTasks = async function () {
 
 /**
  * Gets the hostname to use for autorun in the browser.
- * @returns {string} The hostname to use for autorun
+ * @param {boolean} useIPv6 If use IPv6
+ * @param {boolean} useIPv4 If use IPv4
+ * @returns Promise<string> The hostname to use for autorun
  */
-function getAutorunHostname(useIPv6, useIPv4) {
+async function getAutorunHostname(useIPv6, useIPv4) {
     if (autorunHostname === 'auto') {
+        let localhostResolve = await canResolve('localhost', useIPv6, useIPv4);
+
         if (useIPv6 && useIPv4) {
-            if (avoidLocalhost) return '[::1]';
+            if (avoidLocalhost || !localhostResolve) return '[::1]';
             return 'localhost';
         }
 
@@ -752,6 +786,7 @@ function getAutorunHostname(useIPv6, useIPv4) {
         }
     }
 
+
     return autorunHostname;
 }
 
@@ -759,11 +794,13 @@ function getAutorunHostname(useIPv6, useIPv4) {
  * Tasks that need to be run after the server starts listening.
  * @param {boolean} v6Failed If the server failed to start on IPv6
  * @param {boolean} v4Failed If the server failed to start on IPv4
+ * @param {boolean} useIPv6 If the server is using IPv6
+ * @param {boolean} useIPv4 If the server is using IPv4
  */
 const postSetupTasks = async function (v6Failed, v4Failed, useIPv6, useIPv4) {
     const autorunUrl = new URL(
         (cliArguments.ssl ? 'https://' : 'http://') +
-        (getAutorunHostname(useIPv6, useIPv4)) +
+        (await getAutorunHostname(useIPv6, useIPv4)) +
         (':') +
         ((autorunPortOverride >= 0) ? autorunPortOverride : server_port),
     );
@@ -777,11 +814,15 @@ const postSetupTasks = async function (v6Failed, v4Failed, useIPv6, useIPv4) {
     let logListen = 'SillyTavern is listening on';
 
     if (useIPv6 && !v6Failed) {
-        logListen += color.green(' IPv6: ' + tavernUrlV6.host);
+        logListen += color.green(
+            ' IPv6: ' + tavernUrlV6.host
+        );
     }
 
     if (useIPv4 && !v4Failed) {
-        logListen += color.green(' IPv4: ' + tavernUrl.host);
+        logListen += color.green(
+            ' IPv4: ' + tavernUrl.host
+        );
     }
 
     const goToLog = 'Go to: ' + color.blue(autorunUrl) + ' to open SillyTavern';
@@ -793,16 +834,22 @@ const postSetupTasks = async function (v6Failed, v4Failed, useIPv6, useIPv4) {
     console.log('\n' + getSeparator(plainGoToLog.length) + '\n');
 
     if (listen) {
-        console.log('[::] or 0.0.0.0 means SillyTavern is listening on all network interfaces (Wi-Fi, LAN, localhost). If you want to limit it only to internal localhost ([::1] or 127.0.0.1), change the setting in config.yaml to "listen: false". Check "access.log" file in the SillyTavern directory if you want to inspect incoming connections.\n');
+        console.log(
+            '[::] or 0.0.0.0 means SillyTavern is listening on all network interfaces (Wi-Fi, LAN, localhost). If you want to limit it only to internal localhost ([::1] or 127.0.0.1), change the setting in config.yaml to "listen: false". Check "access.log" file in the SillyTavern directory if you want to inspect incoming connections.\n'
+        );
     }
 
     if (basicAuthMode) {
         if (perUserBasicAuth && !enableAccounts) {
-            console.error(color.red('Per-user basic authentication is enabled, but user accounts are disabled. This configuration may be insecure.'));
+            console.error(color.red(
+                'Per-user basic authentication is enabled, but user accounts are disabled. This configuration may be insecure.'
+            ));
         } else if (!perUserBasicAuth) {
             const basicAuthUser = getConfigValue('basicAuthUser', {});
             if (!basicAuthUser?.username || !basicAuthUser?.password) {
-                console.warn(color.yellow('Basic Authentication is enabled, but username or password is not set or empty!'));
+                console.warn(color.yellow(
+                    'Basic Authentication is enabled, but username or password is not set or empty!'
+                ));
             }
         }
     }
@@ -855,6 +902,8 @@ function logSecurityAlert(message) {
  * Handles the case where the server failed to start on one or both protocols.
  * @param {boolean} v6Failed If the server failed to start on IPv6
  * @param {boolean} v4Failed If the server failed to start on IPv4
+ * @param {boolean} useIPv6 If use IPv6
+ * @param {boolean} useIPv4 If use IPv4
  */
 function handleServerListenFail(v6Failed, v4Failed, useIPv6, useIPv4) {
     if (v6Failed && !useIPv4) {
@@ -876,6 +925,7 @@ function handleServerListenFail(v6Failed, v4Failed, useIPv6, useIPv4) {
 /**
  * Creates an HTTPS server.
  * @param {URL} url The URL to listen on
+ * @param {number} ipVersion the ip version to use
  * @returns {Promise<void>} A promise that resolves when the server is listening
  * @throws {Error} If the server fails to start
  */
@@ -903,6 +953,7 @@ function createHttpsServer(url, ipVersion) {
 /**
  * Creates an HTTP server.
  * @param {URL} url The URL to listen on
+ * @param {number} ipVersion the ip version to use
  * @returns {Promise<void>} A promise that resolves when the server is listening
  * @throws {Error} If the server fails to start
  */
@@ -923,6 +974,12 @@ function createHttpServer(url, ipVersion) {
     });
 }
 
+
+/**
+ * Starts the server using http or https depending on config
+ * @param {boolean} useIPv6 If use IPv6
+ * @param {boolean} useIPv4 If use IPv4
+ */
 async function startHTTPorHTTPS(useIPv6, useIPv4) {
     let v6Failed = false;
     let v4Failed = false;
@@ -957,11 +1014,18 @@ async function startHTTPorHTTPS(useIPv6, useIPv4) {
 async function startServer() {
     let useIPv6 = (enableIPv6 === true);
     let useIPv4 = (enableIPv4 === true);
-    let hasIPv6, hasIPv4, hasIPv6Local, hasIPv4Local, hasIPv6Any, hasIPv4Any;
+
+    let hasIPv6 = false,
+        hasIPv4 = false,
+        hasIPv6Local = false,
+        hasIPv4Local = false,
+        hasIPv6Any = false,
+        hasIPv4Any = false;
 
 
     if (enableIPv6 === 'auto' || enableIPv4 === 'auto') {
         [hasIPv6Any, hasIPv4Any, hasIPv6Local, hasIPv4Local] = await getHasIP();
+
 
         hasIPv6 = listen ? hasIPv6Any : hasIPv6Local;
         if (enableIPv6 === 'auto') {
@@ -987,27 +1051,32 @@ async function startServer() {
                 console.log('IPv4 support detected (but disabled)');
             }
         }
+
+
+        if (enableIPv6 === 'auto' && enableIPv4 === 'auto') {
+            if (!hasIPv6 && !hasIPv4) {
+                console.error('Both IPv6 and IPv4 are not detected');
+                process.exit(1);
+            }
+        }
+
     } else {
         console.log('Neither protocol: ipv6, nor ipv4 are set to auto, skipping detection');
     }
 
 
 
-    if (enableIPv6 === 'auto' && enableIPv4 === 'auto') {
-        if (!hasIPv6 && !hasIPv4) {
-            console.error('Both IPv6 and IPv4 are not detected');
-            process.exit(1);
-        }
-    }
 
     if (!useIPv6 && !useIPv4) {
         console.error('Both IPv6 and IPv4 are disabled,\nP.S. you should never see this error, at least at one point it was checked for before this, with the rest of the config options');
         process.exit(1);
     }
 
+
     const [v6Failed, v4Failed] = await startHTTPorHTTPS(useIPv6, useIPv4);
 
     handleServerListenFail(v6Failed, v4Failed, useIPv6, useIPv4);
+
     postSetupTasks(v6Failed, v4Failed, useIPv6, useIPv4);
 }
 
