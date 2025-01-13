@@ -1015,12 +1015,12 @@ async function startServer() {
     let useIPv6 = (enableIPv6 === true);
     let useIPv4 = (enableIPv4 === true);
 
-    let /** @type {boolean} */ hasIPv6,
-        /** @type {boolean} */ hasIPv4,
-        /** @type {boolean} */ hasIPv6Local,
-        /** @type {boolean} */ hasIPv4Local,
-        /** @type {boolean} */ hasIPv6Any,
-        /** @type {boolean} */ hasIPv4Any;
+    let hasIPv6 = false,
+        hasIPv4 = false,
+        hasIPv6Local = false,
+        hasIPv4Local = false,
+        hasIPv6Any = false,
+        hasIPv4Any = false;
 
 
     if (enableIPv6 === 'auto' || enableIPv4 === 'auto') {
