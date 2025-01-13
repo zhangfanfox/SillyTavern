@@ -3759,6 +3759,14 @@ input[type='checkbox'].del_checkbox {
     color: var(--golden);
 }
 
+#lock_persona_default.locked i.icon {
+    color: var(--golden);
+}
+#lock_user_name.locked i.icon,
+#lock_persona_to_char.locked i.icon {
+    color: var(--active);
+}
+
 #user_avatar_block .avatar_upload {
     cursor: pointer;
     width: 60px;

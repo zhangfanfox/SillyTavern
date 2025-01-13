@@ -4924,8 +4924,6 @@
                                     <input id="your_name" name="your_name" data-i18n="[placeholder]Enter your name" placeholder="Enter your name" class="text_pole wide100p" value="" autocomplete="off">
                                     <div id="your_name_button" class="menu_button fa-solid fa-check" title="Click to set a new User Name" data-i18n="[title]Click to set a new User Name">
                                     </div>
-                                    <div id="lock_user_name" class="menu_button fa-solid fa-unlock" title="Click to lock your selected persona to the current chat. Click again to remove the lock." data-i18n="[title]Click to lock your selected persona to the current chat. Click again to remove the lock.">
-                                    </div>
                                     <div id="sync_name_button" class="menu_button fa-solid fa-sync" title="Click to set user name for all messages" data-i18n="[title]Click to set user name for all messages">
                                     </div>
                                     <div id="persona_lore_button" class="menu_button fa-solid fa-globe" title="Persona Lore&#10;Alt+Click to open the lorebook" data-i18n="[title]Persona Lore Alt+Click to open the lorebook">
@@ -4937,10 +4935,6 @@
                                 <div class="extension_token_counter">
                                     <span data-i18n="Tokens persona description">Tokens</span>: <span id="persona_description_token_count">0</span>
                                 </div>
-                            </div>
-
-                            <div class="persona_management_global_settings">
-                                <h4 class="standoutHeader" data-i18n="Global Settings">Global Settings</h4>
 
                                 <div class="persona_management_description_position_container">
                                     <label for="persona_description_position" data-i18n="Position:">Position:</label>
@@ -4966,6 +4960,27 @@
                                         </div>
                                     </div>
                                 </div>
+
+                                <h4 data-i18n="Connections">Connections</h4>
+                                <div id="persona_connections_buttons" class="flex-container marginBot10">
+                                    <div id="lock_persona_default" class="menu_button menu_button_icon" title="Click to select this as default persona for the new chats. Click again to remove the lock." data-i18n="[title]Click to select this as default persona for the new chats. Click again to remove the lock.">
+                                        <i class="icon fa-solid fa-crown fa-fw"></i>
+                                        <div data-i18n="Default">Default</div>
+                                    </div>
+                                    <div id="lock_user_name" class="menu_button menu_button_icon" title="Click to lock your selected persona to the current chat. Click again to remove the lock." data-i18n="[title]Click to lock your selected persona to the current chat. Click again to remove the lock.">
+                                        <i class="icon fa-solid fa-unlock fa-fw"></i>
+                                        <div data-i18n="Chat">Chat</div>
+                                    </div>
+                                    <div id="lock_persona_to_char" class="menu_button menu_button_icon" title="Click to lock your selected persona to the current character. Click again to remove the lock." data-i18n="[title]Click to lock your selected persona to the current character. Click again to remove the lock.">
+                                        <i class="icon fa-solid fa-unlock fa-fw"></i>
+                                        <div data-i18n="Character">Character</div>
+                                    </div>
+                                </div>
+                                <div id="persona_connections_list" class="text_muted m-b-1" data-i18n="persona_no_connections">[No connections]</div>
+                            </div>
+
+                            <div class="persona_management_global_settings">
+                                <h4 class="standoutHeader" data-i18n="Global Settings">Global Settings</h4>
 
                                 <div class="persona_management_show_notifications range-block">
                                     <label for="persona_show_notifications" class="checkbox_label">
