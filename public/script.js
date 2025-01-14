@@ -232,6 +232,7 @@ import {
     initPersonas,
     setPersonaDescription,
     initUserAvatar,
+    updatePersonaConnectionsAvatarList,
 } from './scripts/personas.js';
 import { getBackgrounds, initBackgrounds, loadBackgroundSettings, background_settings } from './scripts/backgrounds.js';
 import { hideLoader, showLoader } from './scripts/loader.js';
@@ -1537,6 +1538,7 @@ export async function printCharacters(fullRefresh = false) {
     });
 
     favsToHotswap();
+    updatePersonaConnectionsAvatarList();
 }
 
 /** Checks the state of the current search, and adds/removes the search sorting option accordingly */

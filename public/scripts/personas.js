@@ -1,4 +1,6 @@
 import {
+    buildAvatarList,
+    characterToEntity,
     characters,
     chat,
     chat_metadata,
@@ -7,6 +9,7 @@ import {
     event_types,
     getRequestHeaders,
     getThumbnailUrl,
+    groupToEntity,
     menu_type,
     name1,
     name2,
@@ -19,10 +22,10 @@ import {
 } from '../script.js';
 import { persona_description_positions, power_user } from './power-user.js';
 import { getTokenCountAsync } from './tokenizers.js';
-import { PAGINATION_TEMPLATE, debounce, delay, download, ensureImageFormatSupported, flashHighlight, getBase64Async, parseJsonFile } from './utils.js';
+import { PAGINATION_TEMPLATE, debounce, delay, download, ensureImageFormatSupported, flashHighlight, getBase64Async, getCharIndex, parseJsonFile } from './utils.js';
 import { debounce_timeout } from './constants.js';
 import { FILTER_TYPES, FilterHelper } from './filters.js';
-import { selected_group } from './group-chats.js';
+import { groups, selected_group } from './group-chats.js';
 import { POPUP_RESULT, POPUP_TYPE, Popup, callGenericPopup } from './popup.js';
 import { t } from './i18n.js';
 import { openWorldInfoEditor, world_names } from './world-info.js';
@@ -477,6 +480,34 @@ export function setPersonaDescription() {
         .prop('selected', String(true));
     $('#persona_lore_button').toggleClass('world_set', !!power_user.persona_description_lorebook);
     countPersonaDescriptionTokens();
+
+    updatePersonaLockIcons();
+    updatePersonaConnectionsAvatarList();
+}
+
+/**
+ * Displays avatar connections for the current persona.
+ * Converts connections to entities and populates the avatar list. Shows a message if no connections are found.
+ */
+export function updatePersonaConnectionsAvatarList() {
+    /** @type {PersonaConnection[]} */
+    const connections = power_user.persona_descriptions[user_avatar]?.connections ?? [];
+    const entities = connections.map(connection => {
+        if (connection.type === 'character') {
+            const character = characters.find(c => c.avatar === connection.id);
+            if (character) return characterToEntity(character, getCharIndex(character));
+        }
+        if (connection.type === 'group') {
+            const group = groups.find(g => g.id === connection.id);
+            if (group) return groupToEntity(group);
+        }
+        return undefined;
+    }).filter(entity => entity?.item !== undefined);
+
+    if (entities.length)
+        buildAvatarList($('#persona_connections_list'), entities);
+    else
+        $('#persona_connections_list').text('[No connections]');
 }
 
 export function autoSelectPersona(name) {
@@ -694,6 +725,7 @@ async function unlockPersona(type = 'chat') {
                 console.log(`Unlocking persona ${user_avatar} from this character ${name2}`);
                 power_user.persona_descriptions[user_avatar].connections = connections.filter(c => !isPersonaConnectionLocked(c));
                 saveSettingsDebounced();
+                updatePersonaConnectionsAvatarList();
                 if (power_user.persona_show_notifications) {
                     toastr.info(t`User persona ${name1} is now unlocked from character ${name2}. Click the "Lock" again to revert.`, t`Persona unlocked`);
                 }
@@ -756,6 +788,7 @@ async function lockPersona(type = 'chat') {
                 console.log(`Locking persona ${user_avatar} to this character ${name2}`);
                 power_user.persona_descriptions[user_avatar].connections = [...connections, newConnection];
                 saveSettingsDebounced();
+                updatePersonaConnectionsAvatarList();
                 if (power_user.persona_show_notifications) {
                     toastr.success(t`User persona ${name1} is locked to character ${name2}`);
                 }
@@ -1026,7 +1059,7 @@ function updatePersonaLockIcons() {
 
     /** @type {PersonaConnection[]} */
     const connections = power_user.persona_descriptions[user_avatar]?.connections;
-    const hasCharLock = !!connections.some(c =>
+    const hasCharLock = !!connections?.some(c =>
         (menu_type === 'character_edit' && c.type === 'character' && c.id === characters[this_chid]?.avatar)
         || (menu_type === 'group_edit' && c.type === 'group' && c.id === selected_group));
     $('#lock_persona_to_char').toggleClass('locked', hasCharLock);
