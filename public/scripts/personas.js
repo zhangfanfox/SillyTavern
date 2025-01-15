@@ -30,6 +30,7 @@ import { POPUP_RESULT, POPUP_TYPE, Popup, callGenericPopup } from './popup.js';
 import { t } from './i18n.js';
 import { openWorldInfoEditor, world_names } from './world-info.js';
 import { renderTemplateAsync } from './templates.js';
+import { saveMetadataDebounced } from './extensions.js';
 
 /**
  * @typedef {object} PersonaConnection A connection between a character and a character or group entity
@@ -552,6 +553,7 @@ export async function askForPersonaSelection(title, text, personas) {
     content.appendChild(titleElement);
 
     const textElement = document.createElement('div');
+    textElement.classList.add('m-b-1');
     textElement.textContent = text;
     content.appendChild(textElement);
 
@@ -567,7 +569,7 @@ export async function askForPersonaSelection(title, text, personas) {
         block.dataset.result = String(100 + personas.indexOf(block.dataset.pid));
     });
 
-    const popup = new Popup(content, POPUP_TYPE.TEXT, '', {});
+    const popup = new Popup(content, POPUP_TYPE.TEXT, '', { okButton: 'None' });
     const result = await popup.show();
     return Number(result) > 100 ? personas[Number(result) - 100] : null;
 }
@@ -702,10 +704,21 @@ function selectCurrentPersona() {
                 depth: DEFAULT_DEPTH,
                 role: DEFAULT_ROLE,
                 lorebook: '',
+                connections: [],
             };
         }
 
         setPersonaDescription();
+
+        // Update the locked persona if setting is enabled
+        if (power_user.persona_auto_lock && personaName && user_avatar !== chat_metadata['persona']) {
+            chat_metadata['persona'] = user_avatar;
+            console.log(`Auto locked persona to ${user_avatar}`);
+            if (power_user.persona_show_notifications) {
+                toastr.info(`Auto locked persona ${personaName} to current chat`);
+            }
+            saveMetadataDebounced();
+        }
     }
 }
 
@@ -834,8 +847,7 @@ async function lockPersona(type = 'chat') {
         case 'chat': {
             console.log(`Locking persona ${user_avatar} to this chat`);
             chat_metadata['persona'] = user_avatar;
-            await saveMetadata();
-            saveSettingsDebounced();
+            saveMetadataDebounced();
             if (power_user.persona_show_notifications) {
                 toastr.success(t`User persona ${name1} is locked to ${name2} in this chat`);
             }
@@ -849,10 +861,27 @@ async function lockPersona(type = 'chat') {
             if (newConnection && newConnection.id) {
                 console.log(`Locking persona ${user_avatar} to this character ${name2}`);
                 power_user.persona_descriptions[user_avatar].connections = [...connections, newConnection];
+
+                const unlinkedCharacters = [];
+                if (!power_user.persona_allow_multi_connections) {
+                    for (const [avatarId, description] of Object.entries(power_user.persona_descriptions)) {
+                        if (avatarId === user_avatar) continue;
+
+                        const filteredConnections = description.connections?.filter(c => !(c.type === newConnection.type && c.id === newConnection.id)) ?? [];
+                        if (filteredConnections.length !== description.connections?.length) {
+                            description.connections = filteredConnections;
+                            unlinkedCharacters.push(power_user.personas[avatarId]);
+                        }
+                    }
+                }
+
                 saveSettingsDebounced();
                 updatePersonaConnectionsAvatarList();
                 if (power_user.persona_show_notifications) {
-                    toastr.success(t`User persona ${name1} is locked to character ${name2}`);
+                    let additional = '';
+                    if (unlinkedCharacters.length)
+                        additional += `<br /><br />${t`Unlinked existing persona${unlinkedCharacters.length > 1 ? 's' : ''}: ${unlinkedCharacters.join(', ')}`}`;
+                    toastr.success(t`User persona ${name1} is locked to character ${name2}${additional}`, null, { escapeHtml: false });
                 }
             }
             break;
@@ -1136,6 +1165,9 @@ async function setChatLockedPersona() {
     // Define a persona for this chat
     let chatPersona = '';
 
+    /** @type {'chat' | 'character' | 'default' | null} */
+    let connectType = null;
+
     // If persona is locked in chat metadata, select it
     if (chat_metadata['persona']) {
         console.log(`Using locked persona ${chat_metadata['persona']}`);
@@ -1145,14 +1177,11 @@ async function setChatLockedPersona() {
         if (!userAvatars.includes(chatPersona)) {
             console.warn('Chat-locked persona avatar not found, unlocking persona');
             delete chat_metadata['persona'];
-            updatePersonaLockIcons();
+            saveSettingsDebounced();
             chatPersona = '';
-            return;
         }
+        if (chatPersona) connectType = 'chat';
     }
-
-    // TODO: TEMP
-    power_user.persona_allow_multi_connections = true;
 
     // Check if we have any persona connected to the current character
     if (!chatPersona) {
@@ -1171,12 +1200,16 @@ async function setChatLockedPersona() {
                     connectedPersonas);
             }
         }
+
+        if (chatPersona) connectType = 'character';
     }
 
     // Last check if default persona is set, select it
     if (!chatPersona && power_user.default_persona) {
         console.log(`Using default persona ${power_user.default_persona}`);
         chatPersona = power_user.default_persona;
+
+        if (chatPersona) connectType = 'default';
     }
 
     // Whatever way we selected a persona, if it doesn't exist, unlock this chat
@@ -1195,6 +1228,10 @@ async function setChatLockedPersona() {
     // Persona avatar found, select it
     if (chatPersona) {
         setUserAvatar(chatPersona);
+
+        if (power_user.persona_show_notifications) {
+            toastr.info(t`Auto-selected persona ${power_user.personas[chatPersona]} based on ${connectType} connection.`, t`Persona Management`);
+        }
     }
 
     updatePersonaLockIcons();
