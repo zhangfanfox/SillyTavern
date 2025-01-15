@@ -6383,7 +6383,7 @@ export function buildAvatarList(block, entities, { templateId = 'inline_avatar_t
         }
 
         avatarTemplate.attr('data-type', entity.type);
-        avatarTemplate.attr({ 'chid': id, 'id': `CharID${id}` });
+        avatarTemplate.attr('data-chid', id);
         avatarTemplate.find('img').attr('src', this_avatar).attr('alt', entity.item.name);
         avatarTemplate.attr('title', `[Character] ${entity.item.name}\nFile: ${entity.item.avatar}`);
         if (highlightFavs) {
@@ -6398,7 +6398,13 @@ export function buildAvatarList(block, entities, { templateId = 'inline_avatar_t
             avatarTemplate.addClass(grpTemplate.attr('class'));
             avatarTemplate.empty();
             avatarTemplate.append(grpTemplate.children());
+            avatarTemplate.attr({ 'data-grid': id, 'data-chid': null });
             avatarTemplate.attr('title', `[Group] ${entity.item.name}`);
+        }
+        else if (entity.type === 'persona') {
+            avatarTemplate.attr({ 'data-pid': id, 'data-chid': null });
+            avatarTemplate.find('img').attr('src', getUserAvatar(entity.item.avatar));
+            avatarTemplate.attr('title', `[Persona] ${entity.item.name}\nFile: ${entity.item.avatar}`);
         }
 
         if (interactable) {
