@@ -670,13 +670,16 @@ async function bindUserNameToPersona(e) {
 function selectCurrentPersona() {
     const personaName = power_user.personas[user_avatar];
     if (personaName) {
-        const lockedPersona = chat_metadata['persona'];
-        if (lockedPersona && lockedPersona !== user_avatar && power_user.persona_show_notifications) {
-            toastr.info(
-                t`To permanently set "${personaName}" as the selected persona, unlock and relock it using the "Lock" button. Otherwise, the selection resets upon reloading the chat.`,
-                t`This chat is locked to a different persona (${power_user.personas[lockedPersona]}).`,
-                { timeOut: 10000, extendedTimeOut: 20000, preventDuplicates: true },
-            );
+        const hasDifferentChatLock = chat_metadata['persona'] && chat_metadata['persona'] !== user_avatar;
+        const hasDifferentDefaultLock = power_user.default_persona && power_user.default_persona !== user_avatar;
+
+        if (hasDifferentChatLock || (!chat_metadata['persona'] && hasDifferentDefaultLock)) {
+            const message = t`A different persona is locked to this chat, or you have a different default persona set. The currently selected persona will only be temporary, and resets on reload. Consider locking this persona to the chat if you want to permanently use it.`
+                + '<br /><br />'
+                + t`Current Persona: ${power_user.personas[user_avatar]}`
+                + (hasDifferentChatLock ? '<br />' + t`Chat persona: ${power_user.personas[chat_metadata['persona']]}` : '')
+                + (hasDifferentDefaultLock ? '<br />' + t`Default persona: ${power_user.personas[power_user.default_persona]}` : '');
+            toastr.info(message, t`Temporary Persona`, { escapeHtml: false, timeOut: 10000, extendedTimeOut: 20000, preventDuplicates: true });
         }
 
         if (personaName !== name1) {
@@ -715,7 +718,7 @@ function selectCurrentPersona() {
             chat_metadata['persona'] = user_avatar;
             console.log(`Auto locked persona to ${user_avatar}`);
             if (power_user.persona_show_notifications) {
-                toastr.info(`Auto locked persona ${personaName} to current chat`);
+                toastr.info(`Auto locked persona ${personaName} to current chat`, t`Persona Auto Lock`);
             }
             saveMetadataDebounced();
         }
@@ -823,7 +826,7 @@ async function lockPersona(type = 'chat') {
         if (power_user.persona_show_notifications) {
             toastr.info(
                 t`Creating a new persona for currently selected user name and avatar...`,
-                t`Persona not set for this avatar`,
+                t`Persona Does Not Exist`,
                 { timeOut: 10000, extendedTimeOut: 20000 },
             );
         }
@@ -849,7 +852,7 @@ async function lockPersona(type = 'chat') {
             chat_metadata['persona'] = user_avatar;
             saveMetadataDebounced();
             if (power_user.persona_show_notifications) {
-                toastr.success(t`User persona ${name1} is locked to ${name2} in this chat`);
+                toastr.success(t`User persona ${name1} is locked to ${name2} in this chat`, t`Persona Locked`);
             }
             break;
         }
@@ -881,7 +884,7 @@ async function lockPersona(type = 'chat') {
                     let additional = '';
                     if (unlinkedCharacters.length)
                         additional += `<br /><br />${t`Unlinked existing persona${unlinkedCharacters.length > 1 ? 's' : ''}: ${unlinkedCharacters.join(', ')}`}`;
-                    toastr.success(t`User persona ${name1} is locked to character ${name2}${additional}`, null, { escapeHtml: false });
+                    toastr.success(t`User persona ${name1} is locked to character ${name2}${additional}`, t`Persona Locked`, { escapeHtml: false });
                 }
             }
             break;
@@ -903,7 +906,7 @@ async function deleteUserAvatar(e) {
 
     if (avatarId == user_avatar) {
         console.warn(`User tried to delete their current avatar ${avatarId}`);
-        toastr.warning(t`You cannot delete the avatar you are currently using`, t`Warning`);
+        toastr.warning(t`You cannot delete the avatar you are currently using`, t`Persona Warning`);
         return;
     }
 
@@ -928,12 +931,12 @@ async function deleteUserAvatar(e) {
         delete power_user.persona_descriptions[avatarId];
 
         if (avatarId === power_user.default_persona) {
-            toastr.warning(t`The default persona was deleted. You will need to set a new default persona.`, t`Default persona deleted`);
+            toastr.warning(t`The default persona was deleted. You will need to set a new default persona.`, t`Default Persona Deleted`);
             power_user.default_persona = null;
         }
 
         if (avatarId === chat_metadata['persona']) {
-            toastr.warning(t`The locked persona was deleted. You will need to set a new persona for this chat.`, t`Persona deleted`);
+            toastr.warning(t`The locked persona was deleted. You will need to set a new persona for this chat.`, t`Persona Deleted`);
             delete chat_metadata['persona'];
             await saveMetadata();
         }
@@ -1002,7 +1005,7 @@ async function onPersonaLoreButtonClick(event) {
     const selectedLorebook = power_user.persona_description_lorebook;
 
     if (!personaName) {
-        toastr.warning(t`You must bind a name to this persona before you can set a lorebook.`, t`Persona name not set`);
+        toastr.warning(t`You must bind a name to this persona before you can set a lorebook.`, t`Persona Name Not Set`);
         return;
     }
 
@@ -1099,15 +1102,14 @@ async function toggleDefaultPersona(avatarId, { quiet: quiet = false } = {}) {
 
     if (power_user.personas[avatarId] === undefined) {
         console.warn(`No persona name found for avatar ${avatarId}`);
-        toastr.warning(t`You must bind a name to this persona before you can set it as the default.`, t`Persona name not set`);
+        toastr.warning(t`You must bind a name to this persona before you can set it as the default.`, t`Persona Name Not Set`);
         return;
     }
 
-    const personaName = power_user.personas[avatarId];
 
     if (avatarId === currentDefault) {
         if (!quiet) {
-            const confirm = await Popup.show.confirm(t`Are you sure you want to remove the default persona?`, personaName);
+            const confirm = await Popup.show.confirm(t`Are you sure you want to remove the default persona?`, power_user.personas[avatarId]);
             if (!confirm) {
                 console.debug('User cancelled removing default persona');
                 return;
@@ -1116,12 +1118,15 @@ async function toggleDefaultPersona(avatarId, { quiet: quiet = false } = {}) {
 
         console.log(`Removing default persona ${avatarId}`);
         if (power_user.persona_show_notifications) {
-            toastr.info(t`This persona will no longer be used by default when you open a new chat.`, t`Default persona removed`);
+            toastr.info(t`This persona will no longer be used by default when you open a new chat.`, t`Default Persona Removed`);
         }
         delete power_user.default_persona;
     } else {
         if (!quiet) {
-            const confirm = await Popup.show.confirm(t`Are you sure you want to set \"${personaName}\" as the default persona?`, t`This name and avatar will be used for all new chats, as well as existing chats where the user persona is not locked.`);
+            const confirm = await Popup.show.confirm(t`Set Default Persona`,
+                t`Are you sure you want to set \"${power_user.personas[avatarId]}\" as the default persona?`
+                + '<br /><br />'
+                + t`This name and avatar will be used for all new chats, as well as existing chats where the user persona is not locked.`);
             if (!confirm) {
                 console.debug('User cancelled setting default persona');
                 return;
@@ -1130,7 +1135,7 @@ async function toggleDefaultPersona(avatarId, { quiet: quiet = false } = {}) {
 
         power_user.default_persona = avatarId;
         if (power_user.persona_show_notifications) {
-            toastr.success(t`This persona will be used by default when you open a new chat.`, t`Default persona set to ${personaName}`);
+            toastr.success(t`Set to ${power_user.personas[avatarId]}.This persona will be used by default when you open a new chat.`, t`Default Persona Set`);
         }
     }
 
@@ -1193,7 +1198,7 @@ async function setChatLockedPersona() {
         if (connectedPersonas.length > 0) {
             if (!power_user.persona_allow_multi_connections || connectedPersonas.length === 1) {
                 chatPersona = connectedPersonas[0];
-                toastr.warning(t`More than one persona is connected to this character. Using the first available persona for this chat.`, t`Automatic persona selection`);
+                toastr.warning(t`More than one persona is connected to this character. Using the first available persona for this chat.`, t`Automatic Persona Selection`);
             } else {
                 chatPersona = await askForPersonaSelection(t`Select Persona`,
                     t`Select one of multiple with this character connected persona to use for this chat`,
@@ -1230,7 +1235,7 @@ async function setChatLockedPersona() {
         setUserAvatar(chatPersona);
 
         if (power_user.persona_show_notifications) {
-            toastr.info(t`Auto-selected persona ${power_user.personas[chatPersona]} based on ${connectType} connection.`, t`Persona Management`);
+            toastr.info(t`Auto-selected persona ${power_user.personas[chatPersona]} based on ${connectType} connection.`, t`Persona Auto Selected`);
         }
     }
 
@@ -1315,10 +1320,10 @@ async function onPersonasRestoreInput(e) {
     }
 
     if (warnings.length) {
-        toastr.success(t`Personas restored with warnings. Check console for details.`);
+        toastr.success(t`Personas restored with warnings. Check console for details.`, t`Persona Management`);
         console.warn(`PERSONA RESTORE REPORT\n====================\n${warnings.join('\n')}`);
     } else {
-        toastr.success(t`Personas restored successfully.`);
+        toastr.success(t`Personas restored successfully.`, t`Persona Management`);
     }
 
     await getUserAvatars();
@@ -1360,7 +1365,7 @@ async function duplicatePersona(avatarId) {
     const personaName = power_user.personas[avatarId];
 
     if (!personaName) {
-        toastr.warning('Chosen avatar is not a persona');
+        toastr.warning('Chosen avatar is not a persona', t`Persona Management`);
         return;
     }
 
