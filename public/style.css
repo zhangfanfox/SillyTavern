@@ -5643,6 +5643,7 @@ body:not(.movingUI) .drawer-content.maximized {
 
 .model-card .details-container {
     text-align: right;
+    line-height: 0.9;
 }
 
 .model-card:hover {
@@ -5665,7 +5666,7 @@ body:not(.movingUI) .drawer-content.maximized {
 }
 
 .model-title {
-    font-size: 13px;
+    font-size: calc(var(--mainFontSize) * 0.95);
     font-weight: bold;
     overflow: hidden;
 }
@@ -5681,7 +5682,7 @@ body:not(.movingUI) .drawer-content.maximized {
 .model-class,
 .model-context-length,
 .model-date-added {
-    font-size: 10px;
+    font-size: calc(var(--mainFontSize) * 0.75);
 }
 
 .model-class,
