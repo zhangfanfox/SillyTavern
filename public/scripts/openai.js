@@ -4925,6 +4925,8 @@ export function isImageInliningSupported() {
     const visionSupportedModels = [
         'gpt-4-vision',
         'gemini-2.0-flash-thinking-exp-1219',
+        'gemini-2.0-flash-thinking-exp-01-21',
+        'gemini-2.0-flash-thinking-exp',
         'gemini-2.0-flash-exp',
         'gemini-1.5-flash',
         'gemini-1.5-flash-latest',
