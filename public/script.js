@@ -1861,7 +1861,7 @@ export async function showMoreMessages(messagesToLoad = null) {
         $('#chat').scrollTop(newHeight - prevHeight);
     }
 
-    await eventSource.emit(event_types.MORE_MESSAGES_LOADED)
+    await eventSource.emit(event_types.MORE_MESSAGES_LOADED);
 }
 
 export async function printMessages() {
