@@ -2045,8 +2045,8 @@
     "Post a GitHub issue": "在 GitHub 发布问题",
     "Contact the developers": "联系开发者",
     "If you're connected to an API, try asking me something!": "若您已经配置好API，尝试发送些什么吧！",
-    "Title/Memo": "标题/备忘录",
-    "Strategy": "Strategy",
-    "Position": "位置",
-    "Trigger %": "触发率 ％"
+    "Title/Memo": "标题（备忘）",
+    "Strategy": "触发策略",
+    "Position": "插入位置",
+    "Trigger %": "触发率%"
 }
