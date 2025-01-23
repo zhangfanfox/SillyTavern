@@ -170,7 +170,7 @@ import {
     isElementInViewport,
     copyText,
 } from './scripts/utils.js';
-import { debounce_timeout, THINK_BREAK } from './scripts/constants.js';
+import { debounce_timeout } from './scripts/constants.js';
 
 import { doDailyExtensionUpdatesCheck, extension_settings, initExtensions, loadExtensionSettings, runGenerationInterceptors, saveMetadataDebounced } from './scripts/extensions.js';
 import { COMMENT_NAME_DEFAULT, executeSlashCommandsOnChatInput, getSlashCommandsHelp, initDefaultSlashCommands, isExecutingCommandsFromChatInput, pauseScriptExecution, processChatSlashCommands, stopScriptExecution } from './scripts/slash-commands.js';
@@ -5700,10 +5700,6 @@ function getTextContextFromData(data) {
 function extractMessageFromData(data){
     const content = String(getTextContextFromData(data) ?? '');
 
-    if (content.includes(THINK_BREAK)) {
-        return content.split(THINK_BREAK)[1];
-    }
-
     return content;
 }
 
@@ -5713,14 +5709,15 @@ function extractMessageFromData(data){
  * @returns {string} Extracted reasoning
  */
 function extractReasoningFromData(data) {
-    const content = String(getTextContextFromData(data) ?? '');
-
-    if (content.includes(THINK_BREAK)) {
-        return content.split(THINK_BREAK)[0];
-    }
-
-    if (main_api === 'openai' && oai_settings.chat_completion_source === chat_completion_sources.DEEPSEEK && oai_settings.show_thoughts) {
-        return data?.choices?.[0]?.message?.reasoning_content ?? '';
+    if (main_api === 'openai' && oai_settings.show_thoughts) {
+        switch (oai_settings.chat_completion_source) {
+            case chat_completion_sources.DEEPSEEK:
+                return data?.choices?.[0]?.message?.reasoning_content ?? '';
+            case chat_completion_sources.OPENROUTER:
+                return data?.choices?.[0]?.message?.reasoning ?? '';
+            case chat_completion_sources.MAKERSUITE:
+                return data?.responseContent?.parts?.filter(part => part.thought)?.map(part => part.text)?.join('\n\n') ?? '';
+        }
     }
 
     return '';

@@ -7,7 +7,6 @@ import {
     CHAT_COMPLETION_SOURCES,
     GEMINI_SAFETY,
     OPENROUTER_HEADERS,
-    THINK_BREAK,
 } from '../../constants.js';
 import {
     forwardFetchResponse,
@@ -392,11 +391,7 @@ async function sendMakerSuiteRequest(request, response) {
             const responseContent = candidates[0].content ?? candidates[0].output;
             console.log('Google AI Studio response:', responseContent);
 
-            if (Array.isArray(responseContent?.parts) && isThinking && !showThoughts) {
-                responseContent.parts = responseContent.parts.filter(part => !part.thought);
-            }
-
-            const responseText = typeof responseContent === 'string' ? responseContent : responseContent?.parts?.map(part => part.text)?.join(THINK_BREAK);
+            const responseText = typeof responseContent === 'string' ? responseContent : responseContent?.parts?.filter(part => !part.thought)?.map(part => part.text)?.join('\n\n');
             if (!responseText) {
                 let message = 'Google AI Studio Candidate text empty';
                 console.log(message, generateResponseJson);
@@ -404,7 +399,7 @@ async function sendMakerSuiteRequest(request, response) {
             }
 
             // Wrap it back to OAI format
-            const reply = { choices: [{ 'message': { 'content': responseText } }] };
+            const reply = { choices: [{ 'message': { 'content': responseText } }], responseContent };
             return response.send(reply);
         }
     } catch (error) {
@@ -991,6 +986,10 @@ router.post('/generate', jsonParser, function (request, response) {
 
         if (request.body.use_fallback) {
             bodyParams['route'] = 'fallback';
+        }
+
+        if (request.body.show_thoughts) {
+            bodyParams['include_reasoning'] = true;
         }
 
         let cachingAtDepth = getConfigValue('claude.cachingAtDepth', -1);
