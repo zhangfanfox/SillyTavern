@@ -5795,3 +5795,17 @@ body:not(.movingUI) .drawer-content.maximized {
 .alternate_greetings_list {
     overflow-y: scroll;
 }
+
+.mes_text div[data-type="assistant_note"]:has(.assistant_note_export) {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+    padding: 0 2px;
+}
+
+.mes_text div[data-type="assistant_note"]:has(.assistant_note_export)>div:not(.assistant_note_export) {
+    flex: 1;
+}
