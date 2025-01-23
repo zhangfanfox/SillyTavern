@@ -2048,5 +2048,5 @@
     "Title/Memo": "标题（备忘）",
     "Strategy": "触发策略",
     "Position": "插入位置",
-    "Trigger %": "触发率%"
+    "Trigger %": "触发概率%"
 }
