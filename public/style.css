@@ -340,10 +340,19 @@ input[type='checkbox']:focus-visible {
     padding: 5px;
     margin: 5px 0;
     overflow-y: auto;
-    max-height: 100px;
+    max-height: min(50vh, 300px);
 }
 
-.mes_block:has(.edit_textarea) .mes_reasoning,
+.mes_reasoning_summary {
+    cursor: pointer;
+}
+
+.mes_reasoning_summary > span {
+    margin-left: 5px;
+}
+
+.mes_reasoning_details:has(.mes_reasoning:empty),
+.mes_block:has(.edit_textarea) .mes_reasoning_details,
 .mes_bias:empty,
 .mes_reasoning:empty {
     display: none;
