@@ -345,6 +345,17 @@ input[type='checkbox']:focus-visible {
 
 .mes_reasoning_summary {
     cursor: pointer;
+    position: relative;
+}
+
+.mes_reasoning_details:not([open]) .mes_reasoning_copy {
+    display: none;
+}
+
+.mes_reasoning_copy {
+    position: absolute;
+    right: 0;
+    top: 0;
 }
 
 .mes_reasoning_summary > span {
