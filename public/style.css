@@ -332,6 +332,23 @@ input[type='checkbox']:focus-visible {
     color: var(--SmartThemeQuoteColor);
 }
 
+.mes_reasoning {
+    display: block;
+    border: 1px solid var(--SmartThemeBorderColor);
+    background-color: var(--black30a);
+    border-radius: 5px;
+    padding: 5px;
+    margin: 5px 0;
+    overflow-y: auto;
+    max-height: 100px;
+}
+
+.mes_block:has(.edit_textarea) .mes_reasoning,
+.mes_bias:empty,
+.mes_reasoning:empty {
+    display: none;
+}
+
 .mes_text i,
 .mes_text em {
     color: var(--SmartThemeEmColor);
@@ -1022,6 +1039,7 @@ body .panelControlBar {
     /*only affects bubblechat to make it sit nicely at the bottom*/
 }
 
+.last_mes .mes_reasoning,
 .last_mes .mes_text {
     padding-right: 30px;
 }
@@ -1235,14 +1253,18 @@ body.swipeAllMessages .mes:not(.last_mes) .swipes-counter {
     overflow-y: clip;
 }
 
-.mes_text {
+.mes_text,
+.mes_reasoning {
     font-weight: 500;
     line-height: calc(var(--mainFontSize) + .5rem);
+    max-width: 100%;
+    overflow-wrap: anywhere;
+}
+
+.mes_text {
     padding-left: 0;
     padding-top: 5px;
     padding-bottom: 5px;
-    max-width: 100%;
-    overflow-wrap: anywhere;
 }
 
 br {

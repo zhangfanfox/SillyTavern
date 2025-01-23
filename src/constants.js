@@ -413,3 +413,8 @@ export const VLLM_KEYS = [
     'guided_decoding_backend',
     'guided_whitespace_pattern',
 ];
+
+/**
+ * Custom boundary for splitting the text between the model's reasoning and the actual response.
+ */
+export const THINK_BREAK = '##�THINK_BREAK�##';

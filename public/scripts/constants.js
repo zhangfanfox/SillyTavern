@@ -14,3 +14,8 @@ export const debounce_timeout = {
     /** [5 sec] For delayed tasks, like auto-saving or completing batch operations that need a significant pause. */
     extended: 5000,
 };
+
+/**
+ * Custom boundary for splitting the text between the model's reasoning and the actual response.
+ */
+export const THINK_BREAK = '##�THINK_BREAK�##';

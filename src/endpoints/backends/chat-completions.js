@@ -7,6 +7,7 @@ import {
     CHAT_COMPLETION_SOURCES,
     GEMINI_SAFETY,
     OPENROUTER_HEADERS,
+    THINK_BREAK,
 } from '../../constants.js';
 import {
     forwardFetchResponse,
@@ -389,7 +390,7 @@ async function sendMakerSuiteRequest(request, response) {
                 responseContent.parts = responseContent.parts.filter(part => !part.thought);
             }
 
-            const responseText = typeof responseContent === 'string' ? responseContent : responseContent?.parts?.map(part => part.text)?.join('\n\n');
+            const responseText = typeof responseContent === 'string' ? responseContent : responseContent?.parts?.map(part => part.text)?.join(THINK_BREAK);
             if (!responseText) {
                 let message = 'Google AI Studio Candidate text empty';
                 console.log(message, generateResponseJson);
