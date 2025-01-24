@@ -5669,11 +5669,11 @@ function parseAndSaveLogprobs(data, continueFrom) {
 }
 
 /**
- * Gets the text context from the response data.
- * @param {object} data Response JSON data
- * @returns {string} Extracted text
+ * Extracts the message from the response data.
+ * @param {object} data Response data
+ * @returns {string} Extracted message
  */
-function getTextContextFromData(data) {
+function extractMessageFromData(data){
     if (typeof data === 'string') {
         return data;
     }
@@ -5692,17 +5692,6 @@ function getTextContextFromData(data) {
         default:
             return '';
     }
-}
-
-/**
- * Extracts the message from the response data.
- * @param {object} data Response data
- * @returns {string} Extracted message
- */
-function extractMessageFromData(data){
-    const content = String(getTextContextFromData(data) ?? '');
-
-    return content;
 }
 
 /**
