@@ -1205,7 +1205,9 @@ async function loadPersonaForCurrentChat() {
             .map(([key, _]) => key);
 
         if (connectedPersonas.length > 0) {
-            if (!power_user.persona_allow_multi_connections || connectedPersonas.length === 1) {
+            if (connectedPersonas.length === 1) {
+                chatPersona = connectedPersonas[0];
+            } else if (!power_user.persona_allow_multi_connections) {
                 chatPersona = connectedPersonas[0];
                 toastr.warning(t`More than one persona is connected to this character. Using the first available persona for this chat.`, t`Automatic Persona Selection`);
             } else {
