@@ -1163,7 +1163,7 @@ function updatePersonaLockIcons() {
     $('#lock_persona_to_char i.icon').toggleClass('fa-unlock', !hasCharLock);
 }
 
-async function setChatLockedPersona() {
+async function loadPersonaForCurrentChat() {
     // Cache persona list to check if they exist
     const userAvatars = await getUserAvatars(false);
 
@@ -1484,6 +1484,6 @@ export function initPersonas() {
             convertCharacterToPersona();
         }
     });
-    eventSource.on(event_types.CHAT_CHANGED, setChatLockedPersona);
+    eventSource.on(event_types.CHAT_CHANGED, loadPersonaForCurrentChat);
     switchPersonaGridView();
 }
