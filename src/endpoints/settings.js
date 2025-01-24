@@ -10,8 +10,8 @@ import { getConfigValue, generateTimestamp, removeOldBackups } from '../util.js'
 import { jsonParser } from '../express-common.js';
 import { getAllUserHandles, getUserDirectories } from '../users.js';
 
-const ENABLE_EXTENSIONS = getConfigValue('enableExtensions', true);
-const ENABLE_EXTENSIONS_AUTO_UPDATE = getConfigValue('enableExtensionsAutoUpdate', true);
+const ENABLE_EXTENSIONS = !!getConfigValue('extensions.enabled', true);
+const ENABLE_EXTENSIONS_AUTO_UPDATE = !!getConfigValue('extensions.autoUpdate', true);
 const ENABLE_ACCOUNTS = getConfigValue('enableUserAccounts', false);
 
 // 10 minutes
