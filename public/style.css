@@ -348,7 +348,7 @@ input[type='checkbox']:focus-visible {
     padding: 5px;
     margin: 5px 0;
     overflow-y: auto;
-    max-height: 90vh;
+    max-height: 70vh;
 }
 
 .mes_reasoning_summary {
