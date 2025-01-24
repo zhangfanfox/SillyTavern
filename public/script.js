@@ -3198,10 +3198,12 @@ class StreamingProcessor {
                 chat[messageId]['extra'] = {};
             }
 
-            if (this.reasoning && this.messageReasoningDom instanceof HTMLElement) {
+            if (this.reasoning) {
                 chat[messageId]['extra']['reasoning'] = this.reasoning;
-                const formattedReasoning = messageFormatting(this.reasoning, '', false, false, -1);
-                this.messageReasoningDom.innerHTML = formattedReasoning;
+                if (this.messageReasoningDom instanceof HTMLElement) {
+                    const formattedReasoning = messageFormatting(this.reasoning, '', false, false, -1);
+                    this.messageReasoningDom.innerHTML = formattedReasoning;
+                }
             }
 
             if (currentTokenCount) {
