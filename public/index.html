@@ -1934,22 +1934,24 @@
                                         <label for="openai_function_calling" class="checkbox_label flexWrap widthFreeExpand">
                                             <input id="openai_function_calling" type="checkbox" />
                                             <span data-i18n="Enable function calling">Enable function calling</span>
-                                            <div class="flexBasis100p toggle-description justifyLeft">
-                                                <span data-i18n="enable_functions_desc_1">Allows using </span><a href="https://platform.openai.com/docs/guides/function-calling" target="_blank" data-i18n="enable_functions_desc_2">function tools</a>.
-                                                <span data-i18n="enable_functions_desc_3">Can be utilized by various extensions to provide additional functionality.</span>
-                                            </div>
                                         </label>
+                                        <div class="flexBasis100p toggle-description justifyLeft">
+                                            <span data-i18n="enable_functions_desc_1">Allows using </span><a href="https://platform.openai.com/docs/guides/function-calling" target="_blank" data-i18n="enable_functions_desc_2">function tools</a>.
+                                            <span data-i18n="enable_functions_desc_3">Can be utilized by various extensions to provide additional functionality.</span>
+                                        </div>
                                     </div>
                                     <div class="range-block" data-source="openai,openrouter,makersuite,claude,custom,01ai">
                                         <label for="openai_image_inlining" class="checkbox_label flexWrap widthFreeExpand">
                                             <input id="openai_image_inlining" type="checkbox" />
                                             <span data-i18n="Send inline images">Send inline images</span>
-                                            <div id="image_inlining_hint" class="flexBasis100p toggle-description justifyLeft">
-                                                <span data-i18n="image_inlining_hint_1">Sends images in prompts if the model supports it (e.g. GPT-4V, Claude 3 or Llava 13B).
-                                                    Use the</span> <code><i class="fa-solid fa-paperclip"></i></code> <span data-i18n="image_inlining_hint_2">action on any message or the</span>
-                                                <code><i class="fa-solid fa-wand-magic-sparkles"></i></code> <span data-i18n="image_inlining_hint_3">menu to attach an image file to the chat.</span>
-                                            </div>
                                         </label>
+                                        <div id="image_inlining_hint" class="flexBasis100p toggle-description justifyLeft">
+                                            <span data-i18n="image_inlining_hint_1">Sends images in prompts if the model supports it (e.g. GPT-4V, Claude 3 or Llava 13B). Use the</span>
+                                            <code><i class="fa-solid fa-paperclip"></i></code>
+                                            <span data-i18n="image_inlining_hint_2">action on any message or the</span>
+                                            <code><i class="fa-solid fa-wand-magic-sparkles"></i></code>
+                                            <span data-i18n="image_inlining_hint_3">menu to attach an image file to the chat.</span>
+                                        </div>
                                         <div class="flex-container flexFlowColumn wide100p textAlignCenter marginTop10" data-source="openai,custom">
                                             <label for="openai_inline_image_quality" data-i18n="Inline Image Quality">
                                                 Inline Image Quality
@@ -1975,12 +1977,12 @@
                                             </span>
                                         </div>
                                     </div>
-                                    <div class="range-block" data-source="makersuite">
+                                    <div class="range-block" data-source="makersuite,deepseek">
                                         <label for="openai_show_thoughts" class="checkbox_label widthFreeExpand">
                                             <input id="openai_show_thoughts" type="checkbox" />
                                             <span>
                                                 <span data-i18n="Show model thoughts">Show model thoughts</span>
-                                                <i class="opacity50p fa-solid fa-circle-info" title="Gemini 2.0 Thinking"></i>
+                                                <i class="opacity50p fa-solid fa-circle-info" title="Gemini 2.0 Thinking / DeepSeek Reasoner"></i>
                                             </span>
                                         </label>
                                         <div class="toggle-description justifyLeft marginBot5">
@@ -2690,7 +2692,7 @@
                                 <option value="windowai">Window AI</option>
                             </optgroup>
                         </select>
-                        <div class="inline-drawer wide100p" data-source="openai,claude,mistralai,makersuite">
+                        <div class="inline-drawer wide100p" data-source="openai,claude,mistralai,makersuite,deepseek">
                             <div class="inline-drawer-toggle inline-drawer-header">
                                 <b data-i18n="Reverse Proxy">Reverse Proxy</b>
                                 <div class="fa-solid fa-circle-chevron-down inline-drawer-icon down"></div>
@@ -2753,7 +2755,7 @@
                                 </div>
                             </div>
                         </div>
-                        <div id="ReverseProxyWarningMessage" data-source="openai,claude,mistralai,makersuite">
+                        <div id="ReverseProxyWarningMessage" data-source="openai,claude,mistralai,makersuite,deepseek">
                             <div class="reverse_proxy_warning">
                                 <b>
                                     <div data-i18n="Using a proxy that you're not running yourself is a risk to your data privacy.">
@@ -3060,7 +3062,9 @@
                                         <option value="gemini-1.0-ultra-latest">Gemini 1.0 Ultra</option>
                                     </optgroup>
                                     <optgroup label="Subversions">
-                                        <option value="gemini-2.0-flash-thinking-exp-1219">Gemini 2.0 Flash Thinking Experimental</option>
+                                        <option value="gemini-2.0-flash-thinking-exp">Gemini 2.0 Flash Thinking Experimental</option>
+                                        <option value="gemini-2.0-flash-thinking-exp-01-21">Gemini 2.0 Flash Thinking Experimental 2025-01-21</option>
+                                        <option value="gemini-2.0-flash-thinking-exp-1219">Gemini 2.0 Flash Thinking Experimental 2024-12-19</option>
                                         <option value="gemini-2.0-flash-exp">Gemini 2.0 Flash Experimental</option>
                                         <option value="gemini-exp-1114">Gemini Experimental 2024-11-14</option>
                                         <option value="gemini-exp-1121">Gemini Experimental 2024-11-21</option>
@@ -3207,6 +3211,7 @@
                                 <select id="model_deepseek_select">
                                     <option value="deepseek-chat">deepseek-chat</option>
                                     <option value="deepseek-coder">deepseek-coder</option>
+                                    <option value="deepseek-reasoner">deepseek-reasoner</option>
                                 </select>
                             </div>
                         </div>
@@ -5148,7 +5153,8 @@
                         <div id="spoiler_free_desc" class="flex-container flexFlowColumn flex1 flexNoGap">
                             <div id="creators_notes_div" class="title_restorable">
                                 <span data-i18n="Creator's Notes">Creator's Notes</span>
-                                <div id="spoiler_free_desc_button" class="margin0 menu_button fa-solid fa-eye" title="Show / Hide Description and First Message" data-i18n="[title]Show / Hide Description and First Message"></div>
+                                <small id="creators_note_desc_hidden" data-i18n="Character details are hidden.">Character details are hidden.</small>
+                                <div id="spoiler_free_desc_button" class="margin0 menu_button fa-solid fa-eye fa-fw" title="Show / Hide Description and First Message" data-i18n="[title]Show / Hide Description and First Message"></div>
                             </div>
                             <div id="creator_notes_spoiler" class="flex1"></div>
                             <!-- A button to show / hide description_div and description_textarea and first_message_div and firstmessage_textarea-->
@@ -5486,7 +5492,7 @@
         </div>
         <div id="character_popup" class="flex-container flexFlowColumn flexNoGap">
             <div id="character_popup_text">
-                <h3 id="character_popup-button-h3" class="margin0"></h3> <span data-i18n="Advanced Defininitions">- Advanced
+                <h3 id="character_popup-button-h3" class="margin0"></h3> <span data-i18n="Advanced Definitions">- Advanced
                     Definitions</span>
             </div>
             <hr class="margin-bot-10px">
