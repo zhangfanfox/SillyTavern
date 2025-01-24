@@ -740,7 +740,7 @@ function isPersonaConnectionLocked(connection) {
  * @param {PersonaLockType} type - Lock type
  * @returns {boolean} Whether the persona is locked
  */
-function isPersonaLocked(type = 'chat') {
+export function isPersonaLocked(type = 'chat') {
     switch (type) {
         case 'default':
             return power_user.default_persona === user_avatar;
@@ -756,21 +756,26 @@ function isPersonaLocked(type = 'chat') {
 /**
  * Locks or unlocks the persona
  * @param {boolean} state Desired lock state
+ * @param {PersonaLockType} type - Lock type
  * @returns {Promise<void>}
  */
-export async function setPersonaLockState(state) {
-    return state ? await lockPersona() : await unlockPersona();
+export async function setPersonaLockState(state, type = 'chat') {
+    return state ? await lockPersona(type) : await unlockPersona(type);
 }
 
 /**
  * Toggle the persona lock state
  * @param {PersonaLockType} type - Lock type
- * @returns {Promise<void>}
+ * @returns {Promise<boolean>} - Whether the persona was locked
  */
 export async function togglePersonaLock(type = 'chat') {
-    return isPersonaLocked(type)
-        ? await unlockPersona(type)
-        : await lockPersona(type);
+    if (isPersonaLocked(type)) {
+        await unlockPersona(type);
+        return false;
+    } else {
+        await lockPersona(type);
+        return true;
+    }
 }
 
 /**
@@ -810,6 +815,8 @@ async function unlockPersona(type = 'chat') {
             }
             break;
         }
+        default:
+            throw new Error(`Unknown persona lock type: ${type}`);
     }
 
     updatePersonaLockIcons();
@@ -889,6 +896,8 @@ async function lockPersona(type = 'chat') {
             }
             break;
         }
+        default:
+            throw new Error(`Unknown persona lock type: ${type}`);
     }
 
     updatePersonaLockIcons();
