@@ -2240,6 +2240,11 @@ function getMessageFromTemplate({
     return mes;
 }
 
+/**
+ * Re-renders a message block with updated content.
+ * @param {number} messageId Message ID
+ * @param {object} message Message object
+ */
 export function updateMessageBlock(messageId, message) {
     const messageElement = $(`#chat [mesid="${messageId}"]`);
     const text = message?.extra?.display_text ?? message.mes;
