@@ -1191,6 +1191,8 @@ body.swipeAllMessages .mes:not(.last_mes) .swipes-counter {
 }
 
 .avatars_inline {
+    display: flex;
+    gap: 5px;
     flex-wrap: wrap;
     overflow: hidden;
     max-height: calc(var(--avatar-base-height) + 2 * var(--avatar-base-border-radius));
@@ -1225,6 +1227,11 @@ body.swipeAllMessages .mes:not(.last_mes) .swipes-counter {
 
 .avatars_inline .avatar:last-of-type {
     margin-right: calc(var(--avatar-base-border-radius));
+}
+
+.avatars_multiline {
+    max-height: fit-content;
+    height: inherit;
 }
 
 .mes_block {

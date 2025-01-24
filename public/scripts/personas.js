@@ -558,7 +558,7 @@ export async function askForPersonaSelection(title, text, personas) {
     content.appendChild(textElement);
 
     const personaListBlock = document.createElement('div');
-    personaListBlock.classList.add('persona-list', 'avatars_inline', 'flex-container');
+    personaListBlock.classList.add('persona-list', 'avatars_inline', 'avatars_multiline');
     content.appendChild(personaListBlock);
 
     buildPersonaAvatarList(personaListBlock, personas, { interactable: true });
@@ -1201,7 +1201,7 @@ async function loadPersonaForCurrentChat() {
                 toastr.warning(t`More than one persona is connected to this character. Using the first available persona for this chat.`, t`Automatic Persona Selection`);
             } else {
                 chatPersona = await askForPersonaSelection(t`Select Persona`,
-                    t`Select one of multiple with this character connected persona to use for this chat`,
+                    t`Multiple personas are connected to this character. Select a persona to use for this chat.`,
                     connectedPersonas);
             }
         }
