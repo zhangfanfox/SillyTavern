@@ -5149,7 +5149,7 @@ jQuery(() => {
     });
 
     $('#world_button').on('click', async function (event) {
-        const chid = $('#set_character_world').data('data-chid');
+        const chid = $('#set_character_world').data('chid');
 
         if (chid) {
             const worldName = characters[chid]?.data?.extensions?.world;
