@@ -238,7 +238,7 @@ import { getBackgrounds, initBackgrounds, loadBackgroundSettings, background_set
 import { hideLoader, showLoader } from './scripts/loader.js';
 import { BulkEditOverlay, CharacterContextMenu } from './scripts/BulkEditOverlay.js';
 import { loadFeatherlessModels, loadMancerModels, loadOllamaModels, loadTogetherAIModels, loadInfermaticAIModels, loadOpenRouterModels, loadVllmModels, loadAphroditeModels, loadDreamGenModels, initTextGenModels, loadTabbyModels, loadGenericModels } from './scripts/textgen-models.js';
-import { appendFileContent, hasPendingFileAttachment, populateFileAttachment, decodeStyleTags, encodeStyleTags, isExternalMediaAllowed, getCurrentEntityId, preserveNeutralChat, restoreNeutralChat } from './scripts/chats.js';
+import { appendFileContent, hasPendingFileAttachment, populateFileAttachment, decodeStyleTags, encodeStyleTags, isExternalMediaAllowed, getCurrentEntityId, preserveNeutralChat, restoreNeutralChat, PromptReasoning } from './scripts/chats.js';
 import { getPresetManager, initPresetManager } from './scripts/preset-manager.js';
 import { evaluateMacros, getLastMessageId, initMacros } from './scripts/macros.js';
 import { currentUser, setUserControls } from './scripts/user.js';
@@ -3842,6 +3842,11 @@ export async function Generate(type, { automatic_trigger, force_name2, quiet_pro
     let coreChat = chat.filter(x => !x.is_system || (canUseTools && Array.isArray(x.extra?.tool_invocations)));
     if (type === 'swipe') {
         coreChat.pop();
+    }
+
+    const reasoning = new PromptReasoning();
+    for (let i = coreChat.length - 1; i >= 0; i--) {
+        coreChat[i] = { ...coreChat[i], mes: reasoning.addToMessage(coreChat[i].mes, coreChat[i].extra?.reasoning) };
     }
 
     coreChat = await Promise.all(coreChat.map(async (chatItem, index) => {
@@ -8034,7 +8039,7 @@ function updateEditArrowClasses() {
     }
 }
 
-function closeMessageEditor() {
+export function closeMessageEditor() {
     if (this_edit_mes_id) {
         $(`#chat .mes[mesid="${this_edit_mes_id}"] .mes_edit_cancel`).click();
     }

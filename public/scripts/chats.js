@@ -24,6 +24,8 @@ import {
     updateChatMetadata,
     system_message_types,
     updateMessageBlock,
+    closeMessageEditor,
+    substituteParams,
 } from '../script.js';
 import { selected_group } from './group-chats.js';
 import { power_user } from './power-user.js';
@@ -1418,6 +1420,47 @@ export function registerFileConverter(mimeType, converter) {
     converters[mimeType] = converter;
 }
 
+/**
+ * Helper class for adding reasoning to messages.
+ * Keeps track of the number of reasoning additions.
+ */
+export class PromptReasoning {
+    static REASONING_PLACEHOLDER = '\u200B';
+
+    constructor() {
+        this.counter = 0;
+    }
+
+    /**
+     * Add reasoning to a message according to the power user settings.
+     * @param {string} content Message content
+     * @param {string} reasoning Message reasoning
+     * @returns {string} Message content with reasoning
+     */
+    addToMessage(content, reasoning) {
+        // Disabled or reached limit of additions
+        if (!power_user.reasoning.add_to_prompts || this.counter >= power_user.reasoning.max_additions) {
+            return content;
+        }
+
+        // No reasoning provided or a placeholder
+        if (!reasoning || reasoning === PromptReasoning.REASONING_PLACEHOLDER) {
+            return content;
+        }
+
+        // Increment the counter
+        this.counter++;
+
+        // Substitute macros in variable parts
+        const prefix = substituteParams(power_user.reasoning.prefix || '');
+        const separator = substituteParams(power_user.reasoning.separator || '');
+        const suffix = substituteParams(power_user.reasoning.suffix || '');
+
+        // Combine parts with reasoning and content
+        return `${prefix}${reasoning}${suffix}${separator}${content}`;
+    }
+}
+
 jQuery(function () {
     $(document).on('click', '.mes_hide', async function () {
         const messageBlock = $(this).closest('.mes');
@@ -1572,6 +1615,25 @@ jQuery(function () {
     $(document).on('click', '.mes_reasoning_copy', (e) => {
         e.stopPropagation();
         e.preventDefault();
+    });
+
+    $(document).on('click', '.mes_edit_add_reasoning', async function () {
+        const mesBlock = $(this).closest('.mes');
+        const mesId = Number(mesBlock.attr('mesid'));
+        const message = chat[mesId];
+        if (!message?.extra){
+            return;
+        }
+
+        if (message.extra.reasoning) {
+            toastr.info(t`Reasoning already exists.`, t`Edit Message`);
+            return;
+        }
+
+        message.extra.reasoning = PromptReasoning.REASONING_PLACEHOLDER;
+        await saveChatConditional();
+        closeMessageEditor();
+        updateMessageBlock(mesId, message);
     });
 
     $(document).on('click', '.mes_reasoning_delete', async function (e) {
