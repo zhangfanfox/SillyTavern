@@ -544,32 +544,46 @@ export function updatePersonaConnectionsAvatarList() {
  * @param {string} title - The title to display in the popup
  * @param {string} text - The text to display in the popup
  * @param {string[]} personas - An array of persona ids to display for selection
+ * @param {Object} [options] - Optional settings for the popup
+ * @param {string} [options.okButton='None'] - The label for the OK button
+ * @param {(element: HTMLElement, ev: MouseEvent) => any} [options.shiftClickHandler] - A function to handle shift-click
  * @returns {Promise<string?>} - A promise that resolves to the selected persona id or null if no selection was made
  */
-export async function askForPersonaSelection(title, text, personas) {
+export async function askForPersonaSelection(title, text, personas, { okButton = 'None', shiftClickHandler = undefined } = {}) {
     const content = document.createElement('div');
     const titleElement = document.createElement('h3');
     titleElement.textContent = title;
     content.appendChild(titleElement);
 
     const textElement = document.createElement('div');
-    textElement.classList.add('m-b-1');
+    textElement.classList.add('multiline', 'm-b-1');
     textElement.textContent = text;
     content.appendChild(textElement);
 
     const personaListBlock = document.createElement('div');
-    personaListBlock.classList.add('persona-list', 'avatars_inline', 'avatars_multiline');
+    personaListBlock.classList.add('persona-list', 'avatars_inline', 'avatars_multiline', 'text_muted');
     content.appendChild(personaListBlock);
 
-    buildPersonaAvatarList(personaListBlock, personas, { interactable: true });
+    if (personas.length > 0)
+        buildPersonaAvatarList(personaListBlock, personas, { interactable: true });
+    else
+        personaListBlock.textContent = '[No personas]';
 
     // Make the persona blocks clickable and close the popup
     personaListBlock.querySelectorAll('.avatar[data-type="persona"]').forEach(block => {
         if (!(block instanceof HTMLElement)) return;
         block.dataset.result = String(100 + personas.indexOf(block.dataset.pid));
+
+        if (shiftClickHandler) {
+            block.addEventListener('click', function (ev) {
+                if (ev.shiftKey) {
+                    shiftClickHandler(this, ev);
+                }
+            });
+        }
     });
 
-    const popup = new Popup(content, POPUP_TYPE.TEXT, '', { okButton: 'None' });
+    const popup = new Popup(content, POPUP_TYPE.TEXT, '', { okButton: okButton });
     const result = await popup.show();
     return Number(result) > 100 ? personas[Number(result) - 100] : null;
 }
@@ -730,7 +744,7 @@ function selectCurrentPersona() {
  * @param {PersonaConnection} connection - Connection to check
  * @returns {boolean} Whether the connection is locked
  */
-function isPersonaConnectionLocked(connection) {
+export function isPersonaConnectionLocked(connection) {
     return (menu_type === 'character_edit' && connection.type === 'character' && connection.id === characters[this_chid]?.avatar)
         || (menu_type === 'group_edit' && connection.type === 'group' && connection.id === selected_group);
 }
@@ -1199,10 +1213,7 @@ async function loadPersonaForCurrentChat() {
 
     // Check if we have any persona connected to the current character
     if (!chatPersona) {
-        const characterKey = menu_type === 'group_edit' ? selected_group : characters[this_chid]?.avatar;
-        const connectedPersonas = Object.entries(power_user.persona_descriptions)
-            .filter(([_, desc]) => desc.connections?.some(conn => conn.type === 'character' && conn.id === characterKey))
-            .map(([key, _]) => key);
+        const connectedPersonas = getConnectedPersonas();
 
         if (connectedPersonas.length > 0) {
             if (connectedPersonas.length === 1) {
@@ -1212,7 +1223,7 @@ async function loadPersonaForCurrentChat() {
                 toastr.warning(t`More than one persona is connected to this character. Using the first available persona for this chat.`, t`Automatic Persona Selection`);
             } else {
                 chatPersona = await askForPersonaSelection(t`Select Persona`,
-                    t`Multiple personas are connected to this character. Select a persona to use for this chat.`,
+                    t`Multiple personas are connected to this character.\nSelect a persona to use for this chat.`,
                     connectedPersonas);
             }
         }
@@ -1251,6 +1262,20 @@ async function loadPersonaForCurrentChat() {
     }
 
     updatePersonaLockIcons();
+}
+
+/**
+ * Returns an array of persona keys that are connected to the given character key.
+ * If the character key is not provided, it defaults to the currently selected group or character.
+ * @param {string} [characterKey] - The character key to query
+ * @returns {string[]} - An array of persona keys that are connected to the given character key
+ */
+export function getConnectedPersonas(characterKey = undefined) {
+    characterKey ??= menu_type === 'group_edit' ? selected_group : characters[this_chid]?.avatar;
+    const connectedPersonas = Object.entries(power_user.persona_descriptions)
+        .filter(([_, desc]) => desc.connections?.some(conn => conn.type === 'character' && conn.id === characterKey))
+        .map(([key, _]) => key);
+    return connectedPersonas;
 }
 
 function onBackupPersonas() {

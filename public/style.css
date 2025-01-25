@@ -5793,3 +5793,7 @@ body:not(.movingUI) .drawer-content.maximized {
 .mes_text div[data-type="assistant_note"]:has(.assistant_note_export)>div:not(.assistant_note_export) {
     flex: 1;
 }
+
+.multiline {
+    white-space: pre-wrap;
+}
