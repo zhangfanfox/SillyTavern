@@ -547,7 +547,7 @@ export function updatePersonaConnectionsAvatarList() {
     if (entities.length)
         buildAvatarList($('#persona_connections_list'), entities);
     else
-        $('#persona_connections_list').text('[No connections]');
+        $('#persona_connections_list').text(t`[No character connections. Click one of the buttons above to connect this persona.]`);
 }
 
 
