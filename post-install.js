@@ -2,7 +2,7 @@
  * Scripts to be done before starting the server for the first time.
  */
 import fs from 'node:fs';
-import path from 'node:path/posix'; // Windows can handle Unix paths, but not vice-versa
+import path from 'node:path';
 import crypto from 'node:crypto';
 import process from 'node:process';
 import yaml from 'yaml';
