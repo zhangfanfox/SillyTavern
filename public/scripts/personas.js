@@ -22,7 +22,7 @@ import {
 } from '../script.js';
 import { persona_description_positions, power_user } from './power-user.js';
 import { getTokenCountAsync } from './tokenizers.js';
-import { PAGINATION_TEMPLATE, debounce, delay, download, ensureImageFormatSupported, flashHighlight, getBase64Async, getCharIndex, parseJsonFile } from './utils.js';
+import { PAGINATION_TEMPLATE, debounce, delay, download, ensureImageFormatSupported, flashHighlight, getBase64Async, getCharIndex, onlyUnique, parseJsonFile } from './utils.js';
 import { debounce_timeout } from './constants.js';
 import { FILTER_TYPES, FilterHelper } from './filters.js';
 import { groups, selected_group } from './group-chats.js';
@@ -39,6 +39,8 @@ import { saveMetadataDebounced } from './extensions.js';
  */
 
 /** @typedef {'chat' | 'character' | 'default'} PersonaLockType Type of the persona lock */
+
+const USER_AVATAR_PATH = 'User Avatars/';
 
 let savePersonasPage = 0;
 const GRID_STORAGE_KEY = 'Personas_GridView';
@@ -58,7 +60,7 @@ function switchPersonaGridView() {
  * @returns {string} User avatar URL
  */
 export function getUserAvatar(avatarImg) {
-    return `User Avatars/${avatarImg}`;
+    return `${USER_AVATAR_PATH}${avatarImg}`;
 }
 
 export function initUserAvatar(avatar) {
@@ -486,6 +488,17 @@ export function setPersonaDescription() {
     updatePersonaConnectionsAvatarList();
 }
 
+/**
+ * Gets a list of all personas in the current chat.
+ *
+ * @returns {string[]} An array of persona identifiers
+ */
+function getPersonasOfCurrentChat() {
+    const personas = chat.filter(message => String(message.force_avatar).startsWith(USER_AVATAR_PATH))
+        .map(message => message.force_avatar.replace(USER_AVATAR_PATH, ''))
+        .filter(onlyUnique);
+    return personas;
+}
 
 /**
  * Builds a list of persona avatars and populates the given block element with them.
@@ -547,9 +560,10 @@ export function updatePersonaConnectionsAvatarList() {
  * @param {Object} [options] - Optional settings for the popup
  * @param {string} [options.okButton='None'] - The label for the OK button
  * @param {(element: HTMLElement, ev: MouseEvent) => any} [options.shiftClickHandler] - A function to handle shift-click
+ * @param {boolean|string[]} [options.highlightPersonas=false] - Whether to highlight personas - either by providing a list of persona keys, or true to highlight all present in current chat
  * @returns {Promise<string?>} - A promise that resolves to the selected persona id or null if no selection was made
  */
-export async function askForPersonaSelection(title, text, personas, { okButton = 'None', shiftClickHandler = undefined } = {}) {
+export async function askForPersonaSelection(title, text, personas, { okButton = 'None', shiftClickHandler = undefined, highlightPersonas = false } = {}) {
     const content = document.createElement('div');
     const titleElement = document.createElement('h3');
     titleElement.textContent = title;
@@ -569,6 +583,8 @@ export async function askForPersonaSelection(title, text, personas, { okButton =
     else
         personaListBlock.textContent = '[No personas]';
 
+    const personasToHighlight = highlightPersonas instanceof Array ? highlightPersonas : (highlightPersonas ? getPersonasOfCurrentChat() : []);
+
     // Make the persona blocks clickable and close the popup
     personaListBlock.querySelectorAll('.avatar[data-type="persona"]').forEach(block => {
         if (!(block instanceof HTMLElement)) return;
@@ -580,6 +596,12 @@ export async function askForPersonaSelection(title, text, personas, { okButton =
                     shiftClickHandler(this, ev);
                 }
             });
+        }
+
+        if (personasToHighlight && personasToHighlight.includes(block.dataset.pid)) {
+            block.classList.add('is_active');
+            block.title = block.title + '\n\n' + t`Was used in current chat.`;
+            if (block.classList.contains('is_fav')) block.title = block.title + '\n' + t`Is your default persona.`;
         }
     });
 
@@ -1225,7 +1247,7 @@ async function loadPersonaForCurrentChat() {
             } else {
                 chatPersona = await askForPersonaSelection(t`Select Persona`,
                     t`Multiple personas are connected to this character.\nSelect a persona to use for this chat.`,
-                    connectedPersonas);
+                    connectedPersonas, { highlightPersonas: true });
             }
         }
 

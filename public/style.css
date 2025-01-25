@@ -3151,6 +3151,10 @@ input[type=search]:focus::-webkit-search-cancel-button {
     color: var(--golden);
 }
 
+.avatar.is_active {
+    outline: 2px solid var(--active);
+}
+
 #fav_chara_wrap {
     display: flex;
     margin: 5px 0px;

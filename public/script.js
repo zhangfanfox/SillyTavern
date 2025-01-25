@@ -9994,6 +9994,7 @@ jQuery(async function () {
         const message = t`The following personas are connected to the current character.\n\nClick on a persona to select it for the current character.\nShift + Click to unlink the persona from the character.`;
         const selectedPersona = await askForPersonaSelection(t`Persona Connections`, message, connections, {
             okButton: t`Ok`,
+            highlightPersonas: true,
             shiftClickHandler: (element, ev) => {
 
                 const personaId = $(element).attr('data-pid');
