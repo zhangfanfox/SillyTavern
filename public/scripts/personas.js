@@ -684,18 +684,6 @@ async function bindUserNameToPersona(e) {
 function selectCurrentPersona() {
     const personaName = power_user.personas[user_avatar];
     if (personaName) {
-        const hasDifferentChatLock = chat_metadata['persona'] && chat_metadata['persona'] !== user_avatar;
-        const hasDifferentDefaultLock = power_user.default_persona && power_user.default_persona !== user_avatar;
-
-        if (hasDifferentChatLock || (!chat_metadata['persona'] && hasDifferentDefaultLock)) {
-            const message = t`A different persona is locked to this chat, or you have a different default persona set. The currently selected persona will only be temporary, and resets on reload. Consider locking this persona to the chat if you want to permanently use it.`
-                + '<br /><br />'
-                + t`Current Persona: ${power_user.personas[user_avatar]}`
-                + (hasDifferentChatLock ? '<br />' + t`Chat persona: ${power_user.personas[chat_metadata['persona']]}` : '')
-                + (hasDifferentDefaultLock ? '<br />' + t`Default persona: ${power_user.personas[power_user.default_persona]}` : '');
-            toastr.info(message, t`Temporary Persona`, { escapeHtml: false, timeOut: 10000, extendedTimeOut: 20000, preventDuplicates: true });
-        }
-
         if (personaName !== name1) {
             console.log(`Auto-updating user name to ${personaName}`);
             setUserName(personaName);
@@ -735,6 +723,19 @@ function selectCurrentPersona() {
                 toastr.info(`Auto locked persona ${personaName} to current chat`, t`Persona Auto Lock`);
             }
             saveMetadataDebounced();
+        }
+
+        // As the last step, inform user if the persona is only temporarily chosen
+        const hasDifferentChatLock = !!chat_metadata['persona'] && chat_metadata['persona'] !== user_avatar;
+        const hasDifferentDefaultLock = power_user.default_persona && power_user.default_persona !== user_avatar;
+
+        if (hasDifferentChatLock || (!chat_metadata['persona'] && hasDifferentDefaultLock)) {
+            const message = t`A different persona is locked to this chat, or you have a different default persona set. The currently selected persona will only be temporary, and resets on reload. Consider locking this persona to the chat if you want to permanently use it.`
+                + '<br /><br />'
+                + t`Current Persona: ${power_user.personas[user_avatar]}`
+                + (hasDifferentChatLock ? '<br />' + t`Chat persona: ${power_user.personas[chat_metadata['persona']]}` : '')
+                + (hasDifferentDefaultLock ? '<br />' + t`Default persona: ${power_user.personas[power_user.default_persona]}` : '');
+            toastr.info(message, t`Temporary Persona`, { escapeHtml: false, timeOut: 10000, extendedTimeOut: 20000, preventDuplicates: true });
         }
     }
 }
