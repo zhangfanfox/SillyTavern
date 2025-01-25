@@ -11,16 +11,7 @@ const whitelistPath = path.join(process.cwd(), './whitelist.txt');
 const enableForwardedWhitelist = getConfigValue('enableForwardedWhitelist', false);
 let whitelist = getConfigValue('whitelist', []);
 let knownIPs = new Set();
-
-const DEFAULT_WHITELIST_ERROR_MESSAGE =
-    '<h1>Forbidden</h1><p>If you are the system administrator, add your IP address to the whitelist or disable whitelist mode by editing <code>config.yaml</code> in the root directory of your installation.</p><hr /><p><em>Connection from {{ipDetails}} has been blocked. This attempt has been logged.</em></p>';
-
-const errorMessage = Handlebars.compile(
-    getConfigValue(
-        'whitelistErrorMessage',
-        DEFAULT_WHITELIST_ERROR_MESSAGE,
-    ),
-);
+const forbiddenWebpage = Handlebars.compile(fs.readFileSync('./public/error/forbidden-by-whitelist.html', 'utf-8'));
 
 if (fs.existsSync(whitelistPath)) {
     try {
@@ -95,7 +86,7 @@ export default function whitelistMiddleware(whitelistMode, listen) {
                     `Blocked connection from ${clientIp}; User Agent: ${userAgent}\n\tTo allow this connection, add its IP address to the whitelist or disable whitelist mode by editing config.yaml in the root directory of your SillyTavern installation.\n`,
                 ),
             );
-            return res.status(403).send(errorMessage({ ipDetails }));
+            return res.status(403).send(forbiddenWebpage({ ipDetails }));
         }
         next();
     };
