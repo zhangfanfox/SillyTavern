@@ -52,3 +52,5 @@ public/scripts/extensions/third-party
 /certs
 .aider*
 .env
+/StartDev.bat
+
