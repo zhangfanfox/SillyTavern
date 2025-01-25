@@ -18,10 +18,10 @@ import { generateWebLlmChatPrompt, isWebLlmSupported } from '../shared.js';
 export { MODULE_NAME };
 
 /**
- * @typedef {object} Expression Expression definition with label and file path
- * @property {string} label The label of the expression
- * @property {string} path The path to the expression image
- */
+* @typedef {object} Expression Expression definition with label and file path
+* @property {string} label The label of the expression
+* @property {ExpressionImage[]} files One or more images to represent this expression
+*/
 
 /**
  * @typedef {object} ExpressionImage An expression image
@@ -86,6 +86,7 @@ let lastCharacter = undefined;
 let lastMessage = null;
 let lastTalkingState = false;
 let lastTalkingStateMessage = null;  // last message as seen by `updateTalkingState` (tracked separately, different timer)
+/** @type {{[characterKey: string]: Expression[]}} */
 let spriteCache = {};
 let inApiCall = false;
 let lastServerResponseTime = 0;
@@ -1307,6 +1308,11 @@ function removeExpression() {
     $('#no_chat_expressions').show();
 }
 
+/**
+ * Validate a character's sprites, and redraw the sprites list if not done before or forced to redraw.
+ * @param {string} character - The character to validate
+ * @param {boolean} forceRedrawCached - Whether to force redrawing the sprites list even if it's already been drawn before
+ */
 async function validateImages(character, forceRedrawCached) {
     if (!character) {
         return;
@@ -1330,7 +1336,7 @@ async function validateImages(character, forceRedrawCached) {
 
 /**
  * Takes a given sprite as returned from the server, and enriches it with additional data for display/sorting
- * @param {Expression} sprite
+ * @param {{ path: string, label: string }} sprite
  * @returns {ExpressionImage}
  */
 function getExpressionImageData(sprite) {
@@ -1371,7 +1377,8 @@ async function drawSpritesList(character, labels, sprites) {
         const isCustom = extension_settings.expressions.custom?.includes(expression);
         const images = sprites
             .filter(s => s.label === expression)
-            .map(getExpressionImageData)
+            .map(s => s.files)
+            .flat()
             .sort((a, b) => a.title.localeCompare(b.title));
 
         if (images.length === 0) {
@@ -1384,7 +1391,7 @@ async function drawSpritesList(character, labels, sprites) {
         }
 
         // TODO: Fix valid expression lists/caching and group them correctly
-        validExpressions.push({ label: expression, paths: images });
+        validExpressions.push({ label: expression, files: images });
 
         // Render main = first file, additional = rest
         let listItem = await getListItem(expression, {
@@ -1408,13 +1415,35 @@ async function getListItem(expression, { images, isCustom = false } = {}) {
     return renderExtensionTemplateAsync(MODULE_NAME, 'list-item', { expression, images, isCustom: isCustom ?? false });
 }
 
+/**
+ * Fetches and processes the list of sprites for a given character name.
+ * Retrieves sprite data from the server and organizes it into labeled groups.
+ *
+ * @param {string} name - The character name to fetch sprites for
+ * @returns {Promise<Expression[]>} A promise that resolves to an array of grouped expression objects, each containing a label and associated image data
+ */
+
 async function getSpritesList(name) {
     console.debug('getting sprites list');
 
     try {
         const result = await fetch(`/api/sprites/get?name=${encodeURIComponent(name)}`);
+        /** @type {{ label: string, path: string }[]} */
         let sprites = result.ok ? (await result.json()) : [];
-        return sprites;
+
+        /** @type {Expression[]} */
+        const grouped = sprites.reduce((acc, sprite) => {
+            const imageData = getExpressionImageData(sprite);
+            let existingExpression = acc.find(exp => exp.label === sprite.label);
+            if (existingExpression) {
+                existingExpression.files.push(imageData);
+            } else {
+                acc.push({ label: sprite.label, files: [imageData] });
+            }
+
+            return acc;
+        }, []);
+        return grouped;
     }
     catch (err) {
         console.log(err);
