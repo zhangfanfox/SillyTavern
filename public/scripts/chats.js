@@ -23,6 +23,7 @@ import {
     neutralCharacterName,
     updateChatMetadata,
     system_message_types,
+    updateMessageBlock,
 } from '../script.js';
 import { selected_group } from './group-chats.js';
 import { power_user } from './power-user.js';
@@ -1573,9 +1574,30 @@ jQuery(function () {
         e.preventDefault();
     });
 
+    $(document).on('click', '.mes_reasoning_delete', async function (e) {
+        e.stopPropagation();
+        e.preventDefault();
+
+        const confirm = await Popup.show.confirm(t`Are you sure you want to clear the reasoning?`, t`Visible message contents will stay intact.`);
+
+        if (!confirm) {
+            return;
+        }
+
+        const mesBlock = $(this).closest('.mes');
+        const mesId = Number(mesBlock.attr('mesid'));
+        const message = chat[mesId];
+        if (!message?.extra){
+            return;
+        }
+        message.extra.reasoning = '';
+        await saveChatConditional();
+        updateMessageBlock(mesId, message);
+    });
+
     $(document).on('pointerup', '.mes_reasoning_copy', async function () {
         const mesBlock = $(this).closest('.mes');
-        const mesId = mesBlock.attr('mesid');
+        const mesId = Number(mesBlock.attr('mesid'));
         const message = chat[mesId];
         const reasoning = message?.extra?.reasoning;
 
