@@ -67,6 +67,7 @@ import {
     forwardFetchResponse,
     removeColorFormatting,
     getSeparator,
+    safeReadFileSync,
 } from './src/util.js';
 import { UPLOADS_DIRECTORY } from './src/constants.js';
 import { ensureThumbnailCache } from './src/endpoints/thumbnails.js';
@@ -615,12 +616,6 @@ app.use('/api/backends/scale-alt', scaleAltRouter);
 app.use('/api/speech', speechRouter);
 app.use('/api/azure', azureRouter);
 
-// If all other middlewares fail, send 404 error.
-const notFoundWebpage = fs.readFileSync('./public/error/url-not-found.html', { encoding: 'utf-8' });
-app.use((req, res, next) => {
-    res.status(404).send(notFoundWebpage);
-});
-
 const tavernUrlV6 = new URL(
     (cliArguments.ssl ? 'https://' : 'http://') +
     (listen ? '[::]' : '[::1]') +
@@ -927,6 +922,16 @@ async function verifySecuritySettings() {
     }
 }
 
+/**
+ * Registers a not-found error response if a not-found error page exists. Should only be called after all other middlewares have been registered.
+ */
+function apply404Middleware() {
+    const notFoundWebpage = safeReadFileSync('./public/error/url-not-found.html') ?? '';
+    app.use((req, res) => {
+        res.status(404).send(notFoundWebpage);
+    });
+}
+
 // User storage module needs to be initialized before starting the server
 initUserStorage(dataRoot)
     .then(ensurePublicDirectoriesExist)
@@ -934,4 +939,5 @@ initUserStorage(dataRoot)
     .then(migrateSystemPrompts)
     .then(verifySecuritySettings)
     .then(preSetupTasks)
+    .then(apply404Middleware)
     .finally(startServer);
