@@ -67,6 +67,7 @@ import {
     forwardFetchResponse,
     removeColorFormatting,
     getSeparator,
+    safeReadFileSync,
 } from './src/util.js';
 import { UPLOADS_DIRECTORY } from './src/constants.js';
 import { ensureThumbnailCache } from './src/endpoints/thumbnails.js';
@@ -921,6 +922,16 @@ async function verifySecuritySettings() {
     }
 }
 
+/**
+ * Registers a not-found error response if a not-found error page exists. Should only be called after all other middlewares have been registered.
+ */
+function apply404Middleware() {
+    const notFoundWebpage = safeReadFileSync('./public/error/url-not-found.html') ?? '';
+    app.use((req, res) => {
+        res.status(404).send(notFoundWebpage);
+    });
+}
+
 // User storage module needs to be initialized before starting the server
 initUserStorage(dataRoot)
     .then(ensurePublicDirectoriesExist)
@@ -928,4 +939,5 @@ initUserStorage(dataRoot)
     .then(migrateSystemPrompts)
     .then(verifySecuritySettings)
     .then(preSetupTasks)
+    .then(apply404Middleware)
     .finally(startServer);
