@@ -236,6 +236,7 @@ import {
     updatePersonaConnectionsAvatarList,
     getConnectedPersonas,
     askForPersonaSelection,
+    getCurrentConnectionObj,
 } from './scripts/personas.js';
 import { getBackgrounds, initBackgrounds, loadBackgroundSettings, background_settings } from './scripts/backgrounds.js';
 import { hideLoader, showLoader } from './scripts/loader.js';
@@ -9995,6 +9996,7 @@ jQuery(async function () {
         const selectedPersona = await askForPersonaSelection(t`Persona Connections`, message, connections, {
             okButton: t`Ok`,
             highlightPersonas: true,
+            targetedChar: getCurrentConnectionObj(),
             shiftClickHandler: (element, ev) => {
 
                 const personaId = $(element).attr('data-pid');

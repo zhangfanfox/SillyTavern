@@ -561,9 +561,10 @@ export function updatePersonaConnectionsAvatarList() {
  * @param {string} [options.okButton='None'] - The label for the OK button
  * @param {(element: HTMLElement, ev: MouseEvent) => any} [options.shiftClickHandler] - A function to handle shift-click
  * @param {boolean|string[]} [options.highlightPersonas=false] - Whether to highlight personas - either by providing a list of persona keys, or true to highlight all present in current chat
+ * @param {PersonaConnection} [options.targetedChar] - The targeted character or gorup for this persona selection
  * @returns {Promise<string?>} - A promise that resolves to the selected persona id or null if no selection was made
  */
-export async function askForPersonaSelection(title, text, personas, { okButton = 'None', shiftClickHandler = undefined, highlightPersonas = false } = {}) {
+export async function askForPersonaSelection(title, text, personas, { okButton = 'None', shiftClickHandler = undefined, highlightPersonas = false, targetedChar = undefined } = {}) {
     const content = document.createElement('div');
     const titleElement = document.createElement('h3');
     titleElement.textContent = title;
@@ -581,7 +582,7 @@ export async function askForPersonaSelection(title, text, personas, { okButton =
     if (personas.length > 0)
         buildPersonaAvatarList(personaListBlock, personas, { interactable: true });
     else
-        personaListBlock.textContent = '[No personas]';
+        personaListBlock.textContent = t`[Currently no personas connected]`;
 
     const personasToHighlight = highlightPersonas instanceof Array ? highlightPersonas : (highlightPersonas ? getPersonasOfCurrentChat() : []);
 
@@ -605,7 +606,35 @@ export async function askForPersonaSelection(title, text, personas, { okButton =
         }
     });
 
-    const popup = new Popup(content, POPUP_TYPE.TEXT, '', { okButton: okButton });
+    /** @type {import('./popup.js').CustomPopupButton[]} */
+    const customButtons = [];
+    if (targetedChar) {
+        customButtons.push({
+            text: t`Remove All Connections`,
+            result: 2,
+            action: () => {
+                for (const [personaId, description] of Object.entries(power_user.persona_descriptions)) {
+                    /** @type {PersonaConnection[]} */
+                    const connections = description.connections;
+                    if (connections) {
+                        power_user.persona_descriptions[personaId].connections = connections.filter(c => {
+                            if (targetedChar.type == c.type && targetedChar.id == c.id) return false;
+                            return true;
+                        });
+                    }
+                }
+
+                saveSettingsDebounced();
+                updatePersonaConnectionsAvatarList();
+                if (power_user.persona_show_notifications) {
+                    const name = targetedChar.type == 'character' ? characters[targetedChar.id]?.name : groups[targetedChar.id]?.name;
+                    toastr.info(t`All connections to ${name} have been removed.`, t`Personas unlocked`);
+                }
+            },
+        });
+    }
+
+    const popup = new Popup(content, POPUP_TYPE.TEXT, '', { okButton: okButton, customButtons: customButtons });
     const result = await popup.show();
     return Number(result) > 100 ? personas[Number(result) - 100] : null;
 }
@@ -903,8 +932,7 @@ async function lockPersona(type = 'chat') {
             break;
         }
         case 'character': {
-            const newConnection = menu_type === 'character_edit' ? { type: 'character', id: characters[this_chid]?.avatar } :
-                menu_type === 'group_edit' ? { type: 'group', id: selected_group } : null;
+            const newConnection = getCurrentConnectionObj();
             /** @type {PersonaConnection[]} */
             const connections = power_user.persona_descriptions[user_avatar].connections?.filter(c => !isPersonaConnectionLocked(c)) ?? [];
             if (newConnection && newConnection.id) {
@@ -1249,7 +1277,7 @@ async function loadPersonaForCurrentChat() {
             } else {
                 chatPersona = await askForPersonaSelection(t`Select Persona`,
                     t`Multiple personas are connected to this character.\nSelect a persona to use for this chat.`,
-                    connectedPersonas, { highlightPersonas: true });
+                    connectedPersonas, { highlightPersonas: true, targetedChar: getCurrentConnectionObj() });
             }
         }
 
@@ -1301,6 +1329,20 @@ export function getConnectedPersonas(characterKey = undefined) {
         .filter(([_, desc]) => desc.connections?.some(conn => conn.type === 'character' && conn.id === characterKey))
         .map(([key, _]) => key);
     return connectedPersonas;
+}
+
+/**
+ * Retrieves the current connection object based on whether the current chat is with a char or a group.
+ *
+ * @returns {PersonaConnection} An object representing the current connection
+ */
+
+export function getCurrentConnectionObj() {
+    if (menu_type === 'group_edit')
+        return { type: 'group', id: selected_group };
+    if (menu_type == 'character_edit')
+        return { type: 'character', id: characters[this_chid]?.avatar };
+    return null;
 }
 
 function onBackupPersonas() {
