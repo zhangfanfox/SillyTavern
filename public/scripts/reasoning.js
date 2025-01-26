@@ -1,7 +1,12 @@
 import { chat, closeMessageEditor, saveChatConditional, saveSettingsDebounced, substituteParams, updateMessageBlock } from '../script.js';
 import { t } from './i18n.js';
+import { MacrosParser } from './macros.js';
 import { Popup } from './popup.js';
 import { power_user } from './power-user.js';
+import { SlashCommand } from './slash-commands/SlashCommand.js';
+import { ARGUMENT_TYPE, SlashCommandArgument, SlashCommandNamedArgument } from './slash-commands/SlashCommandArgument.js';
+import { commonEnumProviders } from './slash-commands/SlashCommandCommonEnumsProvider.js';
+import { SlashCommandParser } from './slash-commands/SlashCommandParser.js';
 import { copyText } from './utils.js';
 
 /**
@@ -99,6 +104,67 @@ function loadReasoningSettings() {
         power_user.reasoning.max_additions = Number($(this).val());
         saveSettingsDebounced();
     });
+}
+
+function registerReasoningSlashCommands() {
+    SlashCommandParser.addCommandObject(SlashCommand.fromProps({
+        name: 'reasoning-get',
+        returns: ARGUMENT_TYPE.STRING,
+        helpString: t`Get the contents of a reasoning block of a message. Returns an empty string if the message does not have a reasoning block.`,
+        unnamedArgumentList: [
+            SlashCommandArgument.fromProps({
+                description: 'Message ID. If not provided, the message ID of the last message is used.',
+                typeList: ARGUMENT_TYPE.NUMBER,
+                enumProvider: commonEnumProviders.messages(),
+            }),
+        ],
+        callback: (_args, value) => {
+            const messageId = !isNaN(Number(value)) ? Number(value) : chat.length - 1;
+            const message = chat[messageId];
+            const reasoning = message?.extra?.reasoning;
+            return reasoning !== PromptReasoning.REASONING_PLACEHOLDER ? reasoning : '';
+        },
+    }));
+
+    SlashCommandParser.addCommandObject(SlashCommand.fromProps({
+        name: 'reasoning-set',
+        returns: ARGUMENT_TYPE.STRING,
+        helpString: t`Set the reasoning block of a message. Returns the reasoning block content.`,
+        namedArgumentList: [
+            SlashCommandNamedArgument.fromProps({
+                name: 'at',
+                description: 'Message ID. If not provided, the message ID of the last message is used.',
+                typeList: ARGUMENT_TYPE.NUMBER,
+                enumProvider: commonEnumProviders.messages(),
+            }),
+        ],
+        unnamedArgumentList: [
+            SlashCommandArgument.fromProps({
+                description: 'Reasoning block content.',
+                typeList: ARGUMENT_TYPE.STRING,
+            }),
+        ],
+        callback: async (args, value) => {
+            const messageId = !isNaN(Number(args[0])) ? Number(args[0]) : chat.length - 1;
+            const message = chat[messageId];
+            if (!message?.extra) {
+                return '';
+            }
+
+            message.extra.reasoning = String(value);
+            await saveChatConditional();
+
+            closeMessageEditor('reasoning');
+            updateMessageBlock(messageId, message);
+            return message.extra.reasoning;
+        },
+    }));
+}
+
+function registerReasoningMacros() {
+    MacrosParser.registerMacro('reasoningPrefix', () => power_user.reasoning.prefix, t`Reasoning Prefix`);
+    MacrosParser.registerMacro('reasoningSuffix', () => power_user.reasoning.suffix, t`Reasoning Suffix`);
+    MacrosParser.registerMacro('reasoningSeparator', () => power_user.reasoning.separator, t`Reasoning Separator`);
 }
 
 function setReasoningEventHandlers(){
@@ -225,4 +291,6 @@ function setReasoningEventHandlers(){
 export function initReasoning() {
     loadReasoningSettings();
     setReasoningEventHandlers();
+    registerReasoningSlashCommands();
+    registerReasoningMacros();
 }
