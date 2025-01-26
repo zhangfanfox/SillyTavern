@@ -5686,7 +5686,7 @@ function parseAndSaveLogprobs(data, continueFrom) {
  * @param {object} data Response data
  * @returns {string} Extracted message
  */
-function extractMessageFromData(data){
+function extractMessageFromData(data) {
     if (typeof data === 'string') {
         return data;
     }
@@ -8042,9 +8042,23 @@ function updateEditArrowClasses() {
     }
 }
 
-export function closeMessageEditor() {
-    if (this_edit_mes_id) {
-        $(`#chat .mes[mesid="${this_edit_mes_id}"] .mes_edit_cancel`).click();
+/**
+ * Closes the message editor.
+ * @param {'message'|'reasoning'|'all'} what What to close. Default is 'all'.
+ */
+export function closeMessageEditor(what = 'all') {
+    if (what === 'message' || what === 'all') {
+        if (this_edit_mes_id) {
+            $(`#chat .mes[mesid="${this_edit_mes_id}"] .mes_edit_cancel`).click();
+        }
+    }
+    if (what === 'reasoning' || what === 'all') {
+        document.querySelectorAll('.reasoning_edit_textarea').forEach((el) => {
+            const cancelButton = el.closest('.mes')?.querySelector('.mes_reasoning_edit_cancel');
+            if (cancelButton instanceof HTMLElement) {
+                cancelButton.click();
+            }
+        });
     }
 }
 
@@ -11274,14 +11288,15 @@ jQuery(async function () {
 
     $(document).keyup(function (e) {
         if (e.key === 'Escape') {
-            const isEditVisible = $('#curEditTextarea').is(':visible') || $('.reasoning_edit_textarea').length;
+            const isEditVisible = $('#curEditTextarea').is(':visible') || $('.reasoning_edit_textarea').length > 0;
             if (isEditVisible && power_user.auto_save_msg_edits === false) {
-                closeMessageEditor();
+                closeMessageEditor('all');
                 $('#send_textarea').focus();
                 return;
             }
             if (isEditVisible && power_user.auto_save_msg_edits === true) {
                 $(`#chat .mes[mesid="${this_edit_mes_id}"] .mes_edit_done`).click();
+                closeMessageEditor('reasoning');
                 $('#send_textarea').focus();
                 return;
             }

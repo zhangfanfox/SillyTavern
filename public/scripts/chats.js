@@ -1650,11 +1650,61 @@ jQuery(function () {
         }
 
         const reasoning = message?.extra?.reasoning;
+        const chatElement = document.getElementById('chat');
         const textarea = document.createElement('textarea');
         const reasoningBlock = messageBlock.find('.mes_reasoning');
         textarea.classList.add('reasoning_edit_textarea');
         textarea.value = reasoning === PromptReasoning.REASONING_PLACEHOLDER ? '' : reasoning;
         $(textarea).insertBefore(reasoningBlock);
+
+        if (!CSS.supports('field-sizing', 'content')) {
+            const resetHeight = function () {
+                const scrollTop = chatElement.scrollTop;
+                textarea.style.height = '0px';
+                textarea.style.height = `${textarea.scrollHeight}px`;
+                chatElement.scrollTop = scrollTop;
+            };
+
+            textarea.addEventListener('input', resetHeight);
+            resetHeight();
+        }
+
+        textarea.focus();
+        textarea.setSelectionRange(textarea.value.length, textarea.value.length);
+
+        const textareaRect = textarea.getBoundingClientRect();
+        const chatRect = chatElement.getBoundingClientRect();
+
+        // Scroll if textarea bottom is below visible area
+        if (textareaRect.bottom > chatRect.bottom) {
+            const scrollOffset = textareaRect.bottom - chatRect.bottom;
+            chatElement.scrollTop += scrollOffset;
+        }
+    });
+
+    $(document).on('click', '.mes_reasoning_edit_done', async function (e) {
+        e.stopPropagation();
+        e.preventDefault();
+        const { message, messageId, messageBlock } = getMessageFromJquery(this);
+        if (!message?.extra) {
+            return;
+        }
+
+        const textarea = messageBlock.find('.reasoning_edit_textarea');
+        const reasoning = String(textarea.val());
+        message.extra.reasoning = reasoning;
+        await saveChatConditional();
+        updateMessageBlock(messageId, message);
+        textarea.remove();
+    });
+
+    $(document).on('click', '.mes_reasoning_edit_cancel', function (e) {
+        e.stopPropagation();
+        e.preventDefault();
+
+        const { messageBlock } = getMessageFromJquery(this);
+        const textarea = messageBlock.find('.reasoning_edit_textarea');
+        textarea.remove();
     });
 
     $(document).on('click', '.mes_edit_add_reasoning', async function () {

@@ -356,6 +356,12 @@ input[type='checkbox']:focus-visible {
     margin: 2px;
 }
 
+@supports not selector(:has(*)) {
+    .mes_reasoning_details {
+        display: none !important;
+    }
+}
+
 .mes_bias:empty,
 .mes_reasoning:empty,
 .mes_reasoning_details:has(.mes_reasoning:empty),
@@ -1087,6 +1093,10 @@ body .panelControlBar {
 .last_mes {
     margin-bottom: 0 !important;
     /*only affects bubblechat to make it sit nicely at the bottom*/
+}
+
+.last_mes:has(.mes_text:empty):has(.mes_reasoning_details[open]) .mes_reasoning:not(:empty) {
+    margin-bottom: 30px;
 }
 
 .last_mes .mes_reasoning,
