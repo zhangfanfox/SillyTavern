@@ -1474,6 +1474,18 @@ export class PromptReasoning {
 }
 
 jQuery(function () {
+    /**
+     * Gets a message from a jQuery element.
+     * @param {Element} element
+     * @returns {{messageId: number, message: object, messageBlock: JQuery<HTMLElement>}}
+     */
+    const getMessageFromJquery = function (element) {
+        const messageBlock = $(element).closest('.mes');
+        const messageId = Number(messageBlock.attr('mesid'));
+        const message = chat[messageId];
+        return { messageId: messageId, message, messageBlock };
+    };
+
     $(document).on('click', '.mes_hide', async function () {
         const messageBlock = $(this).closest('.mes');
         const messageId = Number(messageBlock.attr('mesid'));
@@ -1629,11 +1641,25 @@ jQuery(function () {
         e.preventDefault();
     });
 
+    $(document).on('click', '.mes_reasoning_edit', function (e) {
+        e.stopPropagation();
+        e.preventDefault();
+        const { message, messageBlock } = getMessageFromJquery(this);
+        if (!message?.extra) {
+            return;
+        }
+
+        const reasoning = message?.extra?.reasoning;
+        const textarea = document.createElement('textarea');
+        const reasoningBlock = messageBlock.find('.mes_reasoning');
+        textarea.classList.add('reasoning_edit_textarea');
+        textarea.value = reasoning === PromptReasoning.REASONING_PLACEHOLDER ? '' : reasoning;
+        $(textarea).insertBefore(reasoningBlock);
+    });
+
     $(document).on('click', '.mes_edit_add_reasoning', async function () {
-        const mesBlock = $(this).closest('.mes');
-        const mesId = Number(mesBlock.attr('mesid'));
-        const message = chat[mesId];
-        if (!message?.extra){
+        const { message, messageId } = getMessageFromJquery(this);
+        if (!message?.extra) {
             return;
         }
 
@@ -1645,7 +1671,7 @@ jQuery(function () {
         message.extra.reasoning = PromptReasoning.REASONING_PLACEHOLDER;
         await saveChatConditional();
         closeMessageEditor();
-        updateMessageBlock(mesId, message);
+        updateMessageBlock(messageId, message);
     });
 
     $(document).on('click', '.mes_reasoning_delete', async function (e) {
@@ -1658,21 +1684,17 @@ jQuery(function () {
             return;
         }
 
-        const mesBlock = $(this).closest('.mes');
-        const mesId = Number(mesBlock.attr('mesid'));
-        const message = chat[mesId];
-        if (!message?.extra){
+        const { message, messageId } = getMessageFromJquery(this);
+        if (!message?.extra) {
             return;
         }
         message.extra.reasoning = '';
         await saveChatConditional();
-        updateMessageBlock(mesId, message);
+        updateMessageBlock(messageId, message);
     });
 
     $(document).on('pointerup', '.mes_reasoning_copy', async function () {
-        const mesBlock = $(this).closest('.mes');
-        const mesId = Number(mesBlock.attr('mesid'));
-        const message = chat[mesId];
+        const { message } = getMessageFromJquery(this);
         const reasoning = message?.extra?.reasoning;
 
         if (!reasoning) {

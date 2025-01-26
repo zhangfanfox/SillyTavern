@@ -11274,7 +11274,7 @@ jQuery(async function () {
 
     $(document).keyup(function (e) {
         if (e.key === 'Escape') {
-            const isEditVisible = $('#curEditTextarea').is(':visible');
+            const isEditVisible = $('#curEditTextarea').is(':visible') || $('.reasoning_edit_textarea').length;
             if (isEditVisible && power_user.auto_save_msg_edits === false) {
                 closeMessageEditor();
                 $('#send_textarea').focus();
