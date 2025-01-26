@@ -636,7 +636,7 @@ export async function askForPersonaSelection(title, text, personas, { okButton =
 
     const popup = new Popup(content, POPUP_TYPE.TEXT, '', { okButton: okButton, customButtons: customButtons });
     const result = await popup.show();
-    return Number(result) > 100 ? personas[Number(result) - 100] : null;
+    return Number(result) >= 100 ? personas[Number(result) - 100] : null;
 }
 
 export function autoSelectPersona(name) {
