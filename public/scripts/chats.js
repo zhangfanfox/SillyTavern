@@ -23,9 +23,6 @@ import {
     neutralCharacterName,
     updateChatMetadata,
     system_message_types,
-    updateMessageBlock,
-    closeMessageEditor,
-    substituteParams,
 } from '../script.js';
 import { selected_group } from './group-chats.js';
 import { power_user } from './power-user.js';
@@ -40,7 +37,6 @@ import {
     saveBase64AsFile,
     extractTextFromOffice,
     download,
-    copyText,
 } from './utils.js';
 import { extension_settings, renderExtensionTemplateAsync, saveMetadataDebounced } from './extensions.js';
 import { POPUP_RESULT, POPUP_TYPE, Popup, callGenericPopup } from './popup.js';
@@ -1420,72 +1416,7 @@ export function registerFileConverter(mimeType, converter) {
     converters[mimeType] = converter;
 }
 
-/**
- * Helper class for adding reasoning to messages.
- * Keeps track of the number of reasoning additions.
- */
-export class PromptReasoning {
-    static REASONING_PLACEHOLDER = '\u200B';
-
-    constructor() {
-        this.counter = 0;
-    }
-
-    /**
-     * Checks if the limit of reasoning additions has been reached.
-     * @returns {boolean} True if the limit of reasoning additions has been reached, false otherwise.
-     */
-    isLimitReached() {
-        if (!power_user.reasoning.add_to_prompts) {
-            return true;
-        }
-
-        return this.counter >= power_user.reasoning.max_additions;
-    }
-
-    /**
-     * Add reasoning to a message according to the power user settings.
-     * @param {string} content Message content
-     * @param {string} reasoning Message reasoning
-     * @returns {string} Message content with reasoning
-     */
-    addToMessage(content, reasoning) {
-        // Disabled or reached limit of additions
-        if (!power_user.reasoning.add_to_prompts || this.counter >= power_user.reasoning.max_additions) {
-            return content;
-        }
-
-        // No reasoning provided or a placeholder
-        if (!reasoning || reasoning === PromptReasoning.REASONING_PLACEHOLDER) {
-            return content;
-        }
-
-        // Increment the counter
-        this.counter++;
-
-        // Substitute macros in variable parts
-        const prefix = substituteParams(power_user.reasoning.prefix || '');
-        const separator = substituteParams(power_user.reasoning.separator || '');
-        const suffix = substituteParams(power_user.reasoning.suffix || '');
-
-        // Combine parts with reasoning and content
-        return `${prefix}${reasoning}${suffix}${separator}${content}`;
-    }
-}
-
 jQuery(function () {
-    /**
-     * Gets a message from a jQuery element.
-     * @param {Element} element
-     * @returns {{messageId: number, message: object, messageBlock: JQuery<HTMLElement>}}
-     */
-    const getMessageFromJquery = function (element) {
-        const messageBlock = $(element).closest('.mes');
-        const messageId = Number(messageBlock.attr('mesid'));
-        const message = chat[messageId];
-        return { messageId: messageId, message, messageBlock };
-    };
-
     $(document).on('click', '.mes_hide', async function () {
         const messageBlock = $(this).closest('.mes');
         const messageId = Number(messageBlock.attr('mesid'));
@@ -1635,125 +1566,6 @@ jQuery(function () {
 
     $(document).on('click', '.mes_img_enlarge', enlargeMessageImage);
     $(document).on('click', '.mes_img_delete', deleteMessageImage);
-
-    $(document).on('click', '.mes_reasoning_copy', (e) => {
-        e.stopPropagation();
-        e.preventDefault();
-    });
-
-    $(document).on('click', '.mes_reasoning_edit', function (e) {
-        e.stopPropagation();
-        e.preventDefault();
-        const { message, messageBlock } = getMessageFromJquery(this);
-        if (!message?.extra) {
-            return;
-        }
-
-        const reasoning = message?.extra?.reasoning;
-        const chatElement = document.getElementById('chat');
-        const textarea = document.createElement('textarea');
-        const reasoningBlock = messageBlock.find('.mes_reasoning');
-        textarea.classList.add('reasoning_edit_textarea');
-        textarea.value = reasoning === PromptReasoning.REASONING_PLACEHOLDER ? '' : reasoning;
-        $(textarea).insertBefore(reasoningBlock);
-
-        if (!CSS.supports('field-sizing', 'content')) {
-            const resetHeight = function () {
-                const scrollTop = chatElement.scrollTop;
-                textarea.style.height = '0px';
-                textarea.style.height = `${textarea.scrollHeight}px`;
-                chatElement.scrollTop = scrollTop;
-            };
-
-            textarea.addEventListener('input', resetHeight);
-            resetHeight();
-        }
-
-        textarea.focus();
-        textarea.setSelectionRange(textarea.value.length, textarea.value.length);
-
-        const textareaRect = textarea.getBoundingClientRect();
-        const chatRect = chatElement.getBoundingClientRect();
-
-        // Scroll if textarea bottom is below visible area
-        if (textareaRect.bottom > chatRect.bottom) {
-            const scrollOffset = textareaRect.bottom - chatRect.bottom;
-            chatElement.scrollTop += scrollOffset;
-        }
-    });
-
-    $(document).on('click', '.mes_reasoning_edit_done', async function (e) {
-        e.stopPropagation();
-        e.preventDefault();
-        const { message, messageId, messageBlock } = getMessageFromJquery(this);
-        if (!message?.extra) {
-            return;
-        }
-
-        const textarea = messageBlock.find('.reasoning_edit_textarea');
-        const reasoning = String(textarea.val());
-        message.extra.reasoning = reasoning;
-        await saveChatConditional();
-        updateMessageBlock(messageId, message);
-        textarea.remove();
-    });
-
-    $(document).on('click', '.mes_reasoning_edit_cancel', function (e) {
-        e.stopPropagation();
-        e.preventDefault();
-
-        const { messageBlock } = getMessageFromJquery(this);
-        const textarea = messageBlock.find('.reasoning_edit_textarea');
-        textarea.remove();
-    });
-
-    $(document).on('click', '.mes_edit_add_reasoning', async function () {
-        const { message, messageId } = getMessageFromJquery(this);
-        if (!message?.extra) {
-            return;
-        }
-
-        if (message.extra.reasoning) {
-            toastr.info(t`Reasoning already exists.`, t`Edit Message`);
-            return;
-        }
-
-        message.extra.reasoning = PromptReasoning.REASONING_PLACEHOLDER;
-        await saveChatConditional();
-        closeMessageEditor();
-        updateMessageBlock(messageId, message);
-    });
-
-    $(document).on('click', '.mes_reasoning_delete', async function (e) {
-        e.stopPropagation();
-        e.preventDefault();
-
-        const confirm = await Popup.show.confirm(t`Are you sure you want to clear the reasoning?`, t`Visible message contents will stay intact.`);
-
-        if (!confirm) {
-            return;
-        }
-
-        const { message, messageId } = getMessageFromJquery(this);
-        if (!message?.extra) {
-            return;
-        }
-        message.extra.reasoning = '';
-        await saveChatConditional();
-        updateMessageBlock(messageId, message);
-    });
-
-    $(document).on('pointerup', '.mes_reasoning_copy', async function () {
-        const { message } = getMessageFromJquery(this);
-        const reasoning = message?.extra?.reasoning;
-
-        if (!reasoning) {
-            return;
-        }
-
-        await copyText(reasoning);
-        toastr.info(t`Copied!`, '', { timeOut: 2000 });
-    });
 
     $('#file_form_input').on('change', async () => {
         const fileInput = document.getElementById('file_form_input');

@@ -1621,7 +1621,6 @@ async function loadPowerUserSettings(settings, data) {
     loadMovingUIState();
     loadCharListState();
     toggleMDHotkeyIconDisplay();
-    loadReasoningSettings();
 }
 
 function toggleMDHotkeyIconDisplay() {
@@ -1636,38 +1635,6 @@ function toggleMDHotkeyIconDisplay() {
 
 function loadCharListState() {
     document.body.classList.toggle('charListGrid', power_user.charListGrid);
-}
-
-function loadReasoningSettings() {
-    $('#reasoning_add_to_prompts').prop('checked', power_user.reasoning.add_to_prompts);
-    $('#reasoning_add_to_prompts').on('change', function () {
-        power_user.reasoning.add_to_prompts = !!$(this).prop('checked');
-        saveSettingsDebounced();
-    });
-
-    $('#reasoning_prefix').val(power_user.reasoning.prefix);
-    $('#reasoning_prefix').on('input', function () {
-        power_user.reasoning.prefix = String($(this).val());
-        saveSettingsDebounced();
-    });
-
-    $('#reasoning_suffix').val(power_user.reasoning.suffix);
-    $('#reasoning_suffix').on('input', function () {
-        power_user.reasoning.suffix = String($(this).val());
-        saveSettingsDebounced();
-    });
-
-    $('#reasoning_separator').val(power_user.reasoning.separator);
-    $('#reasoning_separator').on('input', function () {
-        power_user.reasoning.separator = String($(this).val());
-        saveSettingsDebounced();
-    });
-
-    $('#reasoning_max_additions').val(power_user.reasoning.max_additions);
-    $('#reasoning_max_additions').on('input', function () {
-        power_user.reasoning.max_additions = Number($(this).val());
-        saveSettingsDebounced();
-    });
 }
 
 function loadMovingUIState() {
