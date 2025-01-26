@@ -1432,6 +1432,18 @@ export class PromptReasoning {
     }
 
     /**
+     * Checks if the limit of reasoning additions has been reached.
+     * @returns {boolean} True if the limit of reasoning additions has been reached, false otherwise.
+     */
+    isLimitReached() {
+        if (!power_user.reasoning.add_to_prompts) {
+            return true;
+        }
+
+        return this.counter >= power_user.reasoning.max_additions;
+    }
+
+    /**
      * Add reasoning to a message according to the power user settings.
      * @param {string} content Message content
      * @param {string} reasoning Message reasoning

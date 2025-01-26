@@ -3846,6 +3846,9 @@ export async function Generate(type, { automatic_trigger, force_name2, quiet_pro
 
     const reasoning = new PromptReasoning();
     for (let i = coreChat.length - 1; i >= 0; i--) {
+        if (reasoning.isLimitReached()) {
+            break;
+        }
         coreChat[i] = { ...coreChat[i], mes: reasoning.addToMessage(coreChat[i].mes, coreChat[i].extra?.reasoning) };
     }
 
