@@ -1318,6 +1318,10 @@ button {
     transition: clip-path 200ms;
 }
 
+#send_textarea:placeholder-shown {
+    overflow: hidden;
+}
+
 #send_textarea:focus-visible {
     /* Disable outline for the chat bar itself, we add it to the outer div */
     outline: none;
@@ -2917,7 +2921,7 @@ input[type=search]:focus::-webkit-search-cancel-button {
     position: relative;
 }
 
-#rm_print_characters_block .ch_name,
+.character_name_block .ch_name,
 .avatar-container .ch_name {
     flex: 1 1 auto;
     white-space: nowrap;
@@ -2925,6 +2929,13 @@ input[type=search]:focus::-webkit-search-cancel-button {
     text-wrap: nowrap;
     text-overflow: ellipsis;
     display: block;
+}
+
+.character_name_block .character_version {
+    text-overflow: ellipsis;
+    overflow: hidden;
+    text-wrap: nowrap;
+    max-width: 50%;
 }
 
 #rm_print_characters_block .character_name_block> :last-child {
@@ -3257,6 +3268,18 @@ grammarly-extension {
 #first_message_div {
     display: flex;
     align-items: center;
+}
+
+#creators_notes_div {
+    align-items: baseline;
+}
+
+#creators_note_desc_hidden {
+    display: none;
+}
+
+#creators_notes_div:has(#spoiler_free_desc_button.fa-eye-slash) #creators_note_desc_hidden {
+    display: initial;
 }
 
 .alternate_greeting details {
@@ -4799,7 +4822,7 @@ body:not(.sd) .mes_img_swipes {
 
 .img_enlarged {
     object-fit: contain;
-    width: 100%;
+    max-width: 100%;
     height: 100%;
     cursor: zoom-in
 }
@@ -5627,6 +5650,7 @@ body:not(.movingUI) .drawer-content.maximized {
 
 .model-card .details-container {
     text-align: right;
+    line-height: 0.9;
 }
 
 .model-card:hover {
@@ -5649,7 +5673,7 @@ body:not(.movingUI) .drawer-content.maximized {
 }
 
 .model-title {
-    font-size: 13px;
+    font-size: calc(var(--mainFontSize) * 0.95);
     font-weight: bold;
     overflow: hidden;
 }
@@ -5665,7 +5689,7 @@ body:not(.movingUI) .drawer-content.maximized {
 .model-class,
 .model-context-length,
 .model-date-added {
-    font-size: 10px;
+    font-size: calc(var(--mainFontSize) * 0.75);
 }
 
 .model-class,
@@ -5734,4 +5758,30 @@ body:not(.movingUI) .drawer-content.maximized {
         flex-basis: 100%;
     }
 
+}
+
+/* Constrict the scroll of alternate greetings to only the dynamic form section */
+.alternate_grettings {
+    display: grid;
+    grid-template-rows: auto auto auto 1fr;
+    max-height: 100%;
+    overflow: hidden;
+}
+
+.alternate_greetings_list {
+    overflow-y: scroll;
+}
+
+.mes_text div[data-type="assistant_note"]:has(.assistant_note_export) {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+    padding: 0 2px;
+}
+
+.mes_text div[data-type="assistant_note"]:has(.assistant_note_export)>div:not(.assistant_note_export) {
+    flex: 1;
 }

@@ -11,6 +11,7 @@ import {
     getCurrentChatId,
     getRequestHeaders,
     hideSwipeButtons,
+    name1,
     name2,
     reloadCurrentChat,
     saveChatDebounced,
@@ -21,6 +22,7 @@ import {
     chat_metadata,
     neutralCharacterName,
     updateChatMetadata,
+    system_message_types,
 } from '../script.js';
 import { selected_group } from './group-chats.js';
 import { power_user } from './power-user.js';
@@ -34,6 +36,7 @@ import {
     humanFileSize,
     saveBase64AsFile,
     extractTextFromOffice,
+    download,
 } from './utils.js';
 import { extension_settings, renderExtensionTemplateAsync, saveMetadataDebounced } from './extensions.js';
 import { POPUP_RESULT, POPUP_TYPE, Popup, callGenericPopup } from './popup.js';
@@ -41,6 +44,7 @@ import { ScraperManager } from './scrapers.js';
 import { DragAndDropHandler } from './dragdrop.js';
 import { renderTemplateAsync } from './templates.js';
 import { t } from './i18n.js';
+import { humanizedDateTime } from './RossAscends-mods.js';
 
 /**
  * @typedef {Object} FileAttachment
@@ -585,10 +589,12 @@ async function enlargeMessageImage() {
     const imgHolder = document.createElement('div');
     imgHolder.classList.add('img_enlarged_holder');
     imgHolder.append(img);
-    const imgContainer = $('<div><pre><code></code></pre></div>');
+    const imgContainer = $('<div><pre><code class="img_enlarged_title"></code></pre></div>');
     imgContainer.prepend(imgHolder);
     imgContainer.addClass('img_enlarged_container');
-    imgContainer.find('code').addClass('txt').text(title);
+
+    const codeTitle = imgContainer.find('.img_enlarged_title');
+    codeTitle.addClass('txt').text(title);
     const titleEmpty = !title || title.trim().length === 0;
     imgContainer.find('pre').toggle(!titleEmpty);
     addCopyToCodeBlocks(imgContainer);
@@ -598,9 +604,17 @@ async function enlargeMessageImage() {
     popup.dlg.style.width = 'unset';
     popup.dlg.style.height = 'unset';
 
-    img.addEventListener('click', () => {
+    img.addEventListener('click', event => {
         const shouldZoom = !img.classList.contains('zoomed');
         img.classList.toggle('zoomed', shouldZoom);
+        event.stopPropagation();
+    });
+    codeTitle[0]?.addEventListener('click', event => {
+        event.stopPropagation();
+    });
+
+    popup.dlg.addEventListener('click', event => {
+        popup.completeCancelled();
     });
 
     await popup.show();
@@ -1425,6 +1439,19 @@ jQuery(function () {
         const messageBlock = $(this).closest('.mes');
         const messageId = Number(messageBlock.attr('mesid'));
         await viewMessageFile(messageId);
+    });
+
+    $(document).on('click', '.assistant_note_export', async function () {
+        const chatToSave = [
+            {
+                user_name: name1,
+                character_name: name2,
+                chat_metadata: chat_metadata,
+            },
+            ...chat.filter(x => x?.extra?.type !== system_message_types.ASSISTANT_NOTE),
+        ];
+
+        download(JSON.stringify(chatToSave, null, 4), `Assistant - ${humanizedDateTime()}.json`, 'application/json');
     });
 
     // Do not change. #attachFile is added by extension.
