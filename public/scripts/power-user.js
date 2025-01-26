@@ -257,7 +257,7 @@ let power_user = {
         add_to_prompts: false,
         prefix: '<think>\n',
         suffix: '\n</think>',
-        separator: '\n',
+        separator: '\n\n',
         max_additions: 1,
     },
 
