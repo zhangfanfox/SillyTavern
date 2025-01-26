@@ -6737,14 +6737,14 @@ export function changeMainAPI() {
     forceCharacterEditorTokenize();
 }
 
-export function setUserName(value) {
+export function setUserName(value, { toastPersonaNameChange = true } = {}) {
     name1 = value;
     if (name1 === undefined || name1 == '')
         name1 = default_user_name;
     console.log(`User name changed to ${name1}`);
     $('#your_name').val(name1);
-    if (power_user.persona_show_notifications) {
-        toastr.success(t`Your messages will now be sent as ${name1}`, t`Current persona updated`);
+    if (toastPersonaNameChange && power_user.persona_show_notifications) {
+        toastr.success(t`Your messages will now be sent as ${name1}`, t`Persona Changed`);
     }
     saveSettingsDebounced();
 }
@@ -10024,9 +10024,9 @@ jQuery(async function () {
 
         // One of the persona was selected. So load it.
         if (!isRemoving && selectedPersona) {
-            setUserAvatar(selectedPersona);
+            setUserAvatar(selectedPersona, { toastPersonaNameChange: false });
             if (power_user.persona_show_notifications) {
-                toastr.info(t`Selected persona ${power_user.personas[selectedPersona]} for current chat.`, t`Connected Persona Selected`);
+                toastr.success(t`Selected persona ${power_user.personas[selectedPersona]} for current chat.`, t`Connected Persona Selected`);
             }
         }
     });

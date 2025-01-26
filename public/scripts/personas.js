@@ -73,11 +73,11 @@ export function initUserAvatar(avatar) {
  * Sets a user avatar file
  * @param {string} imgfile Link to an image file
  */
-export function setUserAvatar(imgfile) {
+export function setUserAvatar(imgfile, { toastPersonaNameChange = true } = {}) {
     user_avatar = imgfile && typeof imgfile === 'string' ? imgfile : $(this).attr('imgfile');
     reloadUserAvatar();
     highlightSelectedAvatar();
-    selectCurrentPersona();
+    selectCurrentPersona({ toastPersonaNameChange: toastPersonaNameChange });
     saveSettingsDebounced();
     $('.zoomed_avatar[forchar]').remove();
 }
@@ -628,7 +628,7 @@ export async function askForPersonaSelection(title, text, personas, { okButton =
                 updatePersonaConnectionsAvatarList();
                 if (power_user.persona_show_notifications) {
                     const name = targetedChar.type == 'character' ? characters[targetedChar.id]?.name : groups[targetedChar.id]?.name;
-                    toastr.info(t`All connections to ${name} have been removed.`, t`Personas unlocked`);
+                    toastr.info(t`All connections to ${name} have been removed.`, t`Personas Unlocked`);
                 }
             },
         });
@@ -732,12 +732,14 @@ async function bindUserNameToPersona(e) {
     setPersonaDescription();
 }
 
-function selectCurrentPersona() {
+function selectCurrentPersona({ toastPersonaNameChange = true } = {}) {
     const personaName = power_user.personas[user_avatar];
     if (personaName) {
+        const shouldAutoLock = power_user.persona_auto_lock && user_avatar !== chat_metadata['persona'];
+
         if (personaName !== name1) {
             console.log(`Auto-updating user name to ${personaName}`);
-            setUserName(personaName);
+            setUserName(personaName, { toastPersonaNameChange: !shouldAutoLock && toastPersonaNameChange });
         }
 
         const descriptor = power_user.persona_descriptions[user_avatar];
@@ -767,11 +769,11 @@ function selectCurrentPersona() {
         setPersonaDescription();
 
         // Update the locked persona if setting is enabled
-        if (power_user.persona_auto_lock && personaName && user_avatar !== chat_metadata['persona']) {
+        if (shouldAutoLock) {
             chat_metadata['persona'] = user_avatar;
             console.log(`Auto locked persona to ${user_avatar}`);
-            if (power_user.persona_show_notifications) {
-                toastr.info(`Auto locked persona ${personaName} to current chat`, t`Persona Auto Lock`);
+            if (toastPersonaNameChange && power_user.persona_show_notifications) {
+                toastr.success(`Persona ${personaName} selected and auto-locked to current chat`, t`Persona Selected`);
             }
             saveMetadataDebounced();
             updatePersonaLockIcons();
@@ -788,7 +790,7 @@ function selectCurrentPersona() {
                     + t`Current Persona: ${power_user.personas[user_avatar]}`
                     + (hasDifferentChatLock ? '<br />' + t`Chat persona: ${power_user.personas[chat_metadata['persona']]}` : '')
                     + (hasDifferentDefaultLock ? '<br />' + t`Default persona: ${power_user.personas[power_user.default_persona]}` : '');
-                toastr.info(message, t`Temporary Persona`, { escapeHtml: false, timeOut: 10000, extendedTimeOut: 20000, preventDuplicates: true });
+                toastr.info(message, t`Temporary Persona`, { escapeHtml: false, preventDuplicates: true });
             }
         }
     }
@@ -865,7 +867,7 @@ async function unlockPersona(type = 'chat') {
                 delete chat_metadata['persona'];
                 await saveMetadata();
                 if (power_user.persona_show_notifications) {
-                    toastr.info(t`User persona ${name1} is now unlocked from this chat. Click the "Lock" again to revert.`, t`Persona unlocked`);
+                    toastr.info(t`Persona ${name1} is now unlocked from this chat.`, t`Persona Unlocked`);
                 }
             }
             break;
@@ -879,7 +881,7 @@ async function unlockPersona(type = 'chat') {
                 saveSettingsDebounced();
                 updatePersonaConnectionsAvatarList();
                 if (power_user.persona_show_notifications) {
-                    toastr.info(t`User persona ${name1} is now unlocked from character ${name2}. Click the "Lock" again to revert.`, t`Persona unlocked`);
+                    toastr.info(t`Persona ${name1} is now unlocked from character ${name2}.`, t`Persona Unlocked`);
                 }
             }
             break;
@@ -900,11 +902,7 @@ async function lockPersona(type = 'chat') {
     if (!(user_avatar in power_user.personas)) {
         console.log(`Creating a new persona ${user_avatar}`);
         if (power_user.persona_show_notifications) {
-            toastr.info(
-                t`Creating a new persona for currently selected user name and avatar...`,
-                t`Persona Does Not Exist`,
-                { timeOut: 10000, extendedTimeOut: 20000 },
-            );
+            toastr.info(t`Creating a new persona for currently selected user name and avatar...`, t`Persona Not Found`);
         }
         power_user.personas[user_avatar] = name1;
         power_user.persona_descriptions[user_avatar] = {
@@ -1211,7 +1209,7 @@ async function toggleDefaultPersona(avatarId, { quiet: quiet = false } = {}) {
 
         power_user.default_persona = avatarId;
         if (power_user.persona_show_notifications) {
-            toastr.success(t`Set to ${power_user.personas[avatarId]}.This persona will be used by default when you open a new chat.`, t`Default Persona Set`);
+            toastr.success(t`Set to ${power_user.personas[avatarId]}.This persona will be used by default when you open a new chat.`, t`Default Persona`);
         }
     }
 
@@ -1272,8 +1270,8 @@ async function loadPersonaForCurrentChat() {
             if (connectedPersonas.length === 1) {
                 chatPersona = connectedPersonas[0];
             } else if (!power_user.persona_allow_multi_connections) {
+                console.warn('More than one persona is connected to this character.Using the first available persona for this chat.');
                 chatPersona = connectedPersonas[0];
-                toastr.warning(t`More than one persona is connected to this character. Using the first available persona for this chat.`, t`Automatic Persona Selection`);
             } else {
                 chatPersona = await askForPersonaSelection(t`Select Persona`,
                     t`Multiple personas are connected to this character.\nSelect a persona to use for this chat.`,
@@ -1307,10 +1305,15 @@ async function loadPersonaForCurrentChat() {
 
     // Persona avatar found, select it
     if (chatPersona) {
-        setUserAvatar(chatPersona);
+        const willAutoLock = power_user.persona_auto_lock && user_avatar !== chat_metadata['persona'];
+        setUserAvatar(chatPersona, { toastPersonaNameChange: false });
 
         if (power_user.persona_show_notifications) {
-            toastr.info(t`Auto-selected persona ${power_user.personas[chatPersona]} based on ${connectType} connection.`, t`Persona Auto Selected`);
+            let message = t`Auto-selected persona based on ${connectType} connection.<br />Your messages will now be sent as ${power_user.personas[chatPersona]}.`;
+            if (willAutoLock) {
+                message += '<br /><br />' + t`Auto-locked this persona to current chat.`;
+            }
+            toastr.success(message, t`Persona Auto Selected`, { escapeHtml: false });
         }
     }
 
