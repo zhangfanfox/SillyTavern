@@ -1588,10 +1588,10 @@ async function setExpression(character, expression, force = false) {
 
             let spriteFile = sprite.files[0];
 
-            // Calculate next expression
-            if (sprite.files.length > 1) {
+            // Calculate next expression, if multiple are allowed
+            if (extension_settings.expressions.allowMultiple && sprite.files.length > 1) {
                 let possibleFiles = sprite.files;
-                if (extension_settings.expressions_reroll_if_same) {
+                if (extension_settings.expressions.rerollIfSame) {
                     possibleFiles = possibleFiles.filter(x => x.imageSrc !== prevExpressionSrc);
                 }
                 spriteFile = possibleFiles[Math.floor(Math.random() * possibleFiles.length)];
@@ -2139,6 +2139,14 @@ function migrateSettings() {
         $('#expressions_show_default').prop('checked', extension_settings.expressions.showDefault).trigger('input');
         $('#expression_translate').prop('checked', extension_settings.expressions.translate).on('input', function () {
             extension_settings.expressions.translate = !!$(this).prop('checked');
+            saveSettingsDebounced();
+        });
+        $('#expressions_allow_multiple').prop('checked', extension_settings.expressions.allowMultiple).on('input', function () {
+            extension_settings.expressions.allowMultiple = !!$(this).prop('checked');
+            saveSettingsDebounced();
+        });
+        $('#expressions_reroll_if_same').prop('checked', extension_settings.expressions.rerollIfSame).on('input', function () {
+            extension_settings.expressions.rerollIfSame = !!$(this).prop('checked');
             saveSettingsDebounced();
         });
         $('#expression_override_cleanup_button').on('click', onClickExpressionOverrideRemoveAllButton);
