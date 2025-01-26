@@ -360,7 +360,7 @@ async function setImage(img, path) {
     return new Promise(resolve => {
         const prevExpressionSrc = img.attr('src');
         const expressionClone = img.clone();
-        const originalId = img.attr('id');
+        const originalId = img.data('filename');
 
         //only swap expressions when necessary
         if (prevExpressionSrc !== path && !img.hasClass('expression-animating')) {
@@ -368,7 +368,7 @@ async function setImage(img, path) {
             expressionClone.addClass('expression-clone');
             //make invisible and remove id to prevent double ids
             //must be made invisible to start because they share the same Z-index
-            expressionClone.attr('id', '').css({ opacity: 0 });
+            expressionClone.data('filename', '').css({ opacity: 0 });
             //add new sprite path to clone src
             expressionClone.attr('src', path);
             //add invisible clone to html
@@ -404,7 +404,7 @@ async function setImage(img, path) {
                     //remove old expression
                     img.remove();
                     //replace ID so it becomes the new 'original' expression for next change
-                    expressionClone.attr('id', originalId);
+                    expressionClone.data('filename', originalId);
                     expressionClone.removeClass('expression-animating');
 
                     // Reset the expression holder min height and width
@@ -1311,9 +1311,9 @@ function removeExpression() {
 /**
  * Validate a character's sprites, and redraw the sprites list if not done before or forced to redraw.
  * @param {string} character - The character to validate
- * @param {boolean} forceRedrawCached - Whether to force redrawing the sprites list even if it's already been drawn before
+ * @param {boolean} [forceRedrawCached=false] - Whether to force redrawing the sprites list even if it's already been drawn before
  */
-async function validateImages(character, forceRedrawCached) {
+async function validateImages(character, forceRedrawCached = false) {
     if (!character) {
         return;
     }
@@ -1493,6 +1493,13 @@ async function renderFallbackExpressionPicker() {
     }
 }
 
+/**
+ * Retrieves a unique list of cached expressions.
+ * Combines the default expressions list with custom user-defined expressions.
+ *
+ * @returns {string[]} An array of unique expression labels
+ */
+
 function getCachedExpressions() {
     if (!Array.isArray(expressionsList)) {
         return [];
@@ -1558,7 +1565,14 @@ export async function getExpressionsList() {
     return [...result, ...extension_settings.expressions.custom].filter(onlyUnique);
 }
 
-async function setExpression(character, expression, force) {
+/**
+ * Set the expression of a character.
+ * @param {string} character - The name of the character
+ * @param {string} expression - The expression to set
+ * @param {boolean} [force=false] - Whether to force the expression change even if Visual Novel mode is on.
+ * @returns {Promise<void>} A promise that resolves when the expression has been set.
+ */
+async function setExpression(character, expression, force = false) {
     if (!isTalkingHeadEnabled() || !modules.includes('talkinghead')) {
         console.debug('entered setExpressions');
         await validateImages(character);
@@ -1566,10 +1580,22 @@ async function setExpression(character, expression, force) {
         const prevExpressionSrc = img.attr('src');
         const expressionClone = img.clone();
 
+        /** @type {Expression} */
         const sprite = (spriteCache[character] && spriteCache[character].find(x => x.label === expression));
         console.debug('checking for expression images to show..');
         if (sprite) {
             console.debug('setting expression from character images folder');
+
+            let spriteFile = sprite.files[0];
+
+            // Calculate next expression
+            if (sprite.files.length > 1) {
+                let possibleFiles = sprite.files;
+                if (extension_settings.expressions_reroll_if_same) {
+                    possibleFiles = possibleFiles.filter(x => x.imageSrc !== prevExpressionSrc);
+                }
+                spriteFile = possibleFiles[Math.floor(Math.random() * possibleFiles.length)];
+            }
 
             if (force && isVisualNovelMode()) {
                 const context = getContext();
@@ -1583,13 +1609,13 @@ async function setExpression(character, expression, force) {
                     }
 
                     if (groupMember.name == character) {
-                        await setImage($(`.expression-holder[data-avatar="${member}"] img`), sprite.path);
+                        await setImage($(`.expression-holder[data-avatar="${member}"] img`), spriteFile.imageSrc);
                         return;
                     }
                 }
             }
             //only swap expressions when necessary
-            if (prevExpressionSrc !== sprite.path
+            if (prevExpressionSrc !== spriteFile.imageSrc
                 && !img.hasClass('expression-animating')) {
                 //clone expression
                 expressionClone.addClass('expression-clone');
@@ -1597,7 +1623,7 @@ async function setExpression(character, expression, force) {
                 //must be made invisible to start because they share the same Z-index
                 expressionClone.attr('id', '').css({ opacity: 0 });
                 //add new sprite path to clone src
-                expressionClone.attr('src', sprite.path);
+                expressionClone.attr('src', spriteFile.imageSrc);
                 //add invisible clone to html
                 expressionClone.appendTo($('#expression-holder'));
 
@@ -1645,7 +1671,7 @@ async function setExpression(character, expression, force) {
                 expressionClone.removeClass('default');
                 expressionClone.off('error');
                 expressionClone.on('error', function () {
-                    console.debug('Expression image error', sprite.path);
+                    console.debug('Expression image error', spriteFile.imageSrc);
                     $(this).attr('src', '');
                     $(this).off('error');
                     if (force && extension_settings.expressions.showDefault) {
@@ -1706,7 +1732,7 @@ async function setExpression(character, expression, force) {
 }
 
 function onClickExpressionImage() {
-    const expression = $(this).attr('id');
+    const expression = $(this).data('expression');
     setSpriteSlashCommand({}, expression);
 }
 
@@ -1830,7 +1856,7 @@ async function onClickExpressionUpload(event) {
     // Prevents the expression from being set
     event.stopPropagation();
 
-    const id = $(this).closest('.expression_list_item').attr('id');
+    const expression = $(this).closest('.expression_list_item').data('expression');
     const name = $('#image_list').data('name');
 
     const handleExpressionUploadChange = async (e) => {
@@ -1840,9 +1866,20 @@ async function onClickExpressionUpload(event) {
             return;
         }
 
+        // // If extension_settings.expressions.allowMultiple is false and there's already a main image, ask user:
+        // let hasMainImage = true; // Check from your item data
+        // if (!extension_settings.expressions.allowMultiple && hasMainImage) {
+        //     let userChoice = await callPopup('<h3>Replace existing main image?</h3><p>Press Ok to replace, Cancel to abort.</p>', 'confirm');
+        //     if (!userChoice) {
+        //         return;
+        //     }
+        //     // If user chooses replace, remove the old file, then proceed
+        //     // ...existing code to remove old file...
+        // }
+
         const formData = new FormData();
         formData.append('name', name);
-        formData.append('label', id);
+        formData.append('label', expression);
         formData.append('avatar', file);
 
         await handleFileUpload('/api/sprites/upload', formData);
@@ -1851,7 +1888,7 @@ async function onClickExpressionUpload(event) {
         e.target.form.reset();
 
         // In Talkinghead mode, when a new talkinghead image is uploaded, refresh the live char.
-        if (id === 'talkinghead' && isTalkingHeadEnabled() && modules.includes('talkinghead')) {
+        if (expression === 'talkinghead' && isTalkingHeadEnabled() && modules.includes('talkinghead')) {
             await loadTalkingHead();
         }
     };
@@ -1987,14 +2024,14 @@ async function onClickExpressionDelete(event) {
         return;
     }
 
-    const id = $(this).closest('.expression_list_item').attr('id');
+    const expression = $(this).closest('.expression_list_item').data('expression');
     const name = $('#image_list').data('name');
 
     try {
         await fetch('/api/sprites/delete', {
             method: 'POST',
             headers: getRequestHeaders(),
-            body: JSON.stringify({ name, label: id }),
+            body: JSON.stringify({ name, label: expression }),
         });
     } catch (error) {
         toastr.error('Failed to delete image. Try again later.');
