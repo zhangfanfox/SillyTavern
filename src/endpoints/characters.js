@@ -82,7 +82,8 @@ async function writeCharacterData(inputFile, data, outputFile, request, crop = u
 
                 return await tryReadImage(inputFile, crop);
             } catch (error) {
-                console.log(`Failed to read image: ${inputFile}. Using a fallback image.`);
+                const message = Buffer.isBuffer(inputFile) ? 'Failed to read image buffer.' : `Failed to read image: ${inputFile}.`;
+                console.warn(message, 'Using a fallback image.', error);
                 return await fs.promises.readFile(defaultAvatarPath);
             }
         }
