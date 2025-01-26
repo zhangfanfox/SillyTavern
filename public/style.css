@@ -2931,6 +2931,13 @@ input[type=search]:focus::-webkit-search-cancel-button {
     display: block;
 }
 
+.character_name_block .character_version {
+    text-overflow: ellipsis;
+    overflow: hidden;
+    text-wrap: nowrap;
+    max-width: 50%;
+}
+
 #rm_print_characters_block .character_name_block> :last-child {
     flex: 0 100000 auto;
     /* Force shrinking first */
