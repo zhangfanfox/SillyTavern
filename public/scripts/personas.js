@@ -774,6 +774,7 @@ function selectCurrentPersona() {
                 toastr.info(`Auto locked persona ${personaName} to current chat`, t`Persona Auto Lock`);
             }
             saveMetadataDebounced();
+            updatePersonaLockIcons();
         }
 
         // As the last step, inform user if the persona is only temporarily chosen
@@ -918,7 +919,6 @@ async function lockPersona(type = 'chat') {
 
     switch (type) {
         case 'default': {
-            // TODO: Make this toggle-able
             await toggleDefaultPersona(user_avatar, { quiet: true });
             break;
         }
