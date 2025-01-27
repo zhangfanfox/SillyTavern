@@ -1,6 +1,6 @@
 import { Fuse } from '../../../lib.js';
 
-import { callPopup, eventSource, event_types, generateRaw, getRequestHeaders, main_api, online_status, saveSettingsDebounced, substituteParams, substituteParamsExtended, system_message_types } from '../../../script.js';
+import { eventSource, event_types, generateRaw, getRequestHeaders, main_api, online_status, saveSettingsDebounced, substituteParams, substituteParamsExtended, system_message_types } from '../../../script.js';
 import { dragElement, isMobile } from '../../RossAscends-mods.js';
 import { getContext, getApiUrl, modules, extension_settings, ModuleWorkerWrapper, doExtrasFetch, renderExtensionTemplateAsync } from '../../extensions.js';
 import { loadMovingUIState, power_user } from '../../power-user.js';
@@ -1739,7 +1739,7 @@ function onClickExpressionImage() {
 
 async function onClickExpressionAddCustom() {
     const template = await renderExtensionTemplateAsync(MODULE_NAME, 'add-custom-expression');
-    let expressionName = await callPopup(template, 'input');
+    let expressionName = await Popup.show.input(null, template);
 
     if (!expressionName) {
         console.debug('No custom expression name provided');
@@ -1786,7 +1786,7 @@ async function onClickExpressionRemoveCustom() {
     }
 
     const template = await renderExtensionTemplateAsync(MODULE_NAME, 'remove-custom-expression', { expression: selectedExpression });
-    const confirmation = await callPopup(template, 'confirm');
+    const confirmation = await Popup.show.confirm(null, template);
 
     if (!confirmation) {
         console.debug('Custom expression removal cancelled');
