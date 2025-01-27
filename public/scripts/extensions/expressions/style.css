@@ -204,3 +204,12 @@ img.expression.default {
     align-items: baseline;
     flex-direction: row;
 }
+
+#expressions_container:has(#expressions_allow_multiple:not(:checked)) #image_list .expression_list_item[data-expression-type="additional"] {
+    opacity: 0.3;
+    transition: opacity var(--animation-duration) ease;
+}
+#expressions_container:has(#expressions_allow_multiple:not(:checked)) #image_list .expression_list_item[data-expression-type="additional"]:hover,
+#expressions_container:has(#expressions_allow_multiple:not(:checked)) #image_list .expression_list_item[data-expression-type="additional"]:focus {
+    opacity: unset;
+}

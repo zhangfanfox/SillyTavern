@@ -1349,7 +1349,7 @@ function getExpressionImageData(sprite) {
         fileName: fileName,
         title: fileNameWithoutExtension,
         imageSrc: sprite.path,
-        type: fileNameWithoutExtension == sprite.label ? 'success' : 'additional',
+        type: 'success',
         isCustom: extension_settings.expressions.custom?.includes(sprite.label),
     };
 }
@@ -1380,8 +1380,7 @@ async function drawSpritesList(character, labels, sprites) {
         const images = sprites
             .filter(s => s.label === expression)
             .map(s => s.files)
-            .flat()
-            .sort((a, b) => a.title.localeCompare(b.title));
+            .flat();
 
         if (images.length === 0) {
             const listItem = await getListItem(expression, {
@@ -1444,6 +1443,21 @@ async function getSpritesList(name) {
 
             return acc;
         }, []);
+
+        // Sort the sprites for each expression alphabetically, but keep the main expression file at the front
+        for (const expression of grouped) {
+            expression.files.sort((a, b) => {
+                if (a.title === expression.label) return -1;
+                if (b.title === expression.label) return 1;
+                return a.title.localeCompare(b.title);
+            });
+
+            // Mark all besides the first sprite as 'additional'
+            for (let i = 1; i < expression.files.length; i++) {
+                expression.files[i].type = 'additional';
+            }
+        }
+
         return grouped;
     }
     catch (err) {
@@ -1584,7 +1598,7 @@ async function setExpression(character, expression, force = false) {
         /** @type {Expression} */
         const sprite = (spriteCache[character] && spriteCache[character].find(x => x.label === expression));
         console.debug('checking for expression images to show..');
-        if (sprite) {
+        if (sprite && sprite.files.length > 0) {
             console.debug('setting expression from character images folder');
 
             let spriteFile = sprite.files[0];
