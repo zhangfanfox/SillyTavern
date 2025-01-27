@@ -3887,7 +3887,7 @@ export async function Generate(type, { automatic_trigger, force_name2, quiet_pro
             mes: reasoning.addToMessage(
                 coreChat[i].mes,
                 getRegexedString(
-                    coreChat[i].extra?.reasoning,
+                    String(coreChat[i].extra?.reasoning ?? ''),
                     regex_placement.REASONING,
                     { isPrompt: true, depth: depth },
                 ),
