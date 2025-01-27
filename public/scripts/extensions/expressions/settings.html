@@ -6,13 +6,21 @@
         </div>
 
         <div class="inline-drawer-content">
-            <label class="checkbox_label" for="expression_translate" title="Use the selected API from Chat Translation extension settings.">
+            <label class="checkbox_label" for="expression_translate" title="Use the selected API from Chat Translation extension settings." data-i18n="[title]Use the selected API from Chat Translation extension settings.">
                 <input id="expression_translate" type="checkbox">
                 <span data-i18n="Translate text to English before classification">Translate text to English before classification</span>
             </label>
             <label class="checkbox_label" for="expressions_show_default">
                 <input id="expressions_show_default" type="checkbox">
                 <span data-i18n="Show default images (emojis) if sprite missing">Show default images (emojis) if sprite missing</span>
+            </label>
+            <label class="checkbox_label" for="expressions_allow_multiple" title="A single expression can have multiple sprites. Whenever the expression is chosen, a random sprite for this expression will be selected." data-i18n="[title]A single expression can have multiple sprites. Whenever the expression is chosen, a random sprite for this expression will be selected.">
+                <input id="expressions_allow_multiple" type="checkbox">
+                <span data-i18n="Allow multiple sprites per expression">Allow multiple sprites per expression</span>
+            </label>
+            <label class="checkbox_label" for="expressions_reroll_if_same" title="If the same expression is used again, re-roll the sprite. This only applies to expressions that have multiple available sprites assigned." data-i18n="[title]If the same expression is used again, re-roll the sprite. This only applies to expressions that have multiple available sprites assigned.">
+                <input id="expressions_reroll_if_same" type="checkbox">
+                <span data-i18n="Re-roll if same expression is used again">Re-roll if same sprite is used again</span>
             </label>
             <label id="image_type_block" class="checkbox_label" for="image_type_toggle">
                 <input id="image_type_toggle" type="checkbox">
@@ -51,16 +59,6 @@
                     <i id="expression_custom_add" class="menu_button fa-solid fa-plus margin0" title="Add"></i>
                     <i id="expression_custom_remove" class="menu_button fa-solid fa-xmark margin0" title="Remove"></i>
                 </div>
-            </div>
-            <div class="m-b-1 m-t-1">
-                <label class="checkbox_label" for="expressions_allow_multiple">
-                    <input id="expressions_allow_multiple" type="checkbox">
-                    <span data-i18n="Allow multiple files per expression">Allow multiple files per expression</span>
-                </label>
-                <label class="checkbox_label" for="expressions_reroll_if_same">
-                    <input id="expressions_reroll_if_same" type="checkbox">
-                    <span data-i18n="Re-roll if same expression is used again">Re-roll if same expression is used again</span>
-                </label>
             </div>
             <div id="no_chat_expressions" data-i18n="Open a chat to see the character expressions.">
                 Open a chat to see the character expressions.
