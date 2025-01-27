@@ -3883,6 +3883,7 @@ export async function Generate(type, { automatic_trigger, force_name2, quiet_pro
         }
         const depth = coreChat.length - i - 1;
         coreChat[i] = {
+            ...coreChat[i],
             mes: reasoning.addToMessage(
                 coreChat[i].mes,
                 getRegexedString(
@@ -3891,7 +3892,6 @@ export async function Generate(type, { automatic_trigger, force_name2, quiet_pro
                     { isPrompt: true, depth: depth },
                 ),
             ),
-            ...coreChat[i],
         };
     }
 
