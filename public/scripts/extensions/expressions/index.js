@@ -2081,20 +2081,25 @@ async function onClickExpressionDelete(event) {
     // Prevents the expression from being set
     event.stopPropagation();
 
-    const confirmation = await callPopup('<h3>Are you sure?</h3>Once deleted, it\'s gone forever!', 'confirm');
+    const expressionListItem = $(this).closest('.expression_list_item');
+    const expression = expressionListItem.data('expression');
 
+    const confirmation = await Popup.show.confirm(t`Delete Expression`, t`Are you sure you want to delete this expression? Once deleted, it\'s gone forever!`
+        + '<br /><br />'
+        + t`Expression: `
+        + expressionListItem.attr('data-filename'));
     if (!confirmation) {
         return;
     }
 
-    const expression = $(this).closest('.expression_list_item').data('expression');
+    const fileName = expressionListItem.attr('data-filename');
     const name = $('#image_list').data('name');
 
     try {
         await fetch('/api/sprites/delete', {
             method: 'POST',
             headers: getRequestHeaders(),
-            body: JSON.stringify({ name, label: expression }),
+            body: JSON.stringify({ name, label: expression, spriteName: fileName }),
         });
     } catch (error) {
         toastr.error('Failed to delete image. Try again later.');

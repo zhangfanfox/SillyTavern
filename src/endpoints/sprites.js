@@ -147,8 +147,9 @@ router.get('/get', jsonParser, function (request, response) {
 router.post('/delete', jsonParser, async (request, response) => {
     const label = request.body.label;
     const name = request.body.name;
+    const spriteName = request.body.spriteName || label;
 
-    if (!label || !name) {
+    if (!spriteName || !name) {
         return response.sendStatus(400);
     }
 
@@ -164,7 +165,7 @@ router.post('/delete', jsonParser, async (request, response) => {
 
         // Remove existing sprite with the same label
         for (const file of files) {
-            if (path.parse(file).name === label) {
+            if (path.parse(file).name === spriteName) {
                 fs.rmSync(path.join(spritesPath, file));
             }
         }
