@@ -15,6 +15,8 @@ import { SlashCommandEnumValue, enumTypes } from '../../slash-commands/SlashComm
 import { commonEnumProviders } from '../../slash-commands/SlashCommandCommonEnumsProvider.js';
 import { slashCommandReturnHelper } from '../../slash-commands/SlashCommandReturnHelper.js';
 import { generateWebLlmChatPrompt, isWebLlmSupported } from '../shared.js';
+import { Popup, POPUP_RESULT } from '../../popup.js';
+import { t } from '../../i18n.js';
 export { MODULE_NAME };
 
 /**
@@ -1852,11 +1854,23 @@ async function handleFileUpload(url, formData) {
     }
 }
 
+/**
+ * Removes the file extension from a file name
+ * @param {string} fileName The file name to remove the extension from
+ * @returns {string} The file name without the extension
+ */
+function withoutExtension(fileName) {
+    return fileName.replace(/\.[^/.]+$/, '');
+}
+
 async function onClickExpressionUpload(event) {
     // Prevents the expression from being set
     event.stopPropagation();
 
-    const expression = $(this).closest('.expression_list_item').data('expression');
+    const expressionListItem = $(this).closest('.expression_list_item');
+
+    const clickedFileName = expressionListItem.attr('data-expression-type') !== 'failure' ? expressionListItem.attr('data-filename') : null;
+    const expression = expressionListItem.data('expression');
     const name = $('#image_list').data('name');
 
     const handleExpressionUploadChange = async (e) => {
@@ -1866,21 +1880,70 @@ async function onClickExpressionUpload(event) {
             return;
         }
 
-        // // If extension_settings.expressions.allowMultiple is false and there's already a main image, ask user:
-        // let hasMainImage = true; // Check from your item data
-        // if (!extension_settings.expressions.allowMultiple && hasMainImage) {
-        //     let userChoice = await callPopup('<h3>Replace existing main image?</h3><p>Press Ok to replace, Cancel to abort.</p>', 'confirm');
-        //     if (!userChoice) {
-        //         return;
-        //     }
-        //     // If user chooses replace, remove the old file, then proceed
-        //     // ...existing code to remove old file...
-        // }
+        const existingFiles = spriteCache[name]?.find(x => x.label === expression)?.files || [];
+
+        let spriteName = expression;
+
+        if (extension_settings.expressions.allowMultiple) {
+            const matchesExisting = existingFiles.some(x => x.fileName === file.name);
+            const fileNameWithoutExtension = withoutExtension(file.name);
+            const filenameValidationRegex = new RegExp(`^${expression}(?:[-\\.].*?)?$`);
+            const validFileName = filenameValidationRegex.test(fileNameWithoutExtension);
+
+            // If there is no expression yet and it's a valid expression, we just take it
+            if (!clickedFileName && validFileName) {
+                spriteName = fileNameWithoutExtension;
+            }
+            // If the filename matches the one that was clicked, we just take it and replace it
+            else if (clickedFileName === file.name) {
+                spriteName = fileNameWithoutExtension;
+            }
+            // If it's a valid filename and there's no existing file with the same name, we just take it
+            else if (!matchesExisting && validFileName) {
+                spriteName = fileNameWithoutExtension;
+            }
+            else {
+                /** @type {import('../../popup.js').CustomPopupButton[]} */
+                const customButtons = [];
+                if (clickedFileName) {
+                    customButtons.push({
+                        text: t`Replace Existing`,
+                        result: POPUP_RESULT.NEGATIVE,
+                        action: () => {
+                            console.debug('Replacing existing sprite');
+                            spriteName = withoutExtension(clickedFileName);
+                        },
+                    });
+                }
+
+                const message = await renderExtensionTemplateAsync(MODULE_NAME, 'templates/upload-expression', { expression, clickedFileName });
+
+                spriteName = null;
+                const result = await Popup.show.input(t`Upload Expression Sprite`, message,
+                    `${expression}-${existingFiles.length}`, { customButtons: customButtons });
+
+                if (result) {
+                    if (!filenameValidationRegex.test(result)) {
+                        toastr.warning(t`The name you entered does not follow the naming schema for the selected expression '${expression}'.`, t`Invalid Expression Sprite Name`);
+                        return;
+                    }
+                    spriteName = result;
+                }
+            }
+        } else {
+            spriteName = withoutExtension(clickedFileName);
+        }
+
+        if (!spriteName) {
+            toastr.warning(t`Cancelled uploading sprite.`, t`Upload Cancelled`);
+            return;
+        }
 
         const formData = new FormData();
         formData.append('name', name);
         formData.append('label', expression);
         formData.append('avatar', file);
+        formData.append('spriteName', spriteName);
 
         await handleFileUpload('/api/sprites/upload', formData);
 

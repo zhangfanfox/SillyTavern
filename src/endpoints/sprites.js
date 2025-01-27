@@ -227,6 +227,7 @@ router.post('/upload', urlencodedParser, async (request, response) => {
     const file = request.file;
     const label = request.body.label;
     const name = request.body.name;
+    const spriteName = request.body.spriteName || label;
 
     if (!file || !label || !name) {
         return response.sendStatus(400);
@@ -249,12 +250,12 @@ router.post('/upload', urlencodedParser, async (request, response) => {
 
         // Remove existing sprite with the same label
         for (const file of files) {
-            if (path.parse(file).name === label) {
+            if (path.parse(file).name === spriteName) {
                 fs.rmSync(path.join(spritesPath, file));
             }
         }
 
-        const filename = label + path.parse(file.originalname).ext;
+        const filename = spriteName + path.parse(file.originalname).ext;
         const spritePath = path.join(file.destination, file.filename);
         const pathToFile = path.join(spritesPath, filename);
         // Copy uploaded file to sprites folder
