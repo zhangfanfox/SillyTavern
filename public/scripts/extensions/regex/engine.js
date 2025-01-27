@@ -20,6 +20,7 @@ const regex_placement = {
     SLASH_COMMAND: 3,
     // 4 - sendAs (legacy)
     WORLD_INFO: 5,
+    REASONING: 6,
 };
 
 export const substitute_find_regex = {
