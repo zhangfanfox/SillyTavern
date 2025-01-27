@@ -120,7 +120,7 @@ async function onNarrateOneMessage() {
     }
 
     resetTtsPlayback();
-    ttsJobQueue.push(message);
+    splitMessageAndAddToTtsJobQueue(message);
     moduleWorker();
 }
 
@@ -147,7 +147,7 @@ async function onNarrateText(args, text) {
     }
 
     resetTtsPlayback();
-    ttsJobQueue.push({ mes: text, name: name });
+    splitMessageAndAddToTtsJobQueue({ mes: text, name: name });
     await moduleWorker();
 
     // Return back to the chat voices
@@ -218,6 +218,31 @@ function isTtsProcessing() {
         processing = true;
     }
     return processing;
+}
+
+/**
+ * Splits a message into lines and adds each non-empty line to the TTS job queue.
+ * @param {Object} message - The message object to be processed.
+ * @param {string} message.mes - The text of the message to be split into lines.
+ * @param {string} message.name - The name associated with the message.
+ * @returns {void}
+ */
+function splitMessageAndAddToTtsJobQueue(message) {
+    const lines = message.mes.split("\n");
+
+    for (let i = 0; i < lines.length; i++) {
+        const line = lines[i];
+
+        if (line.length === 0) {
+            continue;
+        }
+
+        ttsJobQueue.push(
+            Object.assign({}, message, {
+                mes: line,
+            })
+        );
+    }
 }
 
 function debugTtsPlayback() {
@@ -350,7 +375,7 @@ function onAudioControlClicked() {
         talkingAnimation(false);
     } else {
         // Default play behavior if not processing or playing is to play the last message.
-        ttsJobQueue.push(context.chat[context.chat.length - 1]);
+        splitMessageAndAddToTtsJobQueue(context.chat[context.chat.length - 1]);
     }
     updateUiAudioPlayState();
 }
@@ -816,7 +841,7 @@ async function onMessageEvent(messageId, lastCharIndex) {
     lastChatId = context.chatId;
 
     console.debug(`Adding message from ${message.name} for TTS processing: "${message.mes}"`);
-    ttsJobQueue.push(message);
+    splitMessageAndAddToTtsJobQueue(message);
 }
 
 async function onMessageDeleted() {
