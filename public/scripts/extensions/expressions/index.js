@@ -1,11 +1,11 @@
 import { Fuse } from '../../../lib.js';
 
-import { eventSource, event_types, generateRaw, getRequestHeaders, main_api, online_status, saveSettingsDebounced, substituteParams, substituteParamsExtended, system_message_types } from '../../../script.js';
+import { characters, eventSource, event_types, generateRaw, getRequestHeaders, main_api, online_status, saveSettingsDebounced, substituteParams, substituteParamsExtended, system_message_types, this_chid } from '../../../script.js';
 import { dragElement, isMobile } from '../../RossAscends-mods.js';
 import { getContext, getApiUrl, modules, extension_settings, ModuleWorkerWrapper, doExtrasFetch, renderExtensionTemplateAsync } from '../../extensions.js';
 import { loadMovingUIState, power_user } from '../../power-user.js';
 import { onlyUnique, debounce, getCharaFilename, trimToEndSentence, trimToStartSentence, waitUntilCondition, findChar } from '../../utils.js';
-import { hideMutedSprites } from '../../group-chats.js';
+import { hideMutedSprites, selected_group } from '../../group-chats.js';
 import { isJsonSchemaSupported } from '../../textgen-settings.js';
 import { debounce_timeout } from '../../constants.js';
 import { SlashCommandParser } from '../../slash-commands/SlashCommandParser.js';
@@ -92,6 +92,8 @@ let lastTalkingStateMessage = null;  // last message as seen by `updateTalkingSt
 let spriteCache = {};
 let inApiCall = false;
 let lastServerResponseTime = 0;
+
+/** @type {{[characterName: string]: string}} */
 export let lastExpression = {};
 
 function isTalkingHeadEnabled() {
@@ -1033,16 +1035,20 @@ function spriteFolderNameFromCharacter(char) {
  * @param {object} args
  * @param {string} args.name Character name or avatar key, passed through findChar
  * @param {string} args.label Expression label
- * @param {string} args.folder Sprite folder path, processed using backslash rules
+ * @param {string} [args.folder=null] Optional sprite folder path, processed using backslash rules
+ * @param {string?} [args.spriteName=null] Optional sprite name
  * @param {string} imageUrl Image URI to fetch and upload
- * @returns {Promise<void>}
+ * @returns {Promise<string>} the sprite name
  */
-async function uploadSpriteCommand({ name, label, folder }, imageUrl) {
+async function uploadSpriteCommand({ name, label, folder = null, spriteName = null }, imageUrl) {
     if (!imageUrl) throw new Error('Image URL is required');
     if (!label || typeof label !== 'string') throw new Error('Expression label is required');
 
     label = label.replace(/[^a-z]/gi, '').toLowerCase().trim();
     if (!label) throw new Error('Expression label must contain at least one letter');
+
+    spriteName = spriteName || label;
+    if (!validateExpressionSpriteName(label, spriteName)) throw new Error('Invalid sprite name. Must follow the naming pattern for expression sprites.');
 
     name = name || getLastCharacterMessage().original_avatar || getLastCharacterMessage().name;
     const char = findChar({ name });
@@ -1062,7 +1068,8 @@ async function uploadSpriteCommand({ name, label, folder }, imageUrl) {
         const formData = new FormData();
         formData.append('name', folder); // this is the folder or character name
         formData.append('label', label); // this is the expression label
-        formData.append('avatar', file);  // this is the image file
+        formData.append('avatar', file); // this is the image file
+        formData.append('spriteName', spriteName); // this is a redundant comment
 
         await handleFileUpload('/api/sprites/upload', formData);
         console.debug(`[${MODULE_NAME}] Upload of ${imageUrl} completed for ${name} with label ${label}`);
@@ -1070,6 +1077,8 @@ async function uploadSpriteCommand({ name, label, folder }, imageUrl) {
         console.error(`[${MODULE_NAME}] Error uploading file:`, error);
         throw error;
     }
+
+    return spriteName;
 }
 
 /**
@@ -1876,6 +1885,12 @@ function withoutExtension(fileName) {
     return fileName.replace(/\.[^/.]+$/, '');
 }
 
+function validateExpressionSpriteName(expression, spriteName) {
+    const filenameValidationRegex = new RegExp(`^${expression}(?:[-\\.].*?)?$`);
+    const validFileName = filenameValidationRegex.test(spriteName);
+    return validFileName;
+}
+
 async function onClickExpressionUpload(event) {
     // Prevents the expression from being set
     event.stopPropagation();
@@ -1900,8 +1915,7 @@ async function onClickExpressionUpload(event) {
         if (extension_settings.expressions.allowMultiple) {
             const matchesExisting = existingFiles.some(x => x.fileName === file.name);
             const fileNameWithoutExtension = withoutExtension(file.name);
-            const filenameValidationRegex = new RegExp(`^${expression}(?:[-\\.].*?)?$`);
-            const validFileName = filenameValidationRegex.test(fileNameWithoutExtension);
+            const validFileName = validateExpressionSpriteName(expression, fileNameWithoutExtension);
 
             // If there is no expression yet and it's a valid expression, we just take it
             if (!clickedFileName && validFileName) {
@@ -1932,15 +1946,15 @@ async function onClickExpressionUpload(event) {
                 const message = await renderExtensionTemplateAsync(MODULE_NAME, 'templates/upload-expression', { expression, clickedFileName });
 
                 spriteName = null;
-                const result = await Popup.show.input(t`Upload Expression Sprite`, message,
+                const input = await Popup.show.input(t`Upload Expression Sprite`, message,
                     `${expression}-${existingFiles.length}`, { customButtons: customButtons });
 
-                if (result) {
-                    if (!filenameValidationRegex.test(result)) {
+                if (input) {
+                    if (!validateExpressionSpriteName(expression, input)) {
                         toastr.warning(t`The name you entered does not follow the naming schema for the selected expression '${expression}'.`, t`Invalid Expression Sprite Name`);
                         return;
                     }
-                    spriteName = result;
+                    spriteName = input;
                 }
             }
         } else {
@@ -2350,23 +2364,23 @@ function migrateSettings() {
     };
 
     SlashCommandParser.addCommandObject(SlashCommand.fromProps({
-        name: 'sprite',
-        aliases: ['emote'],
+        name: 'expression-set',
+        aliases: ['sprite', 'emote'],
         callback: setSpriteSlashCommand,
         unnamedArgumentList: [
             SlashCommandArgument.fromProps({
-                description: 'spriteId',
+                description: 'expression label to set',
                 typeList: [ARGUMENT_TYPE.STRING],
                 isRequired: true,
                 enumProvider: localEnumProviders.expressions,
             }),
         ],
-        helpString: 'Force sets the sprite for the current character.',
-        returns: 'the currently set sprite label after setting it.',
+        helpString: 'Force sets the expression for the current character.',
+        returns: 'The currently set expression label after setting it.',
     }));
     SlashCommandParser.addCommandObject(SlashCommand.fromProps({
-        name: 'spriteoverride',
-        aliases: ['costume'],
+        name: 'expression-folder-override',
+        aliases: ['spriteoverride', 'costume'],
         callback: setSpriteSetCommand,
         unnamedArgumentList: [
             new SlashCommandArgument(
@@ -2376,55 +2390,52 @@ function migrateSettings() {
         helpString: 'Sets an override sprite folder for the current character. If the name starts with a slash or a backslash, selects a sub-folder in the character-named folder. Empty value to reset to default.',
     }));
     SlashCommandParser.addCommandObject(SlashCommand.fromProps({
-        name: 'lastsprite',
-        callback: (_, name) => {
+        name: 'expression-last',
+        aliases: ['lastsprite'],
+        /** @type {(args: object, name: string) => Promise<string>} */
+        callback: async (_, name) => {
             if (typeof name !== 'string') throw new Error('name must be a string');
+            if (!name) {
+                if (selected_group) {
+                    toastr.error(t`In group chats, you must specify a character name.`, t`No character name specified`);
+                    return '';
+                }
+                name = characters[this_chid]?.avatar;
+            }
+
             const char = findChar({ name: name });
+            if (!char) toastr.warning(t`Couldn't find character ${name}.`, t`Character not found`);
+
             const sprite = lastExpression[char?.name ?? name] ?? '';
             return sprite;
         },
-        returns: 'the last set sprite / expression for the named character.',
+        returns: 'the last set expression for the named character.',
         unnamedArgumentList: [
             SlashCommandArgument.fromProps({
-                description: 'Character name - or unique character identifier (avatar key)',
+                description: 'Character name - or unique character identifier (avatar key). If not provided, the current character for this chat will be used (does not work in group chats)',
                 typeList: [ARGUMENT_TYPE.STRING],
-                isRequired: true,
                 enumProvider: commonEnumProviders.characters('character'),
                 forceEnum: true,
             }),
         ],
-        helpString: 'Returns the last set sprite / expression for the named character.',
+        helpString: 'Returns the last set expression for the named character.',
     }));
     SlashCommandParser.addCommandObject(SlashCommand.fromProps({
-        name: 'th',
+        name: 'expression-talkinghead',
         callback: toggleTalkingHeadCommand,
-        aliases: ['talkinghead'],
+        aliases: ['th', 'talkinghead'],
         helpString: 'Character Expressions: toggles <i>Image Type - talkinghead (extras)</i> on/off.',
         returns: 'the current state of the <i>Image Type - talkinghead (extras)</i> on/off.',
     }));
     SlashCommandParser.addCommandObject(SlashCommand.fromProps({
-        name: 'classify-expressions',
-        aliases: ['expressions'],
+        name: 'expression-classify',
+        aliases: ['classify-expressions', 'expressions'],
+        /** @type {(args: {return: string}) => Promise<string>} */
         callback: async (args) => {
-            /** @type {import('../../slash-commands/SlashCommandReturnHelper.js').SlashCommandReturnType} */
-            // @ts-ignore
-            let returnType = args.return;
+            let returnType =
+                /** @type {import('../../slash-commands/SlashCommandReturnHelper.js').SlashCommandReturnType} */
+                (args.return);
 
-            // Old legacy return type handling
-            if (args.format) {
-                toastr.warning(`Legacy argument 'format' with value '${args.format}' is deprecated. Please use 'return' instead. Routing to the correct return type...`, 'Deprecation warning');
-                const type = String(args?.format).toLowerCase().trim();
-                switch (type) {
-                    case 'json':
-                        returnType = 'object';
-                        break;
-                    default:
-                        returnType = 'pipe';
-                        break;
-                }
-            }
-
-            // Now the actual new return type handling
             const list = await getExpressionsList();
 
             return await slashCommandReturnHelper.doReturn(returnType ?? 'pipe', list, { objectToStringFunc: list => list.join(', ') });
@@ -2438,22 +2449,13 @@ function migrateSettings() {
                 enumList: slashCommandReturnHelper.enumList({ allowObject: true }),
                 forceEnum: true,
             }),
-            // TODO remove some day
-            SlashCommandNamedArgument.fromProps({
-                name: 'format',
-                description: '!!! DEPRECATED - use "return" instead !!! The format to return the list in: comma-separated plain text or JSON array. Default is plain text.',
-                typeList: [ARGUMENT_TYPE.STRING],
-                enumList: [
-                    new SlashCommandEnumValue('plain', null, enumTypes.enum, ', '),
-                    new SlashCommandEnumValue('json', null, enumTypes.enum, '[]'),
-                ],
-            }),
         ],
         returns: 'The comma-separated list of available expressions, including custom expressions.',
         helpString: 'Returns a list of available expressions, including custom expressions.',
     }));
     SlashCommandParser.addCommandObject(SlashCommand.fromProps({
-        name: 'classify',
+        name: 'expression-classify',
+        aliases: ['classify'],
         callback: classifyCallback,
         namedArgumentList: [
             SlashCommandNamedArgument.fromProps({
@@ -2492,11 +2494,13 @@ function migrateSettings() {
         `,
     }));
     SlashCommandParser.addCommandObject(SlashCommand.fromProps({
-        name: 'uploadsprite',
+        name: 'expression-upload',
+        aliases: ['uploadsprite'],
+        /** @type {(args: {name: string, label: string, folder: string?, spriteName: string?}, url: string) => Promise<string>} */
         callback: async (args, url) => {
-            await uploadSpriteCommand(args, url);
-            return '';
+            return await uploadSpriteCommand(args, url);
         },
+        returns: 'the resulting sprite name',
         unnamedArgumentList: [
             SlashCommandArgument.fromProps({
                 description: 'URL of the image to upload',
@@ -2510,7 +2514,6 @@ function migrateSettings() {
                 description: 'Character name or avatar key (default is current character)',
                 typeList: [ARGUMENT_TYPE.STRING],
                 isRequired: false,
-                acceptsMultiple: false,
             }),
             SlashCommandNamedArgument.fromProps({
                 name: 'label',
@@ -2518,16 +2521,32 @@ function migrateSettings() {
                 typeList: [ARGUMENT_TYPE.STRING],
                 enumProvider: localEnumProviders.expressions,
                 isRequired: true,
-                acceptsMultiple: false,
             }),
             SlashCommandNamedArgument.fromProps({
                 name: 'folder',
                 description: 'Override folder to upload into',
                 typeList: [ARGUMENT_TYPE.STRING],
                 isRequired: false,
-                acceptsMultiple: false,
+            }),
+            SlashCommandNamedArgument.fromProps({
+                name: 'spriteName',
+                description: 'Override sprite name to allow multiple sprites per expressions. Has to follow the naming pattern. If unspecified, the label will be used as sprite name.',
+                typeList: [ARGUMENT_TYPE.STRING],
+                isRequired: false,
             }),
         ],
-        helpString: '<div>Upload a sprite from a URL.</div><div>Example:</div><pre><code>/uploadsprite name=Seraphina label=joy /user/images/Seraphina/Seraphina_2024-12-22@12h37m57s.png</code></pre>',
+        helpString: `
+            <div>
+                Upload a sprite from a URL.
+            </div>
+            <div>
+                <strong>Example:</strong>
+                <ul>
+                    <li>
+                        <pre><code>/uploadsprite name=Seraphina label=joy /user/images/Seraphina/Seraphina_2024-12-22@12h37m57s.png</code></pre>
+                    </li>
+                </ul>
+            </div>
+        `,
     }));
 })();
