@@ -3194,10 +3194,6 @@ class StreamingProcessor {
             this.#checkDomElements(messageId);
             this.#updateMessageBlockVisibility();
             const currentTime = new Date();
-            // Don't waste time calculating token count for streaming
-            const tokenCountText = (this.reasoning || '') + processedText;
-            const currentTokenCount = isFinal && power_user.message_token_count_enabled ? getTokenCount(tokenCountText, 0) : 0;
-            const timePassed = formatGenerationTimer(this.timeStarted, currentTime, currentTokenCount);
             chat[messageId]['mes'] = processedText;
             chat[messageId]['gen_started'] = this.timeStarted;
             chat[messageId]['gen_finished'] = currentTime;
@@ -3213,6 +3209,10 @@ class StreamingProcessor {
                     this.messageReasoningDom.innerHTML = formattedReasoning;
                 }
             }
+
+            // Don't waste time calculating token count for streaming
+            const tokenCountText = (this.reasoning || '') + processedText;
+            const currentTokenCount = isFinal && power_user.message_token_count_enabled ? getTokenCount(tokenCountText, 0) : 0;
 
             if (currentTokenCount) {
                 chat[messageId]['extra']['token_count'] = currentTokenCount;
@@ -3236,10 +3236,13 @@ class StreamingProcessor {
             if (this.messageTextDom instanceof HTMLElement) {
                 this.messageTextDom.innerHTML = formattedText;
             }
+
+            const timePassed = formatGenerationTimer(this.timeStarted, currentTime, currentTokenCount);
             if (this.messageTimerDom instanceof HTMLElement) {
                 this.messageTimerDom.textContent = timePassed.timerValue;
                 this.messageTimerDom.title = timePassed.timerTitle;
             }
+
             this.setFirstSwipe(messageId);
         }
 

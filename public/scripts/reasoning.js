@@ -27,6 +27,7 @@ function getMessageFromJquery(element) {
  */
 export class PromptReasoning {
     static REASONING_PLACEHOLDER = '\u200B';
+    static REASONING_PLACEHOLDER_REGEX = new RegExp(`${PromptReasoning.REASONING_PLACEHOLDER}$`);
 
     constructor() {
         this.counter = 0;
@@ -121,8 +122,8 @@ function registerReasoningSlashCommands() {
         callback: (_args, value) => {
             const messageId = !isNaN(Number(value)) ? Number(value) : chat.length - 1;
             const message = chat[messageId];
-            const reasoning = message?.extra?.reasoning;
-            return reasoning !== PromptReasoning.REASONING_PLACEHOLDER ? reasoning : '';
+            const reasoning = String(message?.extra?.reasoning ?? '');
+            return reasoning.replace(PromptReasoning.REASONING_PLACEHOLDER_REGEX, '');
         },
     }));
 
@@ -151,7 +152,7 @@ function registerReasoningSlashCommands() {
                 return '';
             }
 
-            message.extra.reasoning = String(value);
+            message.extra.reasoning = String(value ?? '');
             await saveChatConditional();
 
             closeMessageEditor('reasoning');
@@ -181,12 +182,12 @@ function setReasoningEventHandlers(){
             return;
         }
 
-        const reasoning = message?.extra?.reasoning;
+        const reasoning = String(message?.extra?.reasoning ?? '');
         const chatElement = document.getElementById('chat');
         const textarea = document.createElement('textarea');
         const reasoningBlock = messageBlock.find('.mes_reasoning');
         textarea.classList.add('reasoning_edit_textarea');
-        textarea.value = reasoning === PromptReasoning.REASONING_PLACEHOLDER ? '' : reasoning;
+        textarea.value = reasoning.replace(PromptReasoning.REASONING_PLACEHOLDER_REGEX, '');
         $(textarea).insertBefore(reasoningBlock);
 
         if (!CSS.supports('field-sizing', 'content')) {
@@ -277,7 +278,7 @@ function setReasoningEventHandlers(){
 
     $(document).on('pointerup', '.mes_reasoning_copy', async function () {
         const { message } = getMessageFromJquery(this);
-        const reasoning = message?.extra?.reasoning;
+        const reasoning = String(message?.extra?.reasoning ?? '').replace(PromptReasoning.REASONING_PLACEHOLDER_REGEX, '');
 
         if (!reasoning) {
             return;
