@@ -1096,8 +1096,8 @@ async function preparePromptsForChatCompletion({ Scenario, charPersonality, name
         // Unordered prompts without marker
         { role: 'system', content: impersonationPrompt, identifier: 'impersonate' },
         { role: 'system', content: quietPrompt, identifier: 'quietPrompt' },
-        { role: 'system', content: bias, identifier: 'bias' },
         { role: 'system', content: groupNudge, identifier: 'groupNudge' },
+        { role: 'assistant', content: bias, identifier: 'bias' },
     ];
 
     // Tavern Extras - Summary
