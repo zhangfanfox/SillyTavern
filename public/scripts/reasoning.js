@@ -1,4 +1,5 @@
 import { chat, closeMessageEditor, saveChatConditional, saveSettingsDebounced, substituteParams, updateMessageBlock } from '../script.js';
+import { getRegexedString, regex_placement } from './extensions/regex/engine.js';
 import { t } from './i18n.js';
 import { MacrosParser } from './macros.js';
 import { Popup } from './popup.js';
@@ -224,7 +225,7 @@ function setReasoningEventHandlers(){
         }
 
         const textarea = messageBlock.find('.reasoning_edit_textarea');
-        const reasoning = String(textarea.val());
+        const reasoning = getRegexedString(String(textarea.val()), regex_placement.REASONING, { isEdit: true });
         message.extra.reasoning = reasoning;
         await saveChatConditional();
         updateMessageBlock(messageId, message);
