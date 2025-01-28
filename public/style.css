@@ -2919,6 +2919,16 @@ select option:not(:checked) {
     filter: grayscale(0.5);
 }
 
+#persona_controls .persona_name {
+    text-overflow: ellipsis;
+    overflow: hidden;
+    text-align: left;
+    white-space: nowrap;
+    margin-right: 10px;
+    font-size: calc(var(--mainFontSize) * 1.25);
+    color: var(--grey50);
+}
+
 input[type=search]::-webkit-search-cancel-button {
     -webkit-appearance: none;
     height: 1em;
@@ -3395,12 +3405,7 @@ grammarly-extension {
     cursor: pointer;
 }
 
-#rm_characters_block .form_create_bottom_buttons_block {
-    justify-content: space-evenly !important;
-    flex-grow: 0;
-}
-
-.form_create_bottom_buttons_block {
+.buttons_block {
     display: flex;
     flex: 1;
     gap: 5px;
@@ -3409,18 +3414,21 @@ grammarly-extension {
     flex-wrap: wrap;
 }
 
-.form_create_bottom_buttons_block .menu_button {
+.buttons_block .menu_button {
     display: flex;
     justify-content: center;
     align-items: center;
+    padding: 5px;
+    margin: 0;
+    filter: grayscale(0.5);
 }
 
-#delete_button,
+.red_button,
 .redWarningBG {
     background-color: var(--crimson70a) !important;
 }
 
-#delete_button:hover,
+.red_button:hover,
 .redWarningBG:hover {
     background-color: var(--fullred) !important;
 }
@@ -3612,13 +3620,6 @@ grammarly-extension {
 .menu_button.fa-fw {
     /* Font Awesome icons that are a menu button and should be fixed width need a slight fix. 1.25em is their default, but we need to account for button spacing. */
     min-width: calc(1.25em + 12px);
-}
-
-.avatar_div .menu_button,
-.form_create_bottom_buttons_block .menu_button {
-    padding: 5px;
-    margin: 0;
-    filter: grayscale(0.5);
 }
 
 .menu_button:hover,

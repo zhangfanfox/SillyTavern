@@ -4957,14 +4957,16 @@
                             <div class="persona_management_current_persona">
                                 <h4 class="standoutHeader" data-i18n="Current Persona">Current Persona</h4>
 
-                                <h4 data-i18n="Name">Name</h4>
-                                <div class="change_name">
-                                    <input id="your_name" name="your_name" data-i18n="[placeholder]Enter your name" placeholder="Enter your name" class="text_pole wide100p" value="" autocomplete="off">
-                                    <div id="your_name_button" class="menu_button fa-solid fa-check" title="Click to set a new User Name" data-i18n="[title]Click to set a new User Name">
-                                    </div>
-                                    <div id="sync_name_button" class="menu_button fa-solid fa-sync" title="Click to set user name for all messages" data-i18n="[title]Click to set user name for all messages">
-                                    </div>
-                                    <div id="persona_lore_button" class="menu_button fa-solid fa-globe" title="Persona Lore&#10;Alt+Click to open the lorebook" data-i18n="[title]Persona Lore Alt+Click to open the lorebook">
+                                <div id="persona_controls" class="flex-container">
+                                    <h5 id="your_name" class="persona_name">[Persona Name]</h5>
+                                    <div class="persona_controls_buttons_block buttons_block">
+                                        <div id="persona_rename_button" class="menu_button fa-solid fa-pencil" title="Rename Persona / Bind Name To Avatar" data-i18n="[title]Rename Persona / Bind Name To Avatar"></div>
+                                        <div id="sync_name_button" class="menu_button fa-solid fa-sync" title="Click to set user name for all messages" data-i18n="[title]Click to set user name for all messages"></div>
+                                        <div id="persona_lore_button" class="menu_button fa-solid fa-globe" title="Persona Lore&#10;Alt+Click to open the lorebook" data-i18n="[title]Persona Lore Alt+Click to open the lorebook"></div>
+
+                                        <div id="persona_set_image_button" class="menu_button fa-solid fa-image" title="Change Persona Image" data-i18n="[title]Change Persona Image"></div>
+                                        <div id="persona_duplicate_button" class="menu_button fa-solid fa-clone" title="Duplicate Persona" data-i18n="[title]Duplicate Persona"></div>
+                                        <div id="persona_delete_button" class="menu_button fa-solid fa-skull red_button" title="Delete Persona" data-i18n="[title]Delete Persona"></div>
                                     </div>
                                 </div>
 
@@ -5109,13 +5111,13 @@
                                 </div>
                             </div>
                             <div class="flex-container flexFlowColumn expander flexNoGap">
-                                <div id="avatar_div" class="avatar_div alignitemsflexstart justifySpaceBetween flexnowrap">
+                                <div id="avatar_div" class="avatar_div buttons_block alignitemsflexstart justifySpaceBetween flexnowrap">
                                     <label id="avatar_div_div" class="add_avatar avatar" for="add_avatar_button" title="Click to select a new avatar for this character" data-i18n="[title]Click to select a new avatar for this character">
                                         <img id="avatar_load_preview" src="img/ai4.png" alt="avatar">
                                         <input hidden type="file" id="add_avatar_button" name="avatar" accept="image/*">
                                     </label>
                                     <div class="flex-container" id="avatar_controls">
-                                        <div class="form_create_bottom_buttons_block">
+                                        <div class="form_create_bottom_buttons_block buttons_block">
                                             <div id="rm_button_back" class="menu_button fa-solid fa-left-long "></div>
                                             <!-- <div id="renameCharButton" class="menu_button fa-solid fa-user-pen" title="Rename Character"></div> -->
                                             <div id="favorite_button" class="menu_button fa-solid fa-star" title="Add to Favorites" data-i18n="[title]Add to Favorites"></div>
@@ -5131,7 +5133,7 @@
                                             <label for="create_button" id="create_button_label" class="menu_button fa-solid fa-user-check" title="Create Character" data-i18n="[title]Create Character">
                                                 <input type="submit" id="create_button" name="create_button">
                                             </label>
-                                            <div id="delete_button" class="menu_button fa-solid fa-skull " title="Delete Character" data-i18n="[title]Delete Character"></div>
+                                            <div id="delete_button" class="menu_button fa-solid fa-skull red_button" title="Delete Character" data-i18n="[title]Delete Character"></div>
                                         </div>
                                         <label class="flex1 height100p" for="char-management-dropdown">
                                             <select id="char-management-dropdown" class="text_pole">
@@ -5469,23 +5471,23 @@
                     <div class="wide100p character_name_block">
                         <span class="ch_name flex1"></span>
                         <div class="avatar-buttons">
-                            <button class="menu_button bind_user_name" title="Bind user name to that avatar" data-i18n="[title]Bind user name to that avatar">
+                            <!-- <button class="menu_button bind_user_name" title="Bind user name to that avatar" data-i18n="[title]Bind user name to that avatar">
                                 <i class="fa-fw fa-solid fa-user-edit fa-sm"></i>
                             </button>
                             <button class="menu_button set_persona_image" title="Change persona image" data-i18n="[title]Change persona image">
                                 <i class="fa-fw fa-solid fa-image fa-sm"></i>
                             </button>
-                            <!--
+
                             <button class="menu_button set_default_persona" title="Select this as default persona for the new chats." data-i18n="[title]Select this as default persona for the new chats.">
                                 <i class="fa-fw fa-solid fa-crown fa-sm"></i>
                             </button>
-                            -->
+
                             <button class="menu_button duplicate_persona" title="Duplicate persona" data-i18n="[title]Duplicate persona">
                                 <i class="fa-fw fa-solid fa-clone fa-sm"></i>
                             </button>
                             <button class="menu_button delete_avatar" title="Delete persona" data-i18n="[title]Delete persona">
                                 <i class="fa-fw fa-solid fa-trash-alt fa-sm"></i>
-                            </button>
+                            </button> -->
                         </div>
                     </div>
                     <div class="ch_description"></div>

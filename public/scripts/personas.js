@@ -466,6 +466,8 @@ const countPersonaDescriptionTokens = debounce(async () => {
 }, debounce_timeout.relaxed);
 
 export function setPersonaDescription() {
+    $('#your_name').text(name1);
+
     if (power_user.persona_description_position === persona_description_positions.AFTER_CHAR) {
         power_user.persona_description_position = persona_description_positions.IN_PROMPT;
     }
@@ -674,9 +676,8 @@ async function updatePersonaNameIfExists(avatarId, newName) {
     saveSettingsDebounced();
 }
 
-async function bindUserNameToPersona(e) {
-    e?.stopPropagation();
-    const avatarId = $(this).closest('.avatar-container').find('.avatar').attr('imgfile');
+async function bindUserNameToPersona() {
+    const avatarId = user_avatar;
 
     if (!avatarId) {
         console.warn('No avatar id found');
@@ -719,6 +720,7 @@ async function bindUserNameToPersona(e) {
         if (isCurrentPersona) {
             console.log(`Auto-updating user name to ${personaName}`);
             setUserName(personaName);
+            await updatePersonaNameIfExists(user_avatar, personaName);
         }
     } else {
         // If the user clicked ok, but didn't enter a name, delete the persona
@@ -730,6 +732,8 @@ async function bindUserNameToPersona(e) {
     saveSettingsDebounced();
     await getUserAvatars(true, avatarId);
     setPersonaDescription();
+
+    retriggerFirstMessageOnEmptyChat();
 }
 
 function selectCurrentPersona({ toastPersonaNameChange = true } = {}) {
@@ -969,22 +973,15 @@ async function lockPersona(type = 'chat') {
 }
 
 
-async function deleteUserAvatar(e) {
-    e?.stopPropagation();
-    const avatarId = $(this).closest('.avatar-container').find('.avatar').attr('imgfile');
+async function deleteUserAvatar() {
+    const avatarId = user_avatar;
 
     if (!avatarId) {
         console.warn('No avatar id found');
         return;
     }
-
-    if (avatarId == user_avatar) {
-        console.warn(`User tried to delete their current avatar ${avatarId}`);
-        toastr.warning(t`You cannot delete the avatar you are currently using`, t`Persona Warning`);
-        return;
-    }
-
-    const confirm = await Popup.show.confirm(t`Are you sure you want to delete this avatar?`, t`All information associated with its linked persona will be lost.`);
+    const confirm = await Popup.show.confirm(t`Delete Persona`,
+        t`Are you sure you want to delete this avatar?` + '<br />' + t`All information associated with its linked persona will be lost.`);
 
     if (!confirm) {
         console.debug('User cancelled deleting avatar');
@@ -1016,8 +1013,9 @@ async function deleteUserAvatar(e) {
         }
 
         saveSettingsDebounced();
-        await getUserAvatars();
-        updatePersonaLockIcons();
+
+        // Use the existing mechanism to re-render the persona list and choose the next persona here
+        await loadPersonaForCurrentChat({ doRender: true });
     }
 }
 
@@ -1237,9 +1235,9 @@ function updatePersonaLockIcons() {
     $('#lock_persona_to_char i.icon').toggleClass('fa-unlock', !hasCharLock);
 }
 
-async function loadPersonaForCurrentChat() {
+async function loadPersonaForCurrentChat({ doRender = false } = {}) {
     // Cache persona list to check if they exist
-    const userAvatars = await getUserAvatars(false);
+    const userAvatars = await getUserAvatars(doRender);
 
     // Define a persona for this chat
     let chatPersona = '';
@@ -1500,9 +1498,8 @@ async function duplicatePersona(avatarId) {
 }
 
 export function initPersonas() {
-    $(document).on('click', '.bind_user_name', bindUserNameToPersona);
     $(document).on('click', '.set_default_persona', toggleDefaultPersonaClicked);
-    $(document).on('click', '.delete_avatar', deleteUserAvatar);
+    $('#persona_delete_button').on('click', deleteUserAvatar);
     $('#lock_persona_default').on('click', () => togglePersonaLock('default'));
     $('#lock_user_name').on('click', () => togglePersonaLock('chat'));
     $('#lock_persona_to_char').on('click', () => togglePersonaLock('character'));
@@ -1548,11 +1545,13 @@ export function initPersonas() {
         retriggerFirstMessageOnEmptyChat();
     });
 
-    $('#your_name_button').click(async function () {
+    $('#persona_rename_button').click(async function () {
         const userName = String($('#your_name').val()).trim();
         setUserName(userName);
         await updatePersonaNameIfExists(user_avatar, userName);
         retriggerFirstMessageOnEmptyChat();
+        // TODO: Do both binding and/or rename?
+        //bindUserNameToPersona();
     });
 
     $(document).on('click', '#user_avatar_block .avatar_upload', function () {
@@ -1560,28 +1559,15 @@ export function initPersonas() {
         $('#avatar_upload_file').trigger('click');
     });
 
-    $(document).on('click', '#user_avatar_block .duplicate_persona', function (e) {
-        e.stopPropagation();
-        const avatarId = $(this).closest('.avatar-container').find('.avatar').attr('imgfile');
+    $('#persona_duplicate_button').on('click', () => duplicatePersona(user_avatar));
 
-        if (!avatarId) {
+    $('#persona_set_image_button').on('click', function () {
+        if (!user_avatar) {
             console.log('no imgfile');
             return;
         }
 
-        duplicatePersona(avatarId);
-    });
-
-    $(document).on('click', '#user_avatar_block .set_persona_image', function (e) {
-        e.stopPropagation();
-        const avatarId = $(this).closest('.avatar-container').find('.avatar').attr('imgfile');
-
-        if (!avatarId) {
-            console.log('no imgfile');
-            return;
-        }
-
-        $('#avatar_upload_overwrite').val(avatarId);
+        $('#avatar_upload_overwrite').val(user_avatar);
         $('#avatar_upload_file').trigger('click');
     });
 

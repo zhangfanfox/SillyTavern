@@ -6810,7 +6810,7 @@ export function setUserName(value, { toastPersonaNameChange = true } = {}) {
     if (name1 === undefined || name1 == '')
         name1 = default_user_name;
     console.log(`User name changed to ${name1}`);
-    $('#your_name').val(name1);
+    $('#your_name').text(name1);
     if (toastPersonaNameChange && power_user.persona_show_notifications) {
         toastr.success(t`Your messages will now be sent as ${name1}`, t`Persona Changed`);
     }
@@ -6864,7 +6864,7 @@ export async function getSettings() {
         settings = JSON.parse(data.settings);
         if (settings.username !== undefined && settings.username !== '') {
             name1 = settings.username;
-            $('#your_name').val(name1);
+            $('#your_name').text(name1);
         }
 
         await setUserControls(data.enable_accounts);
