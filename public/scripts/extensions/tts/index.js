@@ -30,6 +30,7 @@ import { GoogleTranslateTtsProvider } from './google-translate.js';
 export { talkingAnimation };
 
 const UPDATE_INTERVAL = 1000;
+const wrapper = new ModuleWorkerWrapper(moduleWorker);
 
 let voiceMapEntries = [];
 let voiceMap = {}; // {charName:voiceid, charName2:voiceid2}
@@ -406,6 +407,7 @@ function completeCurrentAudioJob() {
     currentAudioJob = null;
     talkingAnimation(false); //stop lip animation
     // updateUiPlayState();
+    wrapper.update();
 }
 
 /**
@@ -1219,7 +1221,6 @@ jQuery(async function () {
     loadSettings(); // Depends on Extension Controls and loadTtsProvider
     loadTtsProvider(extension_settings.tts.currentProvider); // No dependencies
     addAudioControl(); // Depends on Extension Controls
-    const wrapper = new ModuleWorkerWrapper(moduleWorker);
     setInterval(wrapper.update.bind(wrapper), UPDATE_INTERVAL); // Init depends on all the things
     eventSource.on(event_types.MESSAGE_SWIPED, resetTtsPlayback);
     eventSource.on(event_types.CHAT_CHANGED, onChatChanged);
