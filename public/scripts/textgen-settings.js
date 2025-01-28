@@ -986,6 +986,7 @@ export async function generateTextGenWithStreaming(generate_data, signal) {
         let logprobs = null;
         const swipes = [];
         const toolCalls = [];
+        const state = {};
         while (true) {
             const { done, value } = await reader.read();
             if (done) return;
@@ -1004,7 +1005,7 @@ export async function generateTextGenWithStreaming(generate_data, signal) {
                 logprobs = parseTextgenLogprobs(newText, data.choices?.[0]?.logprobs || data?.completion_probabilities);
             }
 
-            yield { text, swipes, logprobs, toolCalls };
+            yield { text, swipes, logprobs, toolCalls, state };
         }
     };
 }
@@ -1231,7 +1232,7 @@ export function getTextGenGenerationData(finalPrompt, maxTokens, isImpersonate, 
         'top_p': settings.top_p,
         'typical_p': settings.typical_p,
         'typical': settings.typical_p,
-        'sampler_seed': settings.seed,
+        'sampler_seed': settings.seed >= 0 ? settings.seed : undefined,
         'min_p': settings.min_p,
         'repetition_penalty': settings.rep_pen,
         'frequency_penalty': settings.freq_pen,
@@ -1294,7 +1295,7 @@ export function getTextGenGenerationData(finalPrompt, maxTokens, isImpersonate, 
         'temperature_last': (settings.type === OOBA || settings.type === APHRODITE || settings.type == TABBY) ? settings.temperature_last : undefined,
         'speculative_ngram': settings.type === TABBY ? settings.speculative_ngram : undefined,
         'do_sample': settings.type === OOBA ? settings.do_sample : undefined,
-        'seed': settings.seed,
+        'seed': settings.seed >= 0 ? settings.seed : undefined,
         'guidance_scale': cfgValues?.guidanceScale?.value ?? settings.guidance_scale ?? 1,
         'negative_prompt': cfgValues?.negativePrompt ?? substituteParams(settings.negative_prompt) ?? '',
         'grammar_string': settings.grammar_string,

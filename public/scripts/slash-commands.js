@@ -42,6 +42,7 @@ import {
     showMoreMessages,
     stopGeneration,
     substituteParams,
+    syncCurrentSwipeInfoExtras,
     system_avatar,
     system_message_types,
     this_chid,
@@ -1968,8 +1969,8 @@ export function initDefaultSlashCommands() {
     SlashCommandParser.addCommandObject(SlashCommand.fromProps({
         name: 'chat-render',
         helpString: 'Renders a specified number of messages into the chat window. Displays all messages if no argument is provided.',
-        callback: (args, number) => {
-            showMoreMessages(number && !isNaN(Number(number)) ? Number(number) : Number.MAX_SAFE_INTEGER);
+        callback: async (args, number) => {
+            await showMoreMessages(number && !isNaN(Number(number)) ? Number(number) : Number.MAX_SAFE_INTEGER);
             if (isTrueBoolean(String(args?.scroll ?? ''))) {
                 $('#chat').scrollTop(0);
             }
@@ -2814,8 +2815,11 @@ async function addSwipeCallback(args, value) {
     const newSwipeId = lastMessage.swipes.length - 1;
 
     if (isTrueBoolean(args.switch)) {
+        // Make sure ad-hoc changes to extras are saved before swiping away
+        syncCurrentSwipeInfoExtras();
         lastMessage.swipe_id = newSwipeId;
         lastMessage.mes = lastMessage.swipes[newSwipeId];
+        lastMessage.extra = structuredClone(lastMessage.swipe_info?.[newSwipeId]?.extra ?? lastMessage.extra ?? {});
     }
 
     await saveChatConditional();

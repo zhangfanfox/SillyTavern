@@ -253,6 +253,14 @@ let power_user = {
         content: 'Write {{char}}\'s next reply in a fictional chat between {{char}} and {{user}}.',
     },
 
+    reasoning: {
+        add_to_prompts: false,
+        prefix: '<think>\n',
+        suffix: '\n</think>',
+        separator: '\n\n',
+        max_additions: 1,
+    },
+
     personas: {},
     default_persona: null,
     persona_descriptions: {},
@@ -2534,7 +2542,7 @@ async function loadUntilMesId(mesId) {
     let target;
 
     while (getFirstDisplayedMessageId() > mesId && getFirstDisplayedMessageId() !== 0) {
-        showMoreMessages();
+        await showMoreMessages();
         await delay(1);
         target = $('#chat').find(`.mes[mesid=${mesId}]`);
 
@@ -4063,5 +4071,46 @@ $(document).ready(() => {
             }),
         ],
         helpString: 'activates a movingUI preset by name',
+    }));
+    SlashCommandParser.addCommandObject(SlashCommand.fromProps({
+        name: 'stop-strings',
+        aliases: ['stopping-strings', 'custom-stopping-strings', 'custom-stop-strings'],
+        helpString: `
+            <div>
+                Sets a list of custom stopping strings. Gets the list if no value is provided.
+            </div>
+            <div>
+                <strong>Examples:</strong>
+            </div>
+            <ul>
+                <li>Value must be a JSON-serialized array: <pre><code class="language-stscript">/stop-strings ["goodbye", "farewell"]</code></pre></li>
+                <li>Pipe characters must be escaped with a backslash: <pre><code class="language-stscript">/stop-strings ["left\\|right"]</code></pre></li>
+            </ul>
+        `,
+        returns: ARGUMENT_TYPE.LIST,
+        unnamedArgumentList: [
+            SlashCommandArgument.fromProps({
+                description: 'list of strings',
+                typeList: [ARGUMENT_TYPE.LIST],
+                acceptsMultiple: false,
+                isRequired: false,
+            }),
+        ],
+        callback: (_, value) => {
+            if (String(value ?? '').trim()) {
+                const parsedValue = ((x) => { try { return JSON.parse(x.toString()); } catch { return null; } })(value);
+                if (!parsedValue || !Array.isArray(parsedValue)) {
+                    throw new Error('Invalid list format. The value must be a JSON-serialized array of strings.');
+                }
+                parsedValue.forEach((item, index) => {
+                    parsedValue[index] = String(item);
+                });
+                power_user.custom_stopping_strings = JSON.stringify(parsedValue);
+                $('#custom_stopping_strings').val(power_user.custom_stopping_strings);
+                saveSettingsDebounced();
+            }
+
+            return power_user.custom_stopping_strings;
+        },
     }));
 });

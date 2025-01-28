@@ -37,6 +37,8 @@ import {
     getTiktokenTokenizer,
     sentencepieceTokenizers,
     TEXT_COMPLETION_MODELS,
+    webTokenizers,
+    getWebTokenizer,
 } from '../tokenizers.js';
 
 const API_OPENAI = 'https://api.openai.com/v1';
@@ -61,6 +63,7 @@ const API_DEEPSEEK = 'https://api.deepseek.com/beta';
  * @returns
  */
 function postProcessPrompt(messages, type, names) {
+    const addAssistantPrefix = x => x.length && (x[x.length - 1].role !== 'assistant' || (x[x.length - 1].prefix = true)) ? x : x;
     switch (type) {
         case 'merge':
         case 'claude':
@@ -70,7 +73,9 @@ function postProcessPrompt(messages, type, names) {
         case 'strict':
             return mergeMessages(messages, names, true, true);
         case 'deepseek':
-            return (x => x.length && (x[x.length - 1].role !== 'assistant' || (x[x.length - 1].prefix = true)) ? x : x)(mergeMessages(messages, names, true, false));
+            return addAssistantPrefix(mergeMessages(messages, names, true, false));
+        case 'deepseek-reasoner':
+            return addAssistantPrefix(mergeMessages(messages, names, true, true));
         default:
             return messages;
     }
@@ -284,6 +289,7 @@ async function sendMakerSuiteRequest(request, response) {
     const model = String(request.body.model);
     const stream = Boolean(request.body.stream);
     const showThoughts = Boolean(request.body.show_thoughts);
+    const isThinking = model.includes('thinking');
 
     const generationConfig = {
         stopSequences: request.body.stop,
@@ -324,6 +330,12 @@ async function sendMakerSuiteRequest(request, response) {
             body.systemInstruction = prompt.system_instruction;
         }
 
+        if (isThinking && showThoughts) {
+            generationConfig.thinkingConfig = {
+                includeThoughts: true,
+            };
+        }
+
         return body;
     }
 
@@ -337,7 +349,6 @@ async function sendMakerSuiteRequest(request, response) {
             controller.abort();
         });
 
-        const isThinking = model.includes('thinking');
         const apiVersion = isThinking ? 'v1alpha' : 'v1beta';
         const responseType = (stream ? 'streamGenerateContent' : 'generateContent');
 
@@ -382,11 +393,7 @@ async function sendMakerSuiteRequest(request, response) {
             const responseContent = candidates[0].content ?? candidates[0].output;
             console.log('Google AI Studio response:', responseContent);
 
-            if (Array.isArray(responseContent?.parts) && isThinking && !showThoughts) {
-                responseContent.parts = responseContent.parts.filter(part => !part.thought);
-            }
-
-            const responseText = typeof responseContent === 'string' ? responseContent : responseContent?.parts?.map(part => part.text)?.join('\n\n');
+            const responseText = typeof responseContent === 'string' ? responseContent : responseContent?.parts?.filter(part => !part.thought)?.map(part => part.text)?.join('\n\n');
             if (!responseText) {
                 let message = 'Google AI Studio Candidate text empty';
                 console.log(message, generateResponseJson);
@@ -394,7 +401,7 @@ async function sendMakerSuiteRequest(request, response) {
             }
 
             // Wrap it back to OAI format
-            const reply = { choices: [{ 'message': { 'content': responseText } }] };
+            const reply = { choices: [{ 'message': { 'content': responseText } }], responseContent };
             return response.send(reply);
         }
     } catch (error) {
@@ -636,6 +643,89 @@ async function sendCohereRequest(request, response) {
     }
 }
 
+/**
+ * Sends a request to DeepSeek API.
+ * @param {express.Request} request Express request
+ * @param {express.Response} response Express response
+ */
+async function sendDeepSeekRequest(request, response) {
+    const apiUrl = new URL(request.body.reverse_proxy || API_DEEPSEEK).toString();
+    const apiKey = request.body.reverse_proxy ? request.body.proxy_password : readSecret(request.user.directories, SECRET_KEYS.DEEPSEEK);
+
+    if (!apiKey && !request.body.reverse_proxy) {
+        console.log('DeepSeek API key is missing.');
+        return response.status(400).send({ error: true });
+    }
+
+    const controller = new AbortController();
+    request.socket.removeAllListeners('close');
+    request.socket.on('close', function () {
+        controller.abort();
+    });
+
+    try {
+        let bodyParams = {};
+
+        if (request.body.logprobs > 0) {
+            bodyParams['top_logprobs'] = request.body.logprobs;
+            bodyParams['logprobs'] = true;
+        }
+
+        const postProcessType = String(request.body.model).endsWith('-reasoner') ? 'deepseek-reasoner' : 'deepseek';
+        const processedMessages = postProcessPrompt(request.body.messages, postProcessType, getPromptNames(request));
+
+        const requestBody = {
+            'messages': processedMessages,
+            'model': request.body.model,
+            'temperature': request.body.temperature,
+            'max_tokens': request.body.max_tokens,
+            'stream': request.body.stream,
+            'presence_penalty': request.body.presence_penalty,
+            'frequency_penalty': request.body.frequency_penalty,
+            'top_p': request.body.top_p,
+            'stop': request.body.stop,
+            'seed': request.body.seed,
+            ...bodyParams,
+        };
+
+        const config = {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer ' + apiKey,
+            },
+            body: JSON.stringify(requestBody),
+            signal: controller.signal,
+        };
+
+        console.log('DeepSeek request:', requestBody);
+
+        const generateResponse = await fetch(apiUrl + '/chat/completions', config);
+
+        if (request.body.stream) {
+            forwardFetchResponse(generateResponse, response);
+        } else {
+            if (!generateResponse.ok) {
+                const errorText = await generateResponse.text();
+                console.log(`DeepSeek API returned error: ${generateResponse.status} ${generateResponse.statusText} ${errorText}`);
+                const errorJson = tryParse(errorText) ?? { error: true };
+                return response.status(500).send(errorJson);
+            }
+            const generateResponseJson = await generateResponse.json();
+            console.log('DeepSeek response:', generateResponseJson);
+            return response.send(generateResponseJson);
+        }
+    } catch (error) {
+        console.log('Error communicating with DeepSeek API: ', error);
+        if (!response.headersSent) {
+            response.send({ error: true });
+        } else {
+            response.end();
+        }
+    }
+}
+
+
 export const router = express.Router();
 
 router.post('/status', jsonParser, async function (request, response_getstatus_openai) {
@@ -680,8 +770,8 @@ router.post('/status', jsonParser, async function (request, response_getstatus_o
         api_key_openai = readSecret(request.user.directories, SECRET_KEYS.NANOGPT);
         headers = {};
     } else if (request.body.chat_completion_source === CHAT_COMPLETION_SOURCES.DEEPSEEK) {
-        api_url = API_DEEPSEEK.replace('/beta', '');
-        api_key_openai = readSecret(request.user.directories, SECRET_KEYS.DEEPSEEK);
+        api_url = new URL(request.body.reverse_proxy || API_DEEPSEEK.replace('/beta', ''));
+        api_key_openai = request.body.reverse_proxy ? request.body.proxy_password : readSecret(request.user.directories, SECRET_KEYS.DEEPSEEK);
         headers = {};
     } else {
         console.log('This chat completion source is not supported yet.');
@@ -777,6 +867,14 @@ router.post('/bias', jsonParser, async function (request, response) {
                 return response.send({});
             }
             encodeFunction = (text) => new Uint32Array(instance.encodeIds(text));
+        } else if (webTokenizers.includes(model)) {
+            const tokenizer = getWebTokenizer(model);
+            const instance = await tokenizer?.get();
+            if (!instance) {
+                console.warn('Tokenizer not initialized:', model);
+                return response.send({});
+            }
+            encodeFunction = (text) => new Uint32Array(instance.encode(text));
         } else {
             const tokenizer = getTiktokenTokenizer(model);
             encodeFunction = (tokenizer.encode.bind(tokenizer));
@@ -841,6 +939,7 @@ router.post('/generate', jsonParser, function (request, response) {
         case CHAT_COMPLETION_SOURCES.MAKERSUITE: return sendMakerSuiteRequest(request, response);
         case CHAT_COMPLETION_SOURCES.MISTRALAI: return sendMistralAIRequest(request, response);
         case CHAT_COMPLETION_SOURCES.COHERE: return sendCohereRequest(request, response);
+        case CHAT_COMPLETION_SOURCES.DEEPSEEK: return sendDeepSeekRequest(request, response);
     }
 
     let apiUrl;
@@ -899,6 +998,10 @@ router.post('/generate', jsonParser, function (request, response) {
             bodyParams['route'] = 'fallback';
         }
 
+        if (request.body.show_thoughts) {
+            bodyParams['include_reasoning'] = true;
+        }
+
         let cachingAtDepth = getConfigValue('claude.cachingAtDepth', -1);
         if (Number.isInteger(cachingAtDepth) && cachingAtDepth >= 0 && request.body.model?.startsWith('anthropic/claude-3')) {
             cachingAtDepthForOpenRouterClaude(request.body.messages, cachingAtDepth);
@@ -954,18 +1057,6 @@ router.post('/generate', jsonParser, function (request, response) {
         apiKey = readSecret(request.user.directories, SECRET_KEYS.BLOCKENTROPY);
         headers = {};
         bodyParams = {};
-    } else if (request.body.chat_completion_source === CHAT_COMPLETION_SOURCES.DEEPSEEK) {
-        apiUrl = API_DEEPSEEK;
-        apiKey = readSecret(request.user.directories, SECRET_KEYS.DEEPSEEK);
-        headers = {};
-        bodyParams = {};
-
-        if (request.body.logprobs > 0) {
-            bodyParams['top_logprobs'] = request.body.logprobs;
-            bodyParams['logprobs'] = true;
-        }
-
-        request.body.messages = postProcessPrompt(request.body.messages, 'deepseek', getPromptNames(request));
     } else {
         console.log('This chat completion source is not supported yet.');
         return response.status(400).send({ error: true });
@@ -1103,4 +1194,3 @@ router.post('/generate', jsonParser, function (request, response) {
         }
     }
 });
-
