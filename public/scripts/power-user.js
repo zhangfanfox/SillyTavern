@@ -4074,7 +4074,7 @@ $(document).ready(() => {
     }));
     SlashCommandParser.addCommandObject(SlashCommand.fromProps({
         name: 'stop-strings',
-        aliases: ['stopping-strings'],
+        aliases: ['stopping-strings', 'custom-stopping-strings', 'custom-stop-strings'],
         helpString: `
             <div>
                 Sets a list of custom stopping strings. Gets the list if no value is provided.
