@@ -4075,7 +4075,18 @@ $(document).ready(() => {
     SlashCommandParser.addCommandObject(SlashCommand.fromProps({
         name: 'stop-strings',
         aliases: ['stopping-strings'],
-        helpString: 'Sets a list of custom stopping strings. Gets the list if no value is provided.',
+        helpString: `
+            <div>
+                Sets a list of custom stopping strings. Gets the list if no value is provided.
+            </div>
+            <div>
+                <strong>Examples:</strong>
+            </div>
+            <ul>
+                <li>Value must be a JSON-serialized array: <pre><code class="language-stscript">/stop-strings ["goodbye", "farewell"]</code></pre></li>
+                <li>Pipe characters must be escaped with a backslash: <pre><code class="language-stscript">/stop-strings ["left\\|right"]</code></pre></li>
+            </ul>
+        `,
         returns: ARGUMENT_TYPE.LIST,
         unnamedArgumentList: [
             SlashCommandArgument.fromProps({
