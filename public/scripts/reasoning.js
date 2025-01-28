@@ -146,7 +146,7 @@ function registerReasoningSlashCommands() {
             }),
         ],
         callback: async (args, value) => {
-            const messageId = !isNaN(Number(args[0])) ? Number(args[0]) : chat.length - 1;
+            const messageId = !isNaN(Number(args.at)) ? Number(args.at) : chat.length - 1;
             const message = chat[messageId];
             if (!message?.extra) {
                 return '';
