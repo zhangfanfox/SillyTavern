@@ -233,7 +233,7 @@ function processAndQueueTtsMessage(message) {
         return;
     }
 
-    const lines = message.mes.split("\n");
+    const lines = message.mes.split('\n');
 
     for (let i = 0; i < lines.length; i++) {
         const line = lines[i];
@@ -245,7 +245,7 @@ function processAndQueueTtsMessage(message) {
         ttsJobQueue.push(
             Object.assign({}, message, {
                 mes: line,
-            })
+            }),
         );
     }
 }
