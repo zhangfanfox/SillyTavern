@@ -194,16 +194,16 @@ function registerReasoningSlashCommands() {
 
             if (!power_user.reasoning.prefix || !power_user.reasoning.suffix) {
                 toastr.warning(t`Both prefix and suffix must be set in the Reasoning Formatting settings.`);
-                return value.toString();
+                return String(value);
             }
 
-            const parsedReasoning = parseReasoningFromString(value.toString());
+            const parsedReasoning = parseReasoningFromString(String(value));
 
             if (!parsedReasoning) {
                 return '';
             }
 
-            const applyRegex = !isFalseBoolean(args.regex.toString());
+            const applyRegex = !isFalseBoolean(String(args.regex ?? ''));
             return applyRegex
                 ? getRegexedString(parsedReasoning.reasoning, regex_placement.REASONING)
                 : parsedReasoning.reasoning;
