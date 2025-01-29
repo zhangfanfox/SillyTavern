@@ -21,7 +21,7 @@ import {
 } from '../script.js';
 import { persona_description_positions, power_user } from './power-user.js';
 import { getTokenCountAsync } from './tokenizers.js';
-import { PAGINATION_TEMPLATE, debounce, delay, download, ensureImageFormatSupported, flashHighlight, getBase64Async, getCharIndex, onlyUnique, parseJsonFile } from './utils.js';
+import { PAGINATION_TEMPLATE, clearInfoBlock, debounce, delay, download, ensureImageFormatSupported, flashHighlight, getBase64Async, getCharIndex, onlyUnique, parseJsonFile, setInfoBlock } from './utils.js';
 import { debounce_timeout } from './constants.js';
 import { FILTER_TYPES, FilterHelper } from './filters.js';
 import { groups, selected_group } from './group-chats.js';
@@ -56,6 +56,15 @@ const DEFAULT_DEPTH = 2;
 const DEFAULT_ROLE = 0;
 export let user_avatar = '';
 export const personasFilter = new FilterHelper(debounce(getUserAvatars, debounce_timeout.quick));
+
+
+/**
+ * Checks if the Persona Management panel is currently open
+ * @returns {boolean}
+ */
+export function isPersonaPanelOpen() {
+    return document.querySelector('#persona-management-button .drawer-content')?.classList.contains('openDrawer') ?? false;
+}
 
 function switchPersonaGridView() {
     const state = localStorage.getItem(GRID_STORAGE_KEY) === 'true';
@@ -795,17 +804,14 @@ function selectCurrentPersona({ toastPersonaNameChange = true } = {}) {
         }
 
         // As the last step, inform user if the persona is only temporarily chosen
-        if (power_user.persona_show_notifications) {
-            const hasDifferentChatLock = !!chat_metadata['persona'] && chat_metadata['persona'] !== user_avatar;
-            const hasDifferentDefaultLock = power_user.default_persona && power_user.default_persona !== user_avatar;
-
-            if (hasDifferentChatLock || (!chat_metadata['persona'] && hasDifferentDefaultLock)) {
-                const message = t`A different persona is locked to this chat, or you have a different default persona set. The currently selected persona will only be temporary, and resets on reload. Consider locking this persona to the chat if you want to permanently use it.`
-                    + '<br /><br />'
-                    + t`Current Persona: ${power_user.personas[user_avatar]}`
-                    + (hasDifferentChatLock ? '<br />' + t`Chat persona: ${power_user.personas[chat_metadata['persona']]}` : '')
-                    + (hasDifferentDefaultLock ? '<br />' + t`Default persona: ${power_user.personas[power_user.default_persona]}` : '');
-                toastr.info(message, t`Temporary Persona`, { escapeHtml: false, preventDuplicates: true });
+        if (power_user.persona_show_notifications && !isPersonaPanelOpen()) {
+            const temporary = getPersonaTemporaryLockInfo();
+            if (temporary.isTemporary) {
+                toastr.info(t`This persona is only temporarily chosen. Click for more info.`, t`Temporary Persona`, {
+                    preventDuplicates: true, onclick: () => {
+                        toastr.info(temporary.info.replaceAll('\n', '<br />'), t`Temporary Persona`, { escapeHtml: false });
+                    },
+                });
             }
         }
     }
@@ -881,7 +887,7 @@ async function unlockPersona(type = 'chat') {
                 console.log(`Unlocking persona ${user_avatar} from this chat`);
                 delete chat_metadata['persona'];
                 await saveMetadata();
-                if (power_user.persona_show_notifications) {
+                if (power_user.persona_show_notifications && !isPersonaPanelOpen()) {
                     toastr.info(t`Persona ${name1} is now unlocked from this chat.`, t`Persona Unlocked`);
                 }
             }
@@ -895,7 +901,7 @@ async function unlockPersona(type = 'chat') {
                 power_user.persona_descriptions[user_avatar].connections = connections.filter(c => !isPersonaConnectionLocked(c));
                 saveSettingsDebounced();
                 updatePersonaConnectionsAvatarList();
-                if (power_user.persona_show_notifications) {
+                if (power_user.persona_show_notifications && !isPersonaPanelOpen()) {
                     toastr.info(t`Persona ${name1} is now unlocked from character ${name2}.`, t`Persona Unlocked`);
                 }
             }
@@ -939,7 +945,7 @@ async function lockPersona(type = 'chat') {
             console.log(`Locking persona ${user_avatar} to this chat`);
             chat_metadata['persona'] = user_avatar;
             saveMetadataDebounced();
-            if (power_user.persona_show_notifications) {
+            if (power_user.persona_show_notifications && !isPersonaPanelOpen()) {
                 toastr.success(t`User persona ${name1} is locked to ${name2} in this chat`, t`Persona Locked`);
             }
             break;
@@ -971,7 +977,9 @@ async function lockPersona(type = 'chat') {
                     let additional = '';
                     if (unlinkedCharacters.length)
                         additional += `<br /><br />${t`Unlinked existing persona${unlinkedCharacters.length > 1 ? 's' : ''}: ${unlinkedCharacters.join(', ')}`}`;
-                    toastr.success(t`User persona ${name1} is locked to character ${name2}${additional}`, t`Persona Locked`, { escapeHtml: false });
+                    if (additional || !isPersonaPanelOpen()) {
+                        toastr.success(t`User persona ${name1} is locked to character ${name2}${additional}`, t`Persona Locked`, { escapeHtml: false });
+                    }
                 }
             }
             break;
@@ -1175,7 +1183,7 @@ async function toggleDefaultPersonaClicked(e) {
  * @param {boolean} [options.quiet=false] If true, no confirmation popups will be shown
  * @returns {Promise<void>}
  */
-async function toggleDefaultPersona(avatarId, { quiet: quiet = false } = {}) {
+async function toggleDefaultPersona(avatarId, { quiet = false } = {}) {
     if (!avatarId) {
         console.warn('No avatar id found');
         return;
@@ -1200,7 +1208,7 @@ async function toggleDefaultPersona(avatarId, { quiet: quiet = false } = {}) {
         }
 
         console.log(`Removing default persona ${avatarId}`);
-        if (power_user.persona_show_notifications) {
+        if (power_user.persona_show_notifications && !isPersonaPanelOpen()) {
             toastr.info(t`This persona will no longer be used by default when you open a new chat.`, t`Default Persona Removed`);
         }
         delete power_user.default_persona;
@@ -1217,7 +1225,7 @@ async function toggleDefaultPersona(avatarId, { quiet: quiet = false } = {}) {
         }
 
         power_user.default_persona = avatarId;
-        if (power_user.persona_show_notifications) {
+        if (power_user.persona_show_notifications && !isPersonaPanelOpen()) {
             toastr.success(t`Set to ${power_user.personas[avatarId]}.This persona will be used by default when you open a new chat.`, t`Default Persona`);
         }
     }
@@ -1280,6 +1288,53 @@ function updatePersonaUIStates() {
     $('#lock_persona_to_char').toggleClass('locked', personaStates.locked.character);
     $('#lock_persona_to_char i.icon').toggleClass('fa-lock', personaStates.locked.character);
     $('#lock_persona_to_char i.icon').toggleClass('fa-unlock', !personaStates.locked.character);
+
+    // Persona panel info block
+    const { isTemporary, info } = getPersonaTemporaryLockInfo();
+    if (isTemporary) {
+        const messageContainer = document.createElement('div');
+        messageContainer.innerHTML = t`Temporary persona in use.`;
+
+        const infoIcon = document.createElement('i');
+        infoIcon.classList.add('fa-solid', 'fa-circle-info', 'opacity50p', 'marginLeft5');
+        infoIcon.title = info;
+        messageContainer.appendChild(infoIcon);
+
+        // Set the info block content
+        setInfoBlock('#persona_connections_info_block', messageContainer, 'hint');
+    } else {
+        // Clear the info block if no condition applies
+        clearInfoBlock('#persona_connections_info_block');
+    }
+}
+
+/**
+ * Checks if the currently selected persona is temporary due to either a different default persona
+ * or a different persona being locked to the current chat. If so, it also returns a string that
+ * can be used to describe this situation to the user.
+ *
+ * @returns {{isTemporary: boolean, hasDifferentChatLock: boolean, hasDifferentDefaultLock: boolean, info: string?}} An object containing 4 properties:
+ *   - isTemporary: A boolean indicating if the current persona is temporary
+ *   - hasDifferentChatLock: A boolean indicating if the current chat has a different persona locked to it
+ *   - hasDifferentDefaultLock: A boolean indicating if there is a different default persona set
+ *   - info: A string describing the situation, or an empty if not temporary
+ */
+function getPersonaTemporaryLockInfo() {
+    const hasDifferentChatLock = !!chat_metadata['persona'] && chat_metadata['persona'] !== user_avatar;
+    const hasDifferentDefaultLock = power_user.default_persona && power_user.default_persona !== user_avatar;
+    const isTemporary = hasDifferentChatLock || (!chat_metadata['persona'] && hasDifferentDefaultLock);
+    const info = isTemporary ? t`A different persona is locked to this chat, or you have a different default persona set. The currently selected persona will only be temporary, and resets on reload. Consider locking this persona to the chat if you want to permanently use it.`
+        + '\n\n'
+        + t`Current Persona: ${power_user.personas[user_avatar]}`
+        + (hasDifferentChatLock ? '\n' + t`Chat persona: ${power_user.personas[chat_metadata['persona']]}` : '')
+        + (hasDifferentDefaultLock ? '\n' + t`Default persona: ${power_user.personas[power_user.default_persona]}` : '') : '';
+
+    return {
+        isTemporary: isTemporary,
+        hasDifferentChatLock: hasDifferentChatLock,
+        hasDifferentDefaultLock: hasDifferentDefaultLock,
+        info: info,
+    };
 }
 
 async function loadPersonaForCurrentChat({ doRender = false } = {}) {

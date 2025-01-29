@@ -2961,6 +2961,10 @@ select option:not(:checked) {
     color: var(--grey50);
 }
 
+#persona_connections_buttons {
+    margin-bottom: 5px;
+}
+
 input[type=search]::-webkit-search-cancel-button {
     -webkit-appearance: none;
     height: 1em;
@@ -3910,6 +3914,14 @@ input[type='checkbox'].del_checkbox {
 #lock_persona_to_char.locked .icon,
 .avatar-container.locked_to_character .locked_to_character_label .icon {
     color: var(--active);
+}
+
+#lock_user_name.locked {
+    border-color: color-mix(in srgb, var(--SmartThemeQuoteColor) 50%, var(--SmartThemeBorderColor));;
+}
+
+#lock_persona_to_char.locked {
+    border-color: color-mix(in srgb, var(--active) 50%, var(--SmartThemeBorderColor));
 }
 
 #user_avatar_block .avatar_upload {
@@ -5921,4 +5933,37 @@ body:not(.movingUI) .drawer-content.maximized {
 
 .multiline {
     white-space: pre-wrap;
+}
+
+.info-block {
+    padding: 10px 1em;
+    margin: 1em 0;
+    border-radius: 10px;
+    border-left: 5px solid;
+    background-color: var(--SmartThemeBlurTintColor);
+    color: var(--SmartThemeBodyColor);
+    backdrop-filter: blur(calc(var(--SmartThemeBlurStrength)));
+    -webkit-backdrop-filter: blur(calc(var(--SmartThemeBlurStrength)));
+}
+
+.info-block.hint {
+    border-color: var(--info-color, #7fb3e8);
+    background-color: rgba(163, 201, 241, 0.2);
+}
+
+.info-block.info {
+    border-color: var(--default-color, #e8e07f);
+    background-color: rgba(255, 255, 224, 0.2);
+}
+
+.info-block.warning {
+    border-color: var(--warning-color, #e8a97f);
+    background-color: rgba(241, 198, 163, 0.2);
+    /* Reset the font weight from that main warning class */
+    font-weight: unset;
+}
+
+.info-block.error {
+    border-color: var(--error-color, #e87f7f);
+    background-color: rgba(241, 163, 163, 0.2);
 }

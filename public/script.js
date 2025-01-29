@@ -237,6 +237,7 @@ import {
     getConnectedPersonas,
     askForPersonaSelection,
     getCurrentConnectionObj,
+    isPersonaPanelOpen,
 } from './scripts/personas.js';
 import { getBackgrounds, initBackgrounds, loadBackgroundSettings, background_settings } from './scripts/backgrounds.js';
 import { hideLoader, showLoader } from './scripts/loader.js';
@@ -6811,7 +6812,7 @@ export function setUserName(value, { toastPersonaNameChange = true } = {}) {
         name1 = default_user_name;
     console.log(`User name changed to ${name1}`);
     $('#your_name').text(name1);
-    if (toastPersonaNameChange && power_user.persona_show_notifications) {
+    if (toastPersonaNameChange && power_user.persona_show_notifications && !isPersonaPanelOpen()) {
         toastr.success(t`Your messages will now be sent as ${name1}`, t`Persona Changed`);
     }
     saveSettingsDebounced();
