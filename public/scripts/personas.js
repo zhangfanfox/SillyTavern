@@ -10,7 +10,6 @@ import {
     getRequestHeaders,
     getThumbnailUrl,
     groupToEntity,
-    menu_type,
     name1,
     name2,
     reloadCurrentChat,
@@ -40,6 +39,15 @@ import { saveMetadataDebounced } from './extensions.js';
 
 /** @typedef {'chat' | 'character' | 'default'} PersonaLockType Type of the persona lock */
 
+/**
+ * @typedef {object} PersonaState
+ * @property {string} avatarId - The avatar id of the persona
+ * @property {boolean} default - Whether this persona is the default one for all new chats
+ * @property {object} locked - An object containing the lock states
+ * @property {boolean} locked.chat - Whether the persona is locked to the currently open chat
+ * @property {boolean} locked.character - Whether the persona is locked to the currently open character or group
+ */
+
 const USER_AVATAR_PATH = 'User Avatars/';
 
 let savePersonasPage = 0;
@@ -66,7 +74,7 @@ export function getUserAvatar(avatarImg) {
 export function initUserAvatar(avatar) {
     user_avatar = avatar;
     reloadUserAvatar();
-    highlightSelectedAvatar();
+    updatePersonaUIStates();
 }
 
 /**
@@ -74,17 +82,12 @@ export function initUserAvatar(avatar) {
  * @param {string} imgfile Link to an image file
  */
 export function setUserAvatar(imgfile, { toastPersonaNameChange = true } = {}) {
-    user_avatar = imgfile && typeof imgfile === 'string' ? imgfile : $(this).attr('imgfile');
+    user_avatar = imgfile && typeof imgfile === 'string' ? imgfile : $(this).attr('data-avatar-id');
     reloadUserAvatar();
-    highlightSelectedAvatar();
+    updatePersonaUIStates();
     selectCurrentPersona({ toastPersonaNameChange: toastPersonaNameChange });
     saveSettingsDebounced();
     $('.zoomed_avatar[forchar]').remove();
-}
-
-function highlightSelectedAvatar() {
-    $('#user_avatar_block .avatar-container').removeClass('selected');
-    $(`#user_avatar_block .avatar-container[imgfile="${user_avatar}"]`).addClass('selected');
 }
 
 function reloadUserAvatar(force = false) {
@@ -146,24 +149,32 @@ function verifyPersonaSearchSortRule() {
 
 /**
  * Gets a rendered avatar block.
- * @param {string} name Avatar file name
+ * @param {string} avatarId Avatar file name
  * @returns {JQuery<HTMLElement>} Avatar block
  */
-function getUserAvatarBlock(name) {
+function getUserAvatarBlock(avatarId) {
     const isFirefox = navigator.userAgent.toLowerCase().indexOf('firefox') > -1;
     const template = $('#user_avatar_template .avatar-container').clone();
-    const personaName = power_user.personas[name];
-    const personaDescription = power_user.persona_descriptions[name]?.description;
+    const personaName = power_user.personas[avatarId];
+    const personaDescription = power_user.persona_descriptions[avatarId]?.description;
+
     template.find('.ch_name').text(personaName || '[Unnamed Persona]');
     template.find('.ch_description').text(personaDescription || $('#user_avatar_block').attr('no_desc_text')).toggleClass('text_muted', !personaDescription);
-    template.attr('imgfile', name);
-    template.find('.avatar').attr('imgfile', name).attr('title', name);
-    template.toggleClass('default_persona', name === power_user.default_persona);
-    let avatarUrl = getUserAvatar(name);
+    template.attr('data-avatar-id', avatarId);
+    template.find('.avatar').attr('data-avatar-id', avatarId).attr('title', avatarId);
+    template.toggleClass('default_persona', avatarId === power_user.default_persona);
+    let avatarUrl = getUserAvatar(avatarId);
     if (isFirefox) {
         avatarUrl += '?t=' + Date.now();
     }
     template.find('img').attr('src', avatarUrl);
+
+    // Make sure description block has at least three rows. Otherwise height looks inconsistent. I don't have a better idea for this.
+    const currentText = template.find('.ch_description').text();
+    if (currentText.split('\n').length < 3) {
+        template.find('.ch_description').text(currentText + '\n\xa0\n\xa0');
+    }
+
     $('#user_avatar_block').append(template);
     return template;
 }
@@ -218,7 +229,7 @@ export async function getUserAvatars(doRender = true, openPageAt = '') {
                 for (const item of data) {
                     $(listId).append(getUserAvatarBlock(item));
                 }
-                highlightSelectedAvatar();
+                updatePersonaUIStates();
             },
             afterSizeSelectorChange: function (e) {
                 localStorage.setItem(storageKey, e.target.value);
@@ -486,7 +497,7 @@ export function setPersonaDescription() {
     $('#persona_lore_button').toggleClass('world_set', !!power_user.persona_description_lorebook);
     countPersonaDescriptionTokens();
 
-    updatePersonaLockIcons();
+    updatePersonaUIStates();
     updatePersonaConnectionsAvatarList();
 }
 
@@ -780,7 +791,7 @@ function selectCurrentPersona({ toastPersonaNameChange = true } = {}) {
                 toastr.success(`Persona ${personaName} selected and auto-locked to current chat`, t`Persona Selected`);
             }
             saveMetadataDebounced();
-            updatePersonaLockIcons();
+            updatePersonaUIStates();
         }
 
         // As the last step, inform user if the persona is only temporarily chosen
@@ -806,8 +817,8 @@ function selectCurrentPersona({ toastPersonaNameChange = true } = {}) {
  * @returns {boolean} Whether the connection is locked
  */
 export function isPersonaConnectionLocked(connection) {
-    return (menu_type === 'character_edit' && connection.type === 'character' && connection.id === characters[this_chid]?.avatar)
-        || (menu_type === 'group_edit' && connection.type === 'group' && connection.id === selected_group);
+    return (!selected_group && connection.type === 'character' && connection.id === characters[this_chid]?.avatar)
+        || (selected_group && connection.type === 'group' && connection.id === selected_group);
 }
 
 /**
@@ -894,7 +905,7 @@ async function unlockPersona(type = 'chat') {
             throw new Error(`Unknown persona lock type: ${type}`);
     }
 
-    updatePersonaLockIcons();
+    updatePersonaUIStates();
 }
 
 /**
@@ -969,7 +980,7 @@ async function lockPersona(type = 'chat') {
             throw new Error(`Unknown persona lock type: ${type}`);
     }
 
-    updatePersonaLockIcons();
+    updatePersonaUIStates();
 }
 
 
@@ -1149,7 +1160,7 @@ function getOrCreatePersonaDescriptor() {
 
 async function toggleDefaultPersonaClicked(e) {
     e?.stopPropagation();
-    const avatarId = $(e.currentTarget).closest('.avatar-container').find('.avatar').attr('imgfile');
+    const avatarId = $(e.currentTarget).closest('.avatar-container').find('.avatar').attr('data-avatar-id');
     if (avatarId) {
         await toggleDefaultPersona(avatarId);
     } else {
@@ -1213,26 +1224,62 @@ async function toggleDefaultPersona(avatarId, { quiet: quiet = false } = {}) {
 
     saveSettingsDebounced();
     await getUserAvatars(true, avatarId);
-    updatePersonaLockIcons();
+    updatePersonaUIStates();
 }
 
-function updatePersonaLockIcons() {
-    const isDefaultPersona = power_user.default_persona === user_avatar;
-    $('#lock_persona_default').toggleClass('locked', isDefaultPersona);
-
-    const hasChatLock = chat_metadata['persona'] == user_avatar;
-    $('#lock_user_name').toggleClass('locked', hasChatLock);
-    $('#lock_user_name i.icon').toggleClass('fa-lock', hasChatLock);
-    $('#lock_user_name i.icon').toggleClass('fa-unlock', !hasChatLock);
+/**
+ * Returns an object with 3 properties that describe the state of the given persona
+ *
+ * - default: Whether this persona is the default one for all new chats
+ * - locked: An object containing the lock states
+ *   - chat: Whether the persona is locked to the currently open chat
+ *   - character: Whether the persona is locked to the currently open character or group
+ * @param {string} avatarId - The avatar id of the persona to get the state for
+ * @returns {PersonaState} An object describing the state of the given persona
+ */
+function getPersonaStates(avatarId) {
+    const isDefaultPersona = power_user.default_persona === avatarId;
+    const hasChatLock = chat_metadata['persona'] == avatarId;
 
     /** @type {PersonaConnection[]} */
-    const connections = power_user.persona_descriptions[user_avatar]?.connections;
+    const connections = power_user.persona_descriptions[avatarId]?.connections;
     const hasCharLock = !!connections?.some(c =>
-        (menu_type === 'character_edit' && c.type === 'character' && c.id === characters[this_chid]?.avatar)
-        || (menu_type === 'group_edit' && c.type === 'group' && c.id === selected_group));
-    $('#lock_persona_to_char').toggleClass('locked', hasCharLock);
-    $('#lock_persona_to_char i.icon').toggleClass('fa-lock', hasCharLock);
-    $('#lock_persona_to_char i.icon').toggleClass('fa-unlock', !hasCharLock);
+        (!selected_group && c.type === 'character' && c.id === characters[this_chid]?.avatar)
+        || (selected_group && c.type === 'group' && c.id === selected_group));
+
+    return {
+        avatarId: avatarId,
+        default: isDefaultPersona,
+        locked: {
+            chat: hasChatLock,
+            character: hasCharLock,
+        },
+    };
+}
+
+function updatePersonaUIStates() {
+    // Update the persona list
+    $('#user_avatar_block .avatar-container').each(function () {
+        const avatarId = $(this).attr('data-avatar-id');
+        const states = getPersonaStates(avatarId);
+        $(this).toggleClass('default_persona', states.default);
+        $(this).toggleClass('locked_to_chat', states.locked.chat);
+        $(this).toggleClass('locked_to_character', states.locked.character);
+        $(this).toggleClass('selected', avatarId === user_avatar);
+    });
+
+    // Buttons for the persona panel on the right
+    const personaStates = getPersonaStates(user_avatar);
+
+    $('#lock_persona_default').toggleClass('locked', personaStates.default);
+
+    $('#lock_user_name').toggleClass('locked', personaStates.locked.chat);
+    $('#lock_user_name i.icon').toggleClass('fa-lock', personaStates.locked.chat);
+    $('#lock_user_name i.icon').toggleClass('fa-unlock', !personaStates.locked.chat);
+
+    $('#lock_persona_to_char').toggleClass('locked', personaStates.locked.character);
+    $('#lock_persona_to_char i.icon').toggleClass('fa-lock', personaStates.locked.character);
+    $('#lock_persona_to_char i.icon').toggleClass('fa-unlock', !personaStates.locked.character);
 }
 
 async function loadPersonaForCurrentChat({ doRender = false } = {}) {
@@ -1315,7 +1362,7 @@ async function loadPersonaForCurrentChat({ doRender = false } = {}) {
         }
     }
 
-    updatePersonaLockIcons();
+    updatePersonaUIStates();
 }
 
 /**
@@ -1325,7 +1372,7 @@ async function loadPersonaForCurrentChat({ doRender = false } = {}) {
  * @returns {string[]} - An array of persona keys that are connected to the given character key
  */
 export function getConnectedPersonas(characterKey = undefined) {
-    characterKey ??= menu_type === 'group_edit' ? selected_group : characters[this_chid]?.avatar;
+    characterKey ??= selected_group || characters[this_chid]?.avatar;
     const connectedPersonas = Object.entries(power_user.persona_descriptions)
         .filter(([_, desc]) => desc.connections?.some(conn => conn.type === 'character' && conn.id === characterKey))
         .map(([key, _]) => key);
@@ -1339,9 +1386,9 @@ export function getConnectedPersonas(characterKey = undefined) {
  */
 
 export function getCurrentConnectionObj() {
-    if (menu_type === 'group_edit')
+    if (selected_group)
         return { type: 'group', id: selected_group };
-    if (menu_type == 'character_edit')
+    if (characters[this_chid]?.avatar)
         return { type: 'character', id: characters[this_chid]?.avatar };
     return null;
 }
@@ -1538,7 +1585,7 @@ export function initPersonas() {
     $('#avatar_upload_file').on('change', changeUserAvatar);
 
     $(document).on('click', '#user_avatar_block .avatar-container', function () {
-        const imgfile = $(this).attr('imgfile');
+        const imgfile = $(this).attr('data-avatar-id');
         setUserAvatar(imgfile);
 
         // force firstMes {{user}} update on persona switch

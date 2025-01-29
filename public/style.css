@@ -222,6 +222,37 @@ table.responsiveTable {
     animation-name: flash;
 }
 
+.has_hover_label .label_icon {
+    transition: opacity var(--animation-duration) ease, max-width var(--animation-duration) ease;
+}
+.has_hover_label .label {
+    transition: opacity var(--animation-duration-slow) ease, max-width var(--animation-duration-slow) ease;
+    /* Prevent double gap on hidden icon */
+    margin-left: -5px;
+}
+
+.has_hover_label .label_icon,
+.has_hover_label .label {
+    transition-delay: var(--animation-duration-slow);
+}
+.has_hover_label.fast .label_icon,
+.has_hover_label.fast .label {
+    transition-delay: var(--animation-duration);
+}
+
+.has_hover_label .label_icon,
+.has_hover_label:hover .label {
+    opacity: 1;
+    max-width: 100px;
+}
+
+.has_hover_label:hover .label_icon,
+.has_hover_label .label {
+    opacity: 0;
+    max-width: 0;
+    overflow: hidden;
+}
+
 /* Keyboard/focus navigation styling */
 /* Mimic the outline of keyboard navigation for most most focusable controls */
 .interactable {
@@ -2805,6 +2836,7 @@ select option:not(:checked) {
 .menu_button.disabled {
     filter: brightness(75%) grayscale(1);
     opacity: 0.5;
+    cursor: inherit;
     pointer-events: none;
 }
 
@@ -2880,8 +2912,7 @@ select option:not(:checked) {
 }
 
 #form_character_search_form .menu_button,
-#GroupFavDelOkBack .menu_button,
-.avatar-container .menu_button {
+#GroupFavDelOkBack .menu_button {
     margin: 0;
     height: fit-content;
     padding: 5px;
@@ -2915,8 +2946,9 @@ select option:not(:checked) {
     width: max-content;
 }
 
-#persona-management-block .menu_button {
-    filter: grayscale(0.5);
+#persona-management-block .avatar_container_states .menu_button {
+    padding: 3px 5px;
+    pointer-events: initial;
 }
 
 #persona_controls .persona_name {
@@ -3321,28 +3353,6 @@ grammarly-extension {
     z-index: 35;
 }
 
-.avatar-container .avatar-buttons {
-    display: flex;
-    flex-direction: row;
-    gap: 3px;
-    opacity: 0.3;
-    transition: opacity 0.25s ease-in-out;
-}
-
-.avatar-container .avatar-buttons:hover {
-    opacity: 1;
-}
-
-.avatar-container .avatar-buttons .menu_button {
-    padding: 3px;
-}
-
-/* Ross should be able to handle this later */
-/*.big-avatars .avatar-buttons{
-    justify-content: center;
-    width: fit-content;
-}*/
-
 .avatar_div .avatar {
     /*     margin-left: 4px;
     margin-right: 10px;
@@ -3603,6 +3613,7 @@ grammarly-extension {
 
 .menu_button {
     color: var(--SmartThemeBodyColor);
+    filter: grayscale(0.5);
     background-color: var(--SmartThemeBlurTintColor);
     border: 1px solid var(--SmartThemeBorderColor);
     border-radius: 5px;
@@ -3622,8 +3633,8 @@ grammarly-extension {
     min-width: calc(1.25em + 12px);
 }
 
-.menu_button:hover,
-.menu_button.active {
+.menu_button:not(.disabled):hover,
+.menu_button:not(.disabled).active {
     background-color: var(--white30a);
 }
 
@@ -3876,11 +3887,28 @@ input[type='checkbox'].del_checkbox {
     color: var(--golden);
 }
 
+.avatar-container .avatar_state .fa-lock {
+    color: var(--active);
+}
+
+.avatar-container:not(.locked_to_chat) .locked_to_chat_label {
+    display: none;
+}
+.avatar-container:not(.locked_to_character) .locked_to_character_label {
+    display: none;
+}
+
 #lock_persona_default.locked i.icon {
     color: var(--golden);
 }
-#lock_user_name.locked i.icon,
-#lock_persona_to_char.locked i.icon {
+
+#lock_user_name.locked .icon,
+.avatar-container.locked_to_chat .locked_to_chat_label .icon {
+    color: var(--SmartThemeQuoteColor);
+}
+
+#lock_persona_to_char.locked .icon,
+.avatar-container.locked_to_character .locked_to_character_label .icon {
     color: var(--active);
 }
 
