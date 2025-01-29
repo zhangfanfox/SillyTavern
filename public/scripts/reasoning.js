@@ -311,13 +311,18 @@ function parseReasoningFromString(str) {
     }
 
     try {
-        let reasoning = '';
-
         const regex = new RegExp(`${escapeRegex(power_user.reasoning.prefix)}(.*?)${escapeRegex(power_user.reasoning.suffix)}`, 's');
-        const content = String(str).replace(regex, (_match, captureGroup) => {
-            reasoning = power_user.trim_spaces ? captureGroup.trim() : captureGroup;
+
+        let reasoning = '';
+        let content = String(str).replace(regex, (_match, captureGroup) => {
+            reasoning = captureGroup;
             return '';
         });
+
+        if (reasoning && power_user.trim_spaces) {
+            reasoning = reasoning.trim();
+            content = content.trim();
+        }
 
         return { reasoning, content };
     } catch (error) {
