@@ -6093,6 +6093,19 @@ export async function saveReply(type, getMessage, fromStreaming, title, swipes, 
     return { type, getMessage };
 }
 
+export function syncCurrentSwipeInfoExtras() {
+    if (!chat.length) {
+        return;
+    }
+    const currentMessage = chat[chat.length - 1];
+    if (currentMessage && Array.isArray(currentMessage.swipe_info) && typeof currentMessage.swipe_id === 'number') {
+        const swipeInfo = currentMessage.swipe_info[currentMessage.swipe_id];
+        if (swipeInfo && typeof swipeInfo === 'object') {
+            swipeInfo.extra = structuredClone(currentMessage.extra);
+        }
+    }
+}
+
 function saveImageToMessage(img, mes) {
     if (mes && img.image) {
         if (!mes.extra || typeof mes.extra !== 'object') {
@@ -8524,6 +8537,9 @@ function swipe_left() {      // when we swipe left..but no generation.
         streamingProcessor.onStopStreaming();
     }
 
+    // Make sure ad-hoc changes to extras are saved before swiping away
+    syncCurrentSwipeInfoExtras();
+
     const swipe_duration = 120;
     const swipe_range = '700px';
     chat[chat.length - 1]['swipe_id']--;
@@ -8658,6 +8674,9 @@ const swipe_right = () => {
     if (isHordeGenerationNotAllowed()) {
         return unblockGeneration();
     }
+
+    // Make sure ad-hoc changes to extras are saved before swiping away
+    syncCurrentSwipeInfoExtras();
 
     const swipe_duration = 200;
     const swipe_range = 700;
