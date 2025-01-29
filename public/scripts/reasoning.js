@@ -8,7 +8,7 @@ import { SlashCommand } from './slash-commands/SlashCommand.js';
 import { ARGUMENT_TYPE, SlashCommandArgument, SlashCommandNamedArgument } from './slash-commands/SlashCommandArgument.js';
 import { commonEnumProviders } from './slash-commands/SlashCommandCommonEnumsProvider.js';
 import { SlashCommandParser } from './slash-commands/SlashCommandParser.js';
-import { copyText, escapeRegex } from './utils.js';
+import { copyText, escapeRegex, isFalseBoolean } from './utils.js';
 
 /**
  * Gets a message from a jQuery element.
@@ -172,13 +172,22 @@ function registerReasoningSlashCommands() {
         name: 'reasoning-parse',
         returns: 'reasoning string',
         helpString: t`Extracts the reasoning block from a string using the Reasoning Formatting settings.`,
+        namedArgumentList: [
+            SlashCommandNamedArgument.fromProps({
+                name: 'regex',
+                description: 'Whether to apply regex scripts to the reasoning content.',
+                typeList: ARGUMENT_TYPE.BOOLEAN,
+                defaultValue: 'true',
+                isRequired: false,
+            }),
+        ],
         unnamedArgumentList: [
             SlashCommandArgument.fromProps({
                 description: 'input string',
                 typeList: ARGUMENT_TYPE.STRING,
             }),
         ],
-        callback: (_, value) => {
+        callback: (args, value) => {
             if (!value) {
                 return '';
             }
@@ -194,7 +203,10 @@ function registerReasoningSlashCommands() {
                 return '';
             }
 
-            return getRegexedString(parsedReasoning.reasoning, regex_placement.REASONING);
+            const applyRegex = !isFalseBoolean(args.regex.toString());
+            return applyRegex
+                ? getRegexedString(parsedReasoning.reasoning, regex_placement.REASONING)
+                : parsedReasoning.reasoning;
         },
     }));
 }
@@ -398,7 +410,7 @@ function registerReasoningAppEvents() {
 
         // If reasoning was found, add it to the message
         if (parsedReasoning.reasoning) {
-            message.extra.reasoning = parsedReasoning.reasoning;
+            message.extra.reasoning = getRegexedString(parsedReasoning.reasoning, regex_placement.REASONING);
         }
 
         // Update the message text if it was changed
