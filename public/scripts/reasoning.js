@@ -167,6 +167,36 @@ function registerReasoningSlashCommands() {
             return message.extra.reasoning;
         },
     }));
+
+    SlashCommandParser.addCommandObject(SlashCommand.fromProps({
+        name: 'reasoning-parse',
+        returns: 'reasoning string',
+        helpString: t`Extracts the reasoning block from a string using the Reasoning Formatting settings.`,
+        unnamedArgumentList: [
+            SlashCommandArgument.fromProps({
+                description: 'input string',
+                typeList: ARGUMENT_TYPE.STRING,
+            }),
+        ],
+        callback: (_, value) => {
+            if (!value) {
+                return '';
+            }
+
+            if (!power_user.reasoning.prefix || !power_user.reasoning.suffix) {
+                toastr.warning(t`Both prefix and suffix must be set in the Reasoning Formatting settings.`);
+                return value.toString();
+            }
+
+            const parsedReasoning = parseReasoningFromString(value.toString());
+
+            if (!parsedReasoning) {
+                return '';
+            }
+
+            return getRegexedString(parsedReasoning.reasoning, regex_placement.REASONING);
+        },
+    }));
 }
 
 function registerReasoningMacros() {
