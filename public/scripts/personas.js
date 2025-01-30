@@ -696,6 +696,27 @@ async function updatePersonaNameIfExists(avatarId, newName) {
     saveSettingsDebounced();
 }
 
+async function renamePersona(avatarId) {
+    const currentName = power_user.personas[avatarId];
+    const newName = await Popup.show.input(t`Rename Persona`, t`Enter a new name for this persona:`, currentName);
+    if (!newName || newName === currentName) {
+        console.debug('User cancelled renaming persona or name is unchanged');
+        return;
+    }
+
+    power_user.personas[avatarId] = newName;
+    console.log(`Renamed persona ${avatarId} to ${newName}`);
+
+    if (avatarId === user_avatar) {
+        setUserName(newName);
+    }
+
+    saveSettingsDebounced();
+    await getUserAvatars(true, avatarId);
+    updatePersonaUIStates();
+    setPersonaDescription();
+}
+
 async function bindUserNameToPersona() {
     const avatarId = user_avatar;
 
@@ -1164,18 +1185,6 @@ function getOrCreatePersonaDescriptor() {
     return object;
 }
 
-
-
-async function toggleDefaultPersonaClicked(e) {
-    e?.stopPropagation();
-    const avatarId = $(e.currentTarget).closest('.avatar-container').find('.avatar').attr('data-avatar-id');
-    if (avatarId) {
-        await toggleDefaultPersona(avatarId);
-    } else {
-        console.warn('No avatar id found');
-    }
-}
-
 /**
  * Sets a persona as the default one to be used for all new chats and unlocked existing chats
  * @param {string} avatarId The avatar id of the persona to set as the default
@@ -1600,7 +1609,6 @@ async function duplicatePersona(avatarId) {
 }
 
 export function initPersonas() {
-    $(document).on('click', '.set_default_persona', toggleDefaultPersonaClicked);
     $('#persona_delete_button').on('click', deleteUserAvatar);
     $('#lock_persona_default').on('click', () => togglePersonaLock('default'));
     $('#lock_user_name').on('click', () => togglePersonaLock('chat'));
@@ -1647,14 +1655,7 @@ export function initPersonas() {
         retriggerFirstMessageOnEmptyChat();
     });
 
-    $('#persona_rename_button').click(async function () {
-        const userName = String($('#your_name').val()).trim();
-        setUserName(userName);
-        await updatePersonaNameIfExists(user_avatar, userName);
-        retriggerFirstMessageOnEmptyChat();
-        // TODO: Do both binding and/or rename?
-        //bindUserNameToPersona();
-    });
+    $('#persona_rename_button').on('click', () => renamePersona(user_avatar));
 
     $(document).on('click', '#user_avatar_block .avatar_upload', function () {
         $('#avatar_upload_overwrite').val('');

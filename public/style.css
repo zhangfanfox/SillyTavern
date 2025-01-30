@@ -3887,10 +3887,6 @@ input[type='checkbox'].del_checkbox {
     outline: var(--avatar-base-border-radius) solid var(--golden);
 }
 
-.avatar-container.default_persona .set_default_persona {
-    color: var(--golden);
-}
-
 .avatar-container .avatar_state .fa-lock {
     color: var(--active);
 }
