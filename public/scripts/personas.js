@@ -268,7 +268,7 @@ export async function getUserAvatars(doRender = true, openPageAt = '') {
  * Uploads an avatar file to the server
  * @param {string} url URL for the avatar file
  * @param {string} [name] Optional name for the avatar file
- * @returns {Promise} Promise object representing the AJAX request
+ * @returns {Promise} Promise that resolves when the avatar is uploaded
  */
 async function uploadUserAvatar(url, name) {
     const fetchResult = await fetch(url);
@@ -281,18 +281,17 @@ async function uploadUserAvatar(url, name) {
         formData.append('overwrite_name', name);
     }
 
-    return jQuery.ajax({
-        type: 'POST',
-        url: '/api/avatars/upload',
-        data: formData,
-        beforeSend: () => { },
-        cache: false,
-        contentType: false,
-        processData: false,
-        success: async function () {
-            await getUserAvatars(true, name);
-        },
+    const headers = getRequestHeaders();
+    delete headers['Content-Type'];
+
+    await fetch('/api/avatars/upload', {
+        method: 'POST',
+        headers: headers,
+        cache: 'no-cache',
+        body: formData,
     });
+
+    await getUserAvatars(true, name);
 }
 
 async function changeUserAvatar(e) {
@@ -333,32 +332,34 @@ async function changeUserAvatar(e) {
         formData.set('avatar', convertedFile);
     }
 
-    jQuery.ajax({
-        type: 'POST',
-        url: url,
-        data: formData,
-        beforeSend: () => { },
-        cache: false,
-        contentType: false,
-        processData: false,
-        success: async function (data) {
-            // If the user uploaded a new avatar, we want to make sure it's not cached
-            const name = formData.get('overwrite_name');
-            if (name) {
-                await fetch(getUserAvatar(String(name)), { cache: 'no-cache' });
-                reloadUserAvatar(true);
-            }
+    const headers = getRequestHeaders();
+    delete headers['Content-Type'];
 
-            if (!name && data.path) {
-                await getUserAvatars();
-                await delay(500);
-                await createPersona(data.path);
-            }
-
-            await getUserAvatars(true, name || data.path);
-        },
-        error: (jqXHR, exception) => { },
+    const response = await fetch(url, {
+        method: 'POST',
+        headers: headers,
+        cache: 'no-cache',
+        body: formData,
     });
+
+    if (response.ok) {
+        const data = await response.json();
+
+        // If the user uploaded a new avatar, we want to make sure it's not cached
+        const name = formData.get('overwrite_name');
+        if (name) {
+            await fetch(getUserAvatar(String(name)), { cache: 'no-cache' });
+            reloadUserAvatar(true);
+        }
+
+        if (!name && data.path) {
+            await getUserAvatars();
+            await delay(500);
+            await createPersona(data.path);
+        }
+
+        await getUserAvatars(true, name || data.path);
+    }
 
     // Will allow to select the same file twice in a row
     form.reset();
