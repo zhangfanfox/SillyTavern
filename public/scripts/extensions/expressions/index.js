@@ -3,7 +3,7 @@ import { Fuse } from '../../../lib.js';
 import { characters, eventSource, event_types, generateRaw, getRequestHeaders, main_api, online_status, saveSettingsDebounced, substituteParams, substituteParamsExtended, system_message_types, this_chid } from '../../../script.js';
 import { dragElement, isMobile } from '../../RossAscends-mods.js';
 import { getContext, getApiUrl, modules, extension_settings, ModuleWorkerWrapper, doExtrasFetch, renderExtensionTemplateAsync } from '../../extensions.js';
-import { loadMovingUIState, power_user } from '../../power-user.js';
+import { loadMovingUIState, performFuzzySearch, power_user } from '../../power-user.js';
 import { onlyUnique, debounce, getCharaFilename, trimToEndSentence, trimToStartSentence, waitUntilCondition, findChar } from '../../utils.js';
 import { hideMutedSprites, selected_group } from '../../group-chats.js';
 import { isJsonSchemaSupported } from '../../textgen-settings.js';
@@ -12,7 +12,7 @@ import { SlashCommandParser } from '../../slash-commands/SlashCommandParser.js';
 import { SlashCommand } from '../../slash-commands/SlashCommand.js';
 import { ARGUMENT_TYPE, SlashCommandArgument, SlashCommandNamedArgument } from '../../slash-commands/SlashCommandArgument.js';
 import { SlashCommandEnumValue, enumTypes } from '../../slash-commands/SlashCommandEnumValue.js';
-import { commonEnumProviders } from '../../slash-commands/SlashCommandCommonEnumsProvider.js';
+import { commonEnumProviders, enumIcons } from '../../slash-commands/SlashCommandCommonEnumsProvider.js';
 import { slashCommandReturnHelper } from '../../slash-commands/SlashCommandReturnHelper.js';
 import { generateWebLlmChatPrompt, isWebLlmSupported } from '../shared.js';
 import { Popup, POPUP_RESULT } from '../../popup.js';
@@ -27,8 +27,8 @@ export { MODULE_NAME };
 
 /**
  * @typedef {object} ExpressionImage An expression image
- * @property {string?} [expression=null] - The expression
- * @property {boolean?} [isCustom=null] - If the expression is added by user
+ * @property {string} expression - The expression
+ * @property {boolean} [isCustom=false] - If the expression is added by user
  * @property {string} fileName - The filename with extension
  * @property {string} title - The title for the image
  * @property {string} imageSrc - The image source / full path
@@ -78,9 +78,6 @@ const EXPRESSION_API = {
     webllm: 3,
 };
 
-/** @type {ExpressionImage} */
-const NO_IMAGE_PLACEHOLDER = { title: 'No Image', type: 'failure', fileName: 'No-Image-Placeholder.svg', imageSrc: '/img/No-Image-Placeholder.svg' };
-
 let expressionsList = null;
 let lastCharacter = undefined;
 let lastMessage = null;
@@ -91,6 +88,24 @@ let lastServerResponseTime = 0;
 
 /** @type {{[characterName: string]: string}} */
 export let lastExpression = {};
+
+/**
+ * Returns a placeholder image object for a given expression
+ * @param {string} expression - The expression label
+ * @param {boolean} [isCustom=false] - Whether the expression is custom
+ * @returns {ExpressionImage} The placeholder image object
+ */
+function getPlaceholderImage(expression, isCustom = false) {
+    return {
+        expression: expression,
+        isCustom: isCustom,
+        title: 'No Image',
+        type: 'failure',
+        fileName: 'No-Image-Placeholder.svg',
+        imageSrc: '/img/No-Image-Placeholder.svg',
+    };
+}
+
 
 /**
  * Returns the fallback expression if explicitly chosen, otherwise the default one
@@ -189,6 +204,7 @@ async function visualNovelSetCharacterSprites(container, name, expression) {
         const sprites = spriteCache[spriteFolderName];
         const expressionImage = container.find(`.expression-holder[data-avatar="${avatar}"]`);
         const defaultExpression = getFallbackExpression();
+        // TODO: Visual novel sprites need fixing, currently do not update based on multiple sprites, etc
         const defaultSpritePath = sprites.find(x => x.label === defaultExpression)?.path;
         const noSprites = sprites.length === 0;
 
@@ -460,7 +476,7 @@ async function moduleWorker() {
     }
 
     const currentLastMessage = getLastCharacterMessage();
-    let spriteFolderName = context.groupId ? getSpriteFolderName(currentLastMessage, currentLastMessage.name) : getSpriteFolderName();
+    let spriteFolderName = getSpriteFolderName(currentLastMessage, currentLastMessage.name);
 
     // character has no expressions or it is not loaded
     if (Object.keys(spriteCache).length === 0) {
@@ -550,7 +566,7 @@ async function moduleWorker() {
             expression = getFallbackExpression();
         }
 
-        await sendExpressionCall(spriteFolderName, expression, force, vnMode);
+        await sendExpressionCall(spriteFolderName, expression, { force: force, vnMode: vnMode });
     }
     catch (error) {
         console.log(error);
@@ -596,48 +612,55 @@ function getFolderNameByMessage(message) {
     return folderName;
 }
 
-async function sendExpressionCall(name, expression, force, vnMode) {
+/**
+ * Update the expression for the given character.
+ *
+ * @param {string} name The character name, optionally with a sprite folder override, e.g. "folder/expression".
+ * @param {string} expression The expression label, e.g. "amusement", "joy", etc.
+ * @param {Object} [options] Additional options
+ * @param {boolean} [options.force=false] If true, the expression will be sent even if it is the same as the current expression.
+ * @param {boolean} [options.vnMode=null] If true, the expression will be sent in Visual Novel mode. If null, it will be determined by the current chat mode.
+ * @param {string?} [options.overrideSpriteFile=null] - Set if a specific sprite file should be used. Must be sprite file name.
+ */
+async function sendExpressionCall(name, expression, { force = false, vnMode = null, overrideSpriteFile = null } = {}) {
     lastExpression[name.split('/')[0]] = expression;
-    if (!vnMode) {
+    if (vnMode === null) {
         vnMode = isVisualNovelMode();
     }
 
     if (vnMode) {
         await updateVisualNovelMode(name, expression);
     } else {
-        setExpression(name, expression, force);
+        setExpression(name, expression, { force: force, overrideSpriteFile: overrideSpriteFile });
     }
 }
 
-async function setSpriteSetCommand(_, folder) {
+async function setSpriteFolderCommand(_, folder) {
     if (!folder) {
         console.log('Clearing sprite set');
         folder = '';
     }
 
     if (folder.startsWith('/') || folder.startsWith('\\')) {
-        folder = folder.slice(1);
-
         const currentLastMessage = getLastCharacterMessage();
+        folder = folder.slice(1);
         folder = `${currentLastMessage.name}/${folder}`;
     }
 
     $('#expression_override').val(folder.trim());
     onClickExpressionOverrideButton();
-    // removeExpression();
-    // moduleWorker();
-    const vnMode = isVisualNovelMode();
-    await sendExpressionCall(folder, lastExpression, true, vnMode);
+
+    // No need to resend the expression, the folder override will automatically update the currently displayed one.
     return '';
 }
 
 async function classifyCallback(/** @type {{api: string?, prompt: string?}} */ { api = null, prompt = null }, text) {
     if (!text) {
-        toastr.warning('No text provided');
+        toastr.error('No text provided');
         return '';
     }
     if (api && !Object.keys(EXPRESSION_API).includes(api)) {
-        toastr.warning('Invalid API provided');
+        toastr.error('Invalid API provided');
         return '';
     }
 
@@ -653,31 +676,68 @@ async function classifyCallback(/** @type {{api: string?, prompt: string?}} */ {
     return label;
 }
 
-async function setSpriteSlashCommand(_, spriteId) {
-    spriteId = spriteId.trim().toLowerCase();
-    if (!spriteId) {
-        console.log('No sprite id provided');
+/** @type {(args: {type: 'expression' | 'sprite'}, searchTerm: string) => Promise<string>} */
+async function setSpriteSlashCommand({ type }, searchTerm) {
+    type ??= 'expression';
+    searchTerm = searchTerm.trim().toLowerCase();
+    if (!searchTerm) {
+        toastr.error(t`No expression or sprite name provided`, t`Set Sprite`);
         return '';
     }
 
     const spriteFolderName = getSpriteFolderName();
 
+    let label = searchTerm;
+
+    /** @type {string?} */
+    let spriteFile = null;
+
     await validateImages(spriteFolderName);
 
-    // Fuzzy search for sprite
-    const fuse = new Fuse(spriteCache[spriteFolderName], { keys: ['label'] });
-    const results = fuse.search(spriteId);
-    const spriteItem = results[0]?.item;
-
-    if (!spriteItem) {
-        console.log('No sprite found for search term ' + spriteId);
-        return '';
+    // Handle reset as a special term and just reset the sprite via expression call
+    if (searchTerm === '#reset') {
+        await sendExpressionCall(spriteFolderName, label, { force: true });
+        return lastExpression[spriteFolderName] ?? '';
     }
 
-    const label = spriteItem.label;
+    switch (type) {
+        case 'expression': {
+            // Fuzzy search for expression
+            const existingExpressions = getCachedExpressions().map(x => ({ label: x }));
+            const results = performFuzzySearch('expression-expressions', existingExpressions, [
+                { name: 'label', weight: 1 },
+            ], searchTerm);
+            const matchedExpression = results[0]?.item;
+            if (!matchedExpression) {
+                toastr.warning(t`No expression found for search term ${searchTerm}`, t`Set Sprite`);
+                return '';
+            }
 
-    const vnMode = isVisualNovelMode();
-    await sendExpressionCall(spriteFolderName, label, true, vnMode);
+            label = matchedExpression.label;
+            break;
+        }
+        case 'sprite': {
+            // Fuzzy search for sprite file
+            const sprites = spriteCache[spriteFolderName].map(x => x.files).flat();
+            const results = performFuzzySearch('expression-expressions', sprites, [
+                { name: 'title', weight: 1 },
+                { name: 'fileName', weight: 1 },
+            ], searchTerm);
+            const matchedSprite = results[0]?.item;
+            if (!matchedSprite) {
+                toastr.warning(t`No sprite file found for search term ${searchTerm}`, t`Set Sprite`);
+                return '';
+            }
+
+            label = matchedSprite.expression;
+            spriteFile = matchedSprite.fileName;
+            break;
+        }
+        default: throw Error('Invalid sprite set type: ' + type);
+    }
+
+    await sendExpressionCall(spriteFolderName, label, { force: true, overrideSpriteFile: spriteFile });
+
     return label;
 }
 
@@ -714,13 +774,22 @@ function spriteFolderNameFromCharacter(char) {
  */
 async function uploadSpriteCommand({ name, label, folder = null, spriteName = null }, imageUrl) {
     if (!imageUrl) throw new Error('Image URL is required');
-    if (!label || typeof label !== 'string') throw new Error('Expression label is required');
+    if (!label || typeof label !== 'string') {
+        toastr.error(t`Expression label is required`, t`Error Uploading Sprite`);
+        return '';
+    }
 
     label = label.replace(/[^a-z]/gi, '').toLowerCase().trim();
-    if (!label) throw new Error('Expression label must contain at least one letter');
+    if (!label) {
+        toastr.error(t`Expression label must contain at least one letter`, t`Error Uploading Sprite`);
+        return '';
+    }
 
     spriteName = spriteName || label;
-    if (!validateExpressionSpriteName(label, spriteName)) throw new Error('Invalid sprite name. Must follow the naming pattern for expression sprites.');
+    if (!validateExpressionSpriteName(label, spriteName)) {
+        toastr.error(t`Invalid sprite name. Must follow the naming pattern for expression sprites.`, t`Error Uploading Sprite`);
+        return '';
+    }
 
     name = name || getLastCharacterMessage().original_avatar || getLastCharacterMessage().name;
     const char = findChar({ name });
@@ -1066,7 +1135,7 @@ async function drawSpritesList(character, labels, sprites) {
         if (images.length === 0) {
             const listItem = await getListItem(expression, {
                 isCustom,
-                images: [{ expression, isCustom, ...NO_IMAGE_PLACEHOLDER }],
+                images: [getPlaceholderImage(expression, isCustom)],
             });
             $('#image_list').append(listItem);
             continue;
@@ -1264,12 +1333,13 @@ export async function getExpressionsList() {
 /**
  * Set the expression of a character.
  * @param {string} character - The name of the character
- * @param {string} expression - The expression to set
- * @param {boolean} [force=false] - Whether to force the expression change even if Visual Novel mode is on.
+ * @param {string} expression - The expression or sprite name to set
+ * @param {Object} options - Optional parameters
+ * @param {boolean} [options.force=false] - Whether to force the expression change even if Visual Novel mode is on
+ * @param {string?} [options.overrideSpriteFile=null] - Set if a specific sprite file should be used. Must be sprite file name.
  * @returns {Promise<void>} A promise that resolves when the expression has been set.
  */
-async function setExpression(character, expression, force = false) {
-    console.debug('entered setExpressions');
+async function setExpression(character, expression, { force = false, overrideSpriteFile = null } = {}) {
     await validateImages(character);
     const img = $('img.expression');
     const prevExpressionSrc = img.attr('src');
@@ -1277,14 +1347,17 @@ async function setExpression(character, expression, force = false) {
 
     /** @type {Expression} */
     const sprite = (spriteCache[character] && spriteCache[character].find(x => x.label === expression));
-    console.debug('checking for expression images to show..');
     if (sprite && sprite.files.length > 0) {
-        console.debug('setting expression from character images folder');
-
         let spriteFile = sprite.files[0];
 
-        // Calculate next expression, if multiple are allowed
-        if (extension_settings.expressions.allowMultiple && sprite.files.length > 1) {
+        // If a specific sprite file should be set, we are looking it up here
+        if (overrideSpriteFile) {
+            const searched = sprite.files.find(x => x.fileName === overrideSpriteFile);
+            if (searched) spriteFile = searched;
+            else toastr.warning(t`Couldn't find sprite file ${overrideSpriteFile} for expression ${expression}.`, t`Sprite Not Found`);
+        }
+        // Else calculate next expression, if multiple are allowed
+        else if (extension_settings.expressions.allowMultiple && sprite.files.length > 1) {
             let possibleFiles = sprite.files;
             if (extension_settings.expressions.rerollIfSame) {
                 possibleFiles = possibleFiles.filter(x => x.imageSrc !== prevExpressionSrc);
@@ -1309,6 +1382,7 @@ async function setExpression(character, expression, force = false) {
                 }
             }
         }
+
         //only swap expressions when necessary
         if (prevExpressionSrc !== spriteFile.imageSrc
             && !img.hasClass('expression-animating')) {
@@ -1360,7 +1434,6 @@ async function setExpression(character, expression, force = false) {
                     expressionHolder.css('min-height', 100);
                 });
 
-
             expressionClone.removeClass('expression-clone');
 
             expressionClone.removeClass('default');
@@ -1374,26 +1447,44 @@ async function setExpression(character, expression, force = false) {
                 }
             });
         }
+
+        console.info('Expression set', { expression: spriteFile.expression, file: spriteFile.fileName });
     }
     else {
         if (extension_settings.expressions.showDefault) {
             setDefault();
+        } else {
+            setNone();
         }
+        console.debug('Expression unset');
     }
 
     function setDefault() {
-        console.debug('setting default');
+        console.debug('setting default expression');
         const defImgUrl = `/img/default-expressions/${expression}.png`;
         //console.log(defImgUrl);
         img.attr('src', defImgUrl);
         img.addClass('default');
     }
+    function setNone() {
+        console.debug('setting no expression');
+        img.attr('src', '');
+        img.removeClass('default');
+    }
+
     document.getElementById('expression-holder').style.display = '';
 }
 
 function onClickExpressionImage() {
-    const expression = $(this).data('expression');
-    setSpriteSlashCommand({}, expression);
+    // If there is no expression image and we clicked on the placeholder, we remove the sprite by calling via the expression label
+    if ($(this).attr('data-expression-type') === 'failure') {
+        const label = $(this).attr('data-expression');
+        setSpriteSlashCommand({ type: 'expression' }, label);
+        return;
+    }
+
+    const spriteFile = $(this).attr('data-filename');
+    setSpriteSlashCommand({ type: 'sprite' }, spriteFile);
 }
 
 async function onClickExpressionAddCustom() {
@@ -1667,8 +1758,9 @@ async function onClickExpressionOverrideButton() {
         inApiCall = true;
         $('#visual-novel-wrapper').empty();
         await validateImages(overridePath.length === 0 ? currentLastMessage.name : overridePath, true);
+        const name = overridePath.length === 0 ? currentLastMessage.name : overridePath;
         const expression = await getExpressionLabel(currentLastMessage.mes);
-        await sendExpressionCall(overridePath.length === 0 ? currentLastMessage.name : overridePath, expression, true);
+        await sendExpressionCall(name, expression, { force: true });
         forceUpdateVisualNovelMode();
     } catch (error) {
         console.debug(`Setting expression override for ${avatarFileName} failed with error: ${error}`);
@@ -1694,7 +1786,7 @@ async function onClickExpressionOverrideRemoveAllButton() {
         const currentLastMessage = getLastCharacterMessage();
         await validateImages(currentLastMessage.name, true);
         const expression = await getExpressionLabel(currentLastMessage.mes);
-        await sendExpressionCall(currentLastMessage.name, expression, true);
+        await sendExpressionCall(currentLastMessage.name, expression, { force: true });
         forceUpdateVisualNovelMode();
 
         console.debug(extension_settings.expressionOverrides);
@@ -1933,22 +2025,60 @@ function migrateSettings() {
     eventSource.on(event_types.GROUP_UPDATED, updateVisualNovelModeDebounced);
 
     const localEnumProviders = {
-        expressions: () => getCachedExpressions().map(expression => {
-            const isCustom = extension_settings.expressions.custom?.includes(expression);
-            return new SlashCommandEnumValue(expression, null, isCustom ? enumTypes.name : enumTypes.enum, isCustom ? 'C' : 'D');
-        }),
+        expressions: () => {
+            const spriteFolderName = getSpriteFolderName();
+            const expressions = getCachedExpressions();
+            return expressions.map(expression => {
+                const spriteCount = spriteCache[spriteFolderName]?.find(x => x.label === expression)?.files.length ?? 0;
+                const isCustom = extension_settings.expressions.custom?.includes(expression);
+                const subtitle = spriteCount == 0 ? '❌ No sprites available for this expression' :
+                    spriteCount > 1 ? `${spriteCount} sprites` : null;
+                return new SlashCommandEnumValue(expression,
+                    subtitle,
+                    isCustom ? enumTypes.name : enumTypes.enum,
+                    isCustom ? 'C' : 'D');
+            });
+        },
+        sprites: () => {
+            const spriteFolderName = getSpriteFolderName();
+            const sprites = spriteCache[spriteFolderName]?.map(x => x.files)?.flat() ?? [];
+            return sprites.map(x => {
+                return new SlashCommandEnumValue(x.title,
+                    x.title !== x.expression ? x.expression : null,
+                    x.isCustom ? enumTypes.name : enumTypes.enum,
+                    x.isCustom ? 'C' : 'D');
+            });
+        },
     };
 
     SlashCommandParser.addCommandObject(SlashCommand.fromProps({
         name: 'expression-set',
         aliases: ['sprite', 'emote'],
         callback: setSpriteSlashCommand,
+        namedArgumentList: [
+            SlashCommandNamedArgument.fromProps({
+                name: 'type',
+                description: 'Whether to set an expression or a specific sprite.',
+                typeList: [ARGUMENT_TYPE.STRING],
+                isRequired: false,
+                defaultValue: 'expression',
+                enumList: ['expression', 'sprite'],
+            }),
+        ],
         unnamedArgumentList: [
             SlashCommandArgument.fromProps({
                 description: 'expression label to set',
                 typeList: [ARGUMENT_TYPE.STRING],
                 isRequired: true,
-                enumProvider: localEnumProviders.expressions,
+                enumProvider: (executor, _) => {
+                    // Check if command is used to set a sprite, then use those enums
+                    const type = executor.namedArgumentList.find(it => it.name == 'type')?.value || 'expression';
+                    if (type == 'sprite') return localEnumProviders.sprites();
+                    else return [
+                        ...localEnumProviders.expressions(),
+                        new SlashCommandEnumValue('#reset', 'Resets the expression (to either default or no sprite)', enumTypes.enum, '❌'),
+                    ];
+                },
             }),
         ],
         helpString: 'Force sets the expression for the current character.',
@@ -1957,13 +2087,21 @@ function migrateSettings() {
     SlashCommandParser.addCommandObject(SlashCommand.fromProps({
         name: 'expression-folder-override',
         aliases: ['spriteoverride', 'costume'],
-        callback: setSpriteSetCommand,
+        callback: setSpriteFolderCommand,
         unnamedArgumentList: [
             new SlashCommandArgument(
                 'optional folder', [ARGUMENT_TYPE.STRING], false,
             ),
         ],
-        helpString: 'Sets an override sprite folder for the current character. If the name starts with a slash or a backslash, selects a sub-folder in the character-named folder. Empty value to reset to default.',
+        helpString: `
+            <div>
+                Sets an override sprite folder for the current character.<br />
+                In groups, this will apply to the character who last sent a message.
+            </div>
+            <div>
+                If the name starts with a slash or a backslash, selects a sub-folder in the character-named folder. Empty value to reset to default.
+            </div>
+        `,
     }));
     SlashCommandParser.addCommandObject(SlashCommand.fromProps({
         name: 'expression-last',
@@ -1997,8 +2135,8 @@ function migrateSettings() {
         helpString: 'Returns the last set expression for the named character.',
     }));
     SlashCommandParser.addCommandObject(SlashCommand.fromProps({
-        name: 'expression-classify',
-        aliases: ['classify-expressions', 'expressions'],
+        name: 'expression-list',
+        aliases: ['expressions'],
         /** @type {(args: {return: string}) => Promise<string>} */
         callback: async (args) => {
             let returnType =

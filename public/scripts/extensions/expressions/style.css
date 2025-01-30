@@ -109,6 +109,9 @@ img.expression.default {
     flex-direction: column;
     align-items: center;
     justify-content: center;
+}
+
+.expression_list_image_container {
     overflow: hidden;
 }
 
