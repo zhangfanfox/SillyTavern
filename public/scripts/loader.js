@@ -33,7 +33,7 @@ export async function hideLoader() {
             cleanup();
             return;
         }
- 
+
         // Check if transitions are enabled
         const transitionDuration = spinner[0] ? getComputedStyle(spinner[0]).transitionDuration : '0s';
         const hasTransitions = parseFloat(transitionDuration) > 0;
