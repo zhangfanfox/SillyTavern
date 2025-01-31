@@ -5706,15 +5706,26 @@ function extractMessageFromData(data) {
  * @returns {string} Extracted reasoning
  */
 function extractReasoningFromData(data) {
-    if (main_api === 'openai' && oai_settings.show_thoughts) {
-        switch (oai_settings.chat_completion_source) {
-            case chat_completion_sources.DEEPSEEK:
-                return data?.choices?.[0]?.message?.reasoning_content ?? '';
-            case chat_completion_sources.OPENROUTER:
-                return data?.choices?.[0]?.message?.reasoning ?? '';
-            case chat_completion_sources.MAKERSUITE:
-                return data?.responseContent?.parts?.filter(part => part.thought)?.map(part => part.text)?.join('\n\n') ?? '';
-        }
+    switch (main_api) {
+        case 'textgenerationwebui':
+            switch (textgen_settings.type) {
+                case textgen_types.OPENROUTER:
+                    return data?.choices?.[0]?.reasoning ?? '';
+            }
+            break;
+
+        case 'openai':
+            if (!oai_settings.show_thoughts) break;
+
+            switch (oai_settings.chat_completion_source) {
+                case chat_completion_sources.DEEPSEEK:
+                    return data?.choices?.[0]?.message?.reasoning_content ?? '';
+                case chat_completion_sources.OPENROUTER:
+                    return data?.choices?.[0]?.message?.reasoning ?? '';
+                case chat_completion_sources.MAKERSUITE:
+                    return data?.responseContent?.parts?.filter(part => part.thought)?.map(part => part.text)?.join('\n\n') ?? '';
+            }
+            break;
     }
 
     return '';
