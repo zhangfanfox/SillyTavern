@@ -2003,7 +2003,7 @@ export function messageFormatting(mes, ch_name, isSystem, isUser, messageId, san
         return '';
     }
 
-    if (Number(messageId) === 0 && !isSystem && !isUser) {
+    if (Number(messageId) === 0 && !isSystem && !isUser && !isReasoning) {
         const mesBeforeReplace = mes;
         const chatMessage = chat[messageId];
         mes = substituteParams(mes, undefined, ch_name);
@@ -3171,7 +3171,7 @@ class StreamingProcessor {
             this.sendTextarea.dispatchEvent(new Event('input', { bubbles: true }));
         }
         else {
-            await saveReply(this.type, text, true);
+            await saveReply(this.type, text, true, '', [], '');
             messageId = chat.length - 1;
             this.#checkDomElements(messageId);
             this.showMessageButtons(messageId);
@@ -3365,7 +3365,7 @@ class StreamingProcessor {
             const timestamps = [];
             for await (const { text, swipes, logprobs, toolCalls, state } of this.generator()) {
                 timestamps.push(Date.now());
-                if (this.isStopped) {
+                if (this.isStopped || this.abortController.signal.aborted) {
                     return;
                 }
 
@@ -3863,10 +3863,8 @@ export async function Generate(type, { automatic_trigger, force_name2, quiet_pro
 
     const reasoning = new PromptReasoning();
     for (let i = coreChat.length - 1; i >= 0; i--) {
-        if (reasoning.isLimitReached()) {
-            break;
-        }
         const depth = coreChat.length - i - 1;
+        const isPrefix = isContinue && i === coreChat.length - 1;
         coreChat[i] = {
             ...coreChat[i],
             mes: reasoning.addToMessage(
@@ -3876,8 +3874,12 @@ export async function Generate(type, { automatic_trigger, force_name2, quiet_pro
                     regex_placement.REASONING,
                     { isPrompt: true, depth: depth },
                 ),
+                isPrefix,
             ),
         };
+        if (reasoning.isLimitReached()) {
+            break;
+        }
     }
 
     // Determine token limit

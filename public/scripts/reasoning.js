@@ -50,11 +50,12 @@ export class PromptReasoning {
      * Add reasoning to a message according to the power user settings.
      * @param {string} content Message content
      * @param {string} reasoning Message reasoning
+     * @param {boolean} isPrefix Whether this is the last message prefix
      * @returns {string} Message content with reasoning
      */
-    addToMessage(content, reasoning) {
+    addToMessage(content, reasoning, isPrefix) {
         // Disabled or reached limit of additions
-        if (!power_user.reasoning.add_to_prompts || this.counter >= power_user.reasoning.max_additions) {
+        if (!isPrefix && (!power_user.reasoning.add_to_prompts || this.counter >= power_user.reasoning.max_additions)) {
             return content;
         }
 
@@ -70,6 +71,11 @@ export class PromptReasoning {
         const prefix = substituteParams(power_user.reasoning.prefix || '');
         const separator = substituteParams(power_user.reasoning.separator || '');
         const suffix = substituteParams(power_user.reasoning.suffix || '');
+
+        // Combine parts with reasoning only
+        if (isPrefix && !content) {
+            return `${prefix}${reasoning}`;
+        }
 
         // Combine parts with reasoning and content
         return `${prefix}${reasoning}${suffix}${separator}${content}`;
@@ -117,6 +123,7 @@ function loadReasoningSettings() {
 function registerReasoningSlashCommands() {
     SlashCommandParser.addCommandObject(SlashCommand.fromProps({
         name: 'reasoning-get',
+        aliases: ['get-reasoning'],
         returns: ARGUMENT_TYPE.STRING,
         helpString: t`Get the contents of a reasoning block of a message. Returns an empty string if the message does not have a reasoning block.`,
         unnamedArgumentList: [
@@ -136,6 +143,7 @@ function registerReasoningSlashCommands() {
 
     SlashCommandParser.addCommandObject(SlashCommand.fromProps({
         name: 'reasoning-set',
+        aliases: ['set-reasoning'],
         returns: ARGUMENT_TYPE.STRING,
         helpString: t`Set the reasoning block of a message. Returns the reasoning block content.`,
         namedArgumentList: [
@@ -170,6 +178,7 @@ function registerReasoningSlashCommands() {
 
     SlashCommandParser.addCommandObject(SlashCommand.fromProps({
         name: 'reasoning-parse',
+        aliases: ['parse-reasoning'],
         returns: 'reasoning string',
         helpString: t`Extracts the reasoning block from a string using the Reasoning Formatting settings.`,
         namedArgumentList: [
@@ -218,7 +227,7 @@ function registerReasoningMacros() {
     MacrosParser.registerMacro('reasoningSeparator', () => power_user.reasoning.separator, t`Reasoning Separator`);
 }
 
-function setReasoningEventHandlers(){
+function setReasoningEventHandlers() {
     $(document).on('click', '.mes_reasoning_copy', (e) => {
         e.stopPropagation();
         e.preventDefault();
