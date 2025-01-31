@@ -3863,10 +3863,8 @@ export async function Generate(type, { automatic_trigger, force_name2, quiet_pro
 
     const reasoning = new PromptReasoning();
     for (let i = coreChat.length - 1; i >= 0; i--) {
-        if (reasoning.isLimitReached()) {
-            break;
-        }
         const depth = coreChat.length - i - 1;
+        const isPrefix = isContinue && i === coreChat.length - 1;
         coreChat[i] = {
             ...coreChat[i],
             mes: reasoning.addToMessage(
@@ -3876,8 +3874,12 @@ export async function Generate(type, { automatic_trigger, force_name2, quiet_pro
                     regex_placement.REASONING,
                     { isPrompt: true, depth: depth },
                 ),
+                isPrefix,
             ),
         };
+        if (reasoning.isLimitReached()) {
+            break;
+        }
     }
 
     // Determine token limit
