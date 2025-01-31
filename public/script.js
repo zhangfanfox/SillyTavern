@@ -3365,7 +3365,7 @@ class StreamingProcessor {
             const timestamps = [];
             for await (const { text, swipes, logprobs, toolCalls, state } of this.generator()) {
                 timestamps.push(Date.now());
-                if (this.isStopped) {
+                if (this.isStopped || this.abortController.signal.aborted) {
                     return;
                 }
 
