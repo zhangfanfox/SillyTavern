@@ -123,6 +123,7 @@ function loadReasoningSettings() {
 function registerReasoningSlashCommands() {
     SlashCommandParser.addCommandObject(SlashCommand.fromProps({
         name: 'reasoning-get',
+        aliases: ['get-reasoning'],
         returns: ARGUMENT_TYPE.STRING,
         helpString: t`Get the contents of a reasoning block of a message. Returns an empty string if the message does not have a reasoning block.`,
         unnamedArgumentList: [
@@ -142,6 +143,7 @@ function registerReasoningSlashCommands() {
 
     SlashCommandParser.addCommandObject(SlashCommand.fromProps({
         name: 'reasoning-set',
+        aliases: ['set-reasoning'],
         returns: ARGUMENT_TYPE.STRING,
         helpString: t`Set the reasoning block of a message. Returns the reasoning block content.`,
         namedArgumentList: [
@@ -176,6 +178,7 @@ function registerReasoningSlashCommands() {
 
     SlashCommandParser.addCommandObject(SlashCommand.fromProps({
         name: 'reasoning-parse',
+        aliases: ['parse-reasoning'],
         returns: 'reasoning string',
         helpString: t`Extracts the reasoning block from a string using the Reasoning Formatting settings.`,
         namedArgumentList: [
