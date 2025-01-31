@@ -3141,11 +3141,6 @@ async function removeGroupMemberCallback(_, arg) {
         return '';
     }
 
-    if (is_group_generating) {
-        toastr.warning('Cannot run /memberremove command while the group reply is generating.');
-        return '';
-    }
-
     const chid = findGroupMemberId(arg);
 
     if (chid === undefined) {
