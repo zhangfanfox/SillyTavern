@@ -50,11 +50,12 @@ export class PromptReasoning {
      * Add reasoning to a message according to the power user settings.
      * @param {string} content Message content
      * @param {string} reasoning Message reasoning
+     * @param {boolean} isPrefix Whether this is the last message prefix
      * @returns {string} Message content with reasoning
      */
-    addToMessage(content, reasoning) {
+    addToMessage(content, reasoning, isPrefix) {
         // Disabled or reached limit of additions
-        if (!power_user.reasoning.add_to_prompts || this.counter >= power_user.reasoning.max_additions) {
+        if (!isPrefix && (!power_user.reasoning.add_to_prompts || this.counter >= power_user.reasoning.max_additions)) {
             return content;
         }
 
@@ -70,6 +71,11 @@ export class PromptReasoning {
         const prefix = substituteParams(power_user.reasoning.prefix || '');
         const separator = substituteParams(power_user.reasoning.separator || '');
         const suffix = substituteParams(power_user.reasoning.suffix || '');
+
+        // Combine parts with reasoning only
+        if (isPrefix && !content) {
+            return `${prefix}${reasoning}`;
+        }
 
         // Combine parts with reasoning and content
         return `${prefix}${reasoning}${suffix}${separator}${content}`;
@@ -218,7 +224,7 @@ function registerReasoningMacros() {
     MacrosParser.registerMacro('reasoningSeparator', () => power_user.reasoning.separator, t`Reasoning Separator`);
 }
 
-function setReasoningEventHandlers(){
+function setReasoningEventHandlers() {
     $(document).on('click', '.mes_reasoning_copy', (e) => {
         e.stopPropagation();
         e.preventDefault();
