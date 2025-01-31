@@ -298,7 +298,7 @@ const default_settings = {
     names_behavior: character_names_behavior.DEFAULT,
     continue_postfix: continue_postfix_types.SPACE,
     custom_prompt_post_processing: custom_prompt_post_processing_types.NONE,
-    show_thoughts: false,
+    show_thoughts: true,
     seed: -1,
     n: 1,
 };
@@ -377,7 +377,7 @@ const oai_settings = {
     names_behavior: character_names_behavior.DEFAULT,
     continue_postfix: continue_postfix_types.SPACE,
     custom_prompt_post_processing: custom_prompt_post_processing_types.NONE,
-    show_thoughts: false,
+    show_thoughts: true,
     seed: -1,
     n: 1,
 };
