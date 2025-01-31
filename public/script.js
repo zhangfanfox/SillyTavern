@@ -3171,7 +3171,7 @@ class StreamingProcessor {
             this.sendTextarea.dispatchEvent(new Event('input', { bubbles: true }));
         }
         else {
-            await saveReply(this.type, text, true);
+            await saveReply(this.type, text, true, '', [], '');
             messageId = chat.length - 1;
             this.#checkDomElements(messageId);
             this.showMessageButtons(messageId);
