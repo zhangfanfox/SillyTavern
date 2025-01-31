@@ -1107,7 +1107,7 @@ router.post('/generate', jsonParser, function (request, response) {
         ...bodyParams,
     };
 
-    if (request.body.chat_completion_source === CHAT_COMPLETION_SOURCES.OPENAI && String(requestBody.model).startsWith('o3-')) {
+    if (request.body.chat_completion_source === CHAT_COMPLETION_SOURCES.OPENAI && String(requestBody.model).startsWith('o3')) {
         delete requestBody.max_tokens;
     }
 
