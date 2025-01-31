@@ -170,6 +170,7 @@ import {
     toggleDrawer,
     isElementInViewport,
     copyText,
+    escapeHtml,
 } from './scripts/utils.js';
 import { debounce_timeout } from './scripts/constants.js';
 
@@ -2067,6 +2068,17 @@ export function messageFormatting(mes, ch_name, isSystem, isUser, messageId, san
         mes = mes.replaceAll('<', '&lt;').replaceAll('>', '&gt;');
     }
 
+    // Make sure reasoning strings are always shown, even if they include "<" or ">"
+    [power_user.reasoning.prefix, power_user.reasoning.suffix].forEach((reasoningString) => {
+        if (!reasoningString || !reasoningString.trim().length) {
+            return;
+        }
+        // Only replace the first occurrence of the reasoning string
+        if (mes.includes(reasoningString)) {
+            mes = mes.replace(reasoningString, escapeHtml(reasoningString));
+        }
+    });
+
     if (!isSystem) {
         // Save double quotes in tags as a special character to prevent them from being encoded
         if (!power_user.encode_tags) {
@@ -3209,7 +3221,7 @@ class StreamingProcessor {
             }
 
             if (this.reasoning) {
-                chat[messageId]['extra']['reasoning'] = this.reasoning;
+                chat[messageId]['extra']['reasoning'] = power_user.trim_spaces ? this.reasoning.trim() : this.reasoning;
                 if (this.messageReasoningDom instanceof HTMLElement) {
                     const formattedReasoning = messageFormatting(this.reasoning, '', false, false, messageId, {}, true);
                     this.messageReasoningDom.innerHTML = formattedReasoning;
@@ -4777,6 +4789,10 @@ export async function Generate(type, { automatic_trigger, force_name2, quiet_pro
 
         messageChunk = cleanUpMessage(getMessage, isImpersonate, isContinue, false);
         reasoning = getRegexedString(reasoning, regex_placement.REASONING);
+
+        if (power_user.trim_spaces) {
+            reasoning = reasoning.trim();
+        }
 
         if (isContinue) {
             getMessage = continue_mag + getMessage;
