@@ -998,7 +998,7 @@ router.post('/generate', jsonParser, function (request, response) {
             bodyParams['route'] = 'fallback';
         }
 
-        if (request.body.show_thoughts) {
+        if (request.body.include_reasoning) {
             bodyParams['include_reasoning'] = true;
         }
 
