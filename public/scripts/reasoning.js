@@ -176,15 +176,16 @@ function registerReasoningSlashCommands() {
             SlashCommandNamedArgument.fromProps({
                 name: 'regex',
                 description: 'Whether to apply regex scripts to the reasoning content.',
-                typeList: ARGUMENT_TYPE.BOOLEAN,
+                typeList: [ARGUMENT_TYPE.BOOLEAN],
                 defaultValue: 'true',
                 isRequired: false,
+                enumProvider: commonEnumProviders.boolean('trueFalse'),
             }),
         ],
         unnamedArgumentList: [
             SlashCommandArgument.fromProps({
                 description: 'input string',
-                typeList: ARGUMENT_TYPE.STRING,
+                typeList: [ARGUMENT_TYPE.STRING],
             }),
         ],
         callback: (args, value) => {
