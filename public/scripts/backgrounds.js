@@ -111,7 +111,7 @@ function onLockBackgroundClick(e) {
         return '';
     }
 
-    const relativeBgImage = getUrlParameter(this);
+    const relativeBgImage = getUrlParameter(this) ?? background_settings.url;
 
     saveBackgroundMetadata(relativeBgImage);
     setCustomBackground();
