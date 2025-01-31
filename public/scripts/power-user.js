@@ -3928,9 +3928,9 @@ $(document).ready(() => {
         helpString: 'Start a new chat with a random character. If an argument is provided, only considers characters that have the specified tag.',
     }));
     SlashCommandParser.addCommandObject(SlashCommand.fromProps({
-        name: 'delmode',
+        name: 'delete',
         callback: doDelMode,
-        aliases: ['del'],
+        aliases: ['del', 'delmode'],
         unnamedArgumentList: [
             new SlashCommandArgument(
                 'optional number', [ARGUMENT_TYPE.NUMBER], false,
