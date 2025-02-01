@@ -12,7 +12,7 @@ import { SlashCommandParser } from '../../slash-commands/SlashCommandParser.js';
 import { SlashCommand } from '../../slash-commands/SlashCommand.js';
 import { ARGUMENT_TYPE, SlashCommandArgument, SlashCommandNamedArgument } from '../../slash-commands/SlashCommandArgument.js';
 import { SlashCommandEnumValue, enumTypes } from '../../slash-commands/SlashCommandEnumValue.js';
-import { commonEnumProviders, enumIcons } from '../../slash-commands/SlashCommandCommonEnumsProvider.js';
+import { commonEnumProviders } from '../../slash-commands/SlashCommandCommonEnumsProvider.js';
 import { slashCommandReturnHelper } from '../../slash-commands/SlashCommandReturnHelper.js';
 import { generateWebLlmChatPrompt, isWebLlmSupported } from '../shared.js';
 import { Popup, POPUP_RESULT } from '../../popup.js';
@@ -128,20 +128,20 @@ async function forceUpdateVisualNovelMode() {
 const updateVisualNovelModeDebounced = debounce(forceUpdateVisualNovelMode, debounce_timeout.quick);
 
 async function updateVisualNovelMode(name, expression) {
-    const container = $('#visual-novel-wrapper');
+    const vnContainer = $('#visual-novel-wrapper');
 
-    await visualNovelRemoveInactive(container);
+    await visualNovelRemoveInactive(vnContainer);
 
-    const setSpritePromises = await visualNovelSetCharacterSprites(container, name, expression);
+    const setSpritePromises = await visualNovelSetCharacterSprites(vnContainer, name, expression);
 
     // calculate layer indices based on recent messages
-    await visualNovelUpdateLayers(container);
+    await visualNovelUpdateLayers(vnContainer);
 
     await Promise.allSettled(setSpritePromises);
 
     // update again based on new sprites
     if (setSpritePromises.length > 0) {
-        await visualNovelUpdateLayers(container);
+        await visualNovelUpdateLayers(vnContainer);
     }
 }
 
@@ -172,53 +172,53 @@ async function visualNovelRemoveInactive(container) {
     await Promise.allSettled(removeInactiveCharactersPromises);
 }
 
-async function visualNovelSetCharacterSprites(container, name, expression) {
+/**
+ * Sets the character sprites for visual novel mode based on the provided container, name, and expression.
+ *
+ * @param {JQuery<HTMLElement>} vnContainer - The container element where the sprites will be set
+ * @param {string} spriteFolderName - The name of the sprite folder
+ * @param {string} expression - The expression to set for the characters
+ * @returns {Promise<Array>} - An array of promises that resolve when the sprites are set
+ */
+async function visualNovelSetCharacterSprites(vnContainer, spriteFolderName, expression) {
     const context = getContext();
     const group = context.groups.find(x => x.id == context.groupId);
-    const labels = await getExpressionsList();
 
-    const createCharacterPromises = [];
     const setSpritePromises = [];
 
     for (const avatar of group.members) {
-        const isDisabled = group.disabled_members.includes(avatar);
-
         // skip disabled characters
+        const isDisabled = group.disabled_members.includes(avatar);
         if (isDisabled && hideMutedSprites) {
             continue;
         }
 
         const character = context.characters.find(x => x.avatar == avatar);
-
         if (!character) {
             continue;
         }
 
-        const spriteFolderName = getSpriteFolderName({ original_avatar: character.avatar }, character.name);
+        const expressionImage = vnContainer.find(`.expression-holder[data-avatar="${avatar}"]`);
+
+        const memberSpriteFolderName = getSpriteFolderName({ original_avatar: character.avatar }, character.name);
 
         // download images if not downloaded yet
-        if (spriteCache[spriteFolderName] === undefined) {
-            spriteCache[spriteFolderName] = await getSpritesList(spriteFolderName);
+        if (spriteCache[memberSpriteFolderName] === undefined) {
+            spriteCache[memberSpriteFolderName] = await getSpritesList(memberSpriteFolderName);
         }
 
-        const sprites = spriteCache[spriteFolderName];
-        const expressionImage = container.find(`.expression-holder[data-avatar="${avatar}"]`);
-        const defaultExpression = getFallbackExpression();
-        // TODO: Visual novel sprites need fixing, currently do not update based on multiple sprites, etc
-        const defaultSpritePath = sprites.find(x => x.label === defaultExpression)?.path;
-        const noSprites = sprites.length === 0;
+        const prevExpressionSrc = expressionImage.find('img').attr('src') || null;
 
-        if (expressionImage.length > 0) {
-            if (name == spriteFolderName) {
-                await validateImages(spriteFolderName, true);
+        const spriteFile = chooseSpriteForExpression(memberSpriteFolderName, expression, { prevExpressionSrc: prevExpressionSrc });
+        if (expressionImage.length) {
+            if (spriteFolderName == memberSpriteFolderName) {
+                await validateImages(memberSpriteFolderName, true);
                 setExpressionOverrideHtml(true); // <= force clear expression override input
-                const currentSpritePath = labels.includes(expression) ? sprites.find(x => x.label === expression)?.path : '';
-
-                const path = currentSpritePath || defaultSpritePath || '';
+                const path = spriteFile?.imageSrc || '';
                 const img = expressionImage.find('img');
                 await setImage(img, path);
             }
-            expressionImage.toggleClass('hidden', noSprites);
+            expressionImage.toggleClass('hidden', !spriteFile);
         } else {
             const template = $('#expression-holder').clone();
             template.attr('id', `expression-${avatar}`);
@@ -226,18 +226,19 @@ async function visualNovelSetCharacterSprites(container, name, expression) {
             template.find('.drag-grabber').attr('id', `expression-${avatar}header`);
             $('#visual-novel-wrapper').append(template);
             dragElement($(template[0]));
-            template.toggleClass('hidden', noSprites);
-            await setImage(template.find('img'), defaultSpritePath || '');
+            template.toggleClass('hidden', !spriteFile);
+            await setImage(template.find('img'), spriteFile?.imageSrc || '');
             const fadeInPromise = new Promise(resolve => {
                 template.fadeIn(250, () => resolve());
             });
-            createCharacterPromises.push(fadeInPromise);
-            const setSpritePromise = setLastMessageSprite(template.find('img'), avatar, labels);
-            setSpritePromises.push(setSpritePromise);
+            setSpritePromises.push(fadeInPromise);
         }
+
+        if (spriteFile) console.info(`Expression set for group member ${character.name}`, { expression: spriteFile.expression, file: spriteFile.fileName });
+        else if (expressionImage.length) console.info(`Expression unset for group member ${character.name} - No sprite found`, { expression: expression });
+        else console.info(`Expression not available for group member ${character.name}`, { expression: expression });
     }
 
-    await Promise.allSettled(createCharacterPromises);
     return setSpritePromises;
 }
 
@@ -276,11 +277,11 @@ async function visualNovelUpdateLayers(container) {
     const containerWidth = container.width();
     const pivotalPoint = containerWidth * 0.5;
 
-    let images = $('#visual-novel-wrapper .expression-holder');
+    let images = Array.from($('#visual-novel-wrapper .expression-holder')).sort(sortFunction);
     let imagesWidth = [];
 
-    images.sort(sortFunction).each(function () {
-        imagesWidth.push($(this).width());
+    images.forEach(image => {
+        imagesWidth.push($(image).width());
     });
 
     let totalWidth = imagesWidth.reduce((a, b) => a + b, 0);
@@ -294,7 +295,7 @@ async function visualNovelUpdateLayers(container) {
         currentPosition = 0; // Reset the initial position to 0
     }
 
-    images.sort(sortFunction).each((index, current) => {
+    images.forEach((current, index) => {
         const element = $(current);
         const elementID = element.attr('id');
 
@@ -325,23 +326,6 @@ async function visualNovelUpdateLayers(container) {
     });
 
     await Promise.allSettled(setLayerIndicesPromises);
-}
-
-async function setLastMessageSprite(img, avatar, labels) {
-    const context = getContext();
-    const lastMessage = context.chat.slice().reverse().find(x => x.original_avatar == avatar || (x.force_avatar && x.force_avatar.includes(encodeURIComponent(avatar))));
-
-    if (lastMessage) {
-        const text = lastMessage.mes || '';
-        const spriteFolderName = getSpriteFolderName(lastMessage, lastMessage.name);
-        const sprites = spriteCache[spriteFolderName] || [];
-        const label = await getExpressionLabel(text);
-        const path = labels.includes(label) ? sprites.find(x => x.label === label)?.path : '';
-
-        if (path) {
-            setImage(img, path);
-        }
-    }
 }
 
 async function setImage(img, path) {
@@ -1062,28 +1046,28 @@ function removeExpression() {
 
 /**
  * Validate a character's sprites, and redraw the sprites list if not done before or forced to redraw.
- * @param {string} character - The character to validate
+ * @param {string} spriteFolderName - The character sprite folder to validate
  * @param {boolean} [forceRedrawCached=false] - Whether to force redrawing the sprites list even if it's already been drawn before
  */
-async function validateImages(character, forceRedrawCached = false) {
-    if (!character) {
+async function validateImages(spriteFolderName, forceRedrawCached = false) {
+    if (!spriteFolderName) {
         return;
     }
 
     const labels = await getExpressionsList();
 
-    if (spriteCache[character]) {
-        if (forceRedrawCached && $('#image_list').data('name') !== character) {
+    if (spriteCache[spriteFolderName]) {
+        if (forceRedrawCached && $('#image_list').data('name') !== spriteFolderName) {
             console.debug('force redrawing character sprites list');
-            await drawSpritesList(character, labels, spriteCache[character]);
+            await drawSpritesList(spriteFolderName, labels, spriteCache[spriteFolderName]);
         }
 
         return;
     }
 
-    const sprites = await getSpritesList(character);
-    let validExpressions = await drawSpritesList(character, labels, sprites);
-    spriteCache[character] = validExpressions;
+    const sprites = await getSpritesList(spriteFolderName);
+    let validExpressions = await drawSpritesList(spriteFolderName, labels, sprites);
+    spriteCache[spriteFolderName] = validExpressions;
 }
 
 /**
@@ -1106,20 +1090,20 @@ function getExpressionImageData(sprite) {
 
 /**
  * Populate the character expression list with sprites for the given character.
- * @param {string} character - The name of the character to populate the list for
+ * @param {string} spriteFolderName - The name of the character to populate the list for
  * @param {string[]} labels - An array of expression labels that are valid
  * @param {Expression[]} sprites - An array of sprites
  * @returns {Promise<Expression[]>} An array of valid expression labels
  */
-async function drawSpritesList(character, labels, sprites) {
+async function drawSpritesList(spriteFolderName, labels, sprites) {
     /** @type {Expression[]} */
     let validExpressions = [];
 
     $('#no_chat_expressions').hide();
     $('#open_chat_expressions').show();
     $('#image_list').empty();
-    $('#image_list').data('name', character);
-    $('#image_list_header_name').text(character);
+    $('#image_list').data('name', spriteFolderName);
+    $('#image_list_header_name').text(spriteFolderName);
 
     if (!Array.isArray(labels)) {
         return [];
@@ -1331,55 +1315,75 @@ export async function getExpressionsList() {
 }
 
 /**
+ * Selects a sprite from the given sprite folder for the given expression.
+ *
+ * If multiple sprites are allowed for the expression, it will randomly select one.
+ * If the rerollIfSame option is enabled, it will only select a different sprite if the previous sprite was the same.
+ * If the overrideSpriteFile option is set, it will look for the sprite with the given file name instead of randomly selecting one.
+ *
+ * @param {string} spriteFolderName - The name of the sprite folder
+ * @param {string} expression - The expression to find the sprite for
+ * @param {object} [options] - Options to select the sprite
+ * @param {string} [options.prevExpressionSrc=null] - The source of the previous expression
+ * @param {string} [options.overrideSpriteFile=null] - The file name of the sprite to select
+ * @returns {ExpressionImage} - The selected sprite
+ */
+function chooseSpriteForExpression(spriteFolderName, expression, { prevExpressionSrc = null, overrideSpriteFile = null } = {}) {
+    const sprite = (spriteCache[spriteFolderName] && spriteCache[spriteFolderName].find(x => x.label === expression));
+    if (!(sprite?.files.length > 0))
+        return null;
+
+    let spriteFile = sprite.files[0];
+
+    // If a specific sprite file should be set, we are looking it up here
+    if (overrideSpriteFile) {
+        const searched = sprite.files.find(x => x.fileName === overrideSpriteFile);
+        if (searched) spriteFile = searched;
+        else toastr.warning(t`Couldn't find sprite file ${overrideSpriteFile} for expression ${expression}.`, t`Sprite Not Found`);
+    }
+    // Else calculate next expression, if multiple are allowed
+    else if (extension_settings.expressions.allowMultiple && sprite.files.length > 1) {
+        let possibleFiles = sprite.files;
+        if (extension_settings.expressions.rerollIfSame) {
+            possibleFiles = possibleFiles.filter(x => !prevExpressionSrc || x.imageSrc !== prevExpressionSrc);
+        }
+        spriteFile = possibleFiles[Math.floor(Math.random() * possibleFiles.length)];
+    }
+
+    return spriteFile;
+
+}
+
+/**
  * Set the expression of a character.
- * @param {string} character - The name of the character
+ * @param {string} spriteFolderName - The name of the character (folder name - can also be a costume override)
  * @param {string} expression - The expression or sprite name to set
  * @param {Object} options - Optional parameters
  * @param {boolean} [options.force=false] - Whether to force the expression change even if Visual Novel mode is on
  * @param {string?} [options.overrideSpriteFile=null] - Set if a specific sprite file should be used. Must be sprite file name.
  * @returns {Promise<void>} A promise that resolves when the expression has been set.
  */
-async function setExpression(character, expression, { force = false, overrideSpriteFile = null } = {}) {
-    await validateImages(character);
+async function setExpression(spriteFolderName, expression, { force = false, overrideSpriteFile = null } = {}) {
+    await validateImages(spriteFolderName);
     const img = $('img.expression');
     const prevExpressionSrc = img.attr('src');
     const expressionClone = img.clone();
 
-    /** @type {Expression} */
-    const sprite = (spriteCache[character] && spriteCache[character].find(x => x.label === expression));
-    if (sprite && sprite.files.length > 0) {
-        let spriteFile = sprite.files[0];
-
-        // If a specific sprite file should be set, we are looking it up here
-        if (overrideSpriteFile) {
-            const searched = sprite.files.find(x => x.fileName === overrideSpriteFile);
-            if (searched) spriteFile = searched;
-            else toastr.warning(t`Couldn't find sprite file ${overrideSpriteFile} for expression ${expression}.`, t`Sprite Not Found`);
-        }
-        // Else calculate next expression, if multiple are allowed
-        else if (extension_settings.expressions.allowMultiple && sprite.files.length > 1) {
-            let possibleFiles = sprite.files;
-            if (extension_settings.expressions.rerollIfSame) {
-                possibleFiles = possibleFiles.filter(x => x.imageSrc !== prevExpressionSrc);
-            }
-            spriteFile = possibleFiles[Math.floor(Math.random() * possibleFiles.length)];
-        }
-
+    const spriteFile = chooseSpriteForExpression(spriteFolderName, expression, { prevExpressionSrc: prevExpressionSrc, overrideSpriteFile: overrideSpriteFile });
+    if (spriteFile) {
         if (force && isVisualNovelMode()) {
             const context = getContext();
             const group = context.groups.find(x => x.id === context.groupId);
 
-            for (const member of group.members) {
-                const groupMember = context.characters.find(x => x.avatar === member);
+            // If it's a folder, make sure we find the group member based on the actual name
+            const memberName = spriteFolderName.split('/')[0] ?? spriteFolderName;
 
-                if (!groupMember) {
-                    continue;
-                }
-
-                if (groupMember.name == character) {
-                    await setImage($(`.expression-holder[data-avatar="${member}"] img`), spriteFile.imageSrc);
-                    return;
-                }
+            const groupMember = group.members
+                .map(member => context.characters.find(x => x.avatar === member))
+                .find(groupMember => groupMember && groupMember.name === memberName);
+            if (groupMember) {
+                await setImage($(`.expression-holder[data-avatar="${groupMember.avatar}"] img`), spriteFile.imageSrc);
+                return;
             }
         }
 
@@ -1456,7 +1460,7 @@ async function setExpression(character, expression, { force = false, overrideSpr
         } else {
             setNone();
         }
-        console.debug('Expression unset');
+        console.debug('Expression unset - No sprite found', { expression: expression });
     }
 
     function setDefault() {
@@ -1969,7 +1973,7 @@ function migrateSettings() {
         $(document).on('click', '.expression_list_item', onClickExpressionImage);
         $(document).on('click', '.expression_list_upload', onClickExpressionUpload);
         $(document).on('click', '.expression_list_delete', onClickExpressionDelete);
-        $(window).on('resize', updateVisualNovelModeDebounced);
+        $(window).on('resize', () => updateVisualNovelModeDebounced());
         $('#open_chat_expressions').hide();
 
         await renderAdditionalExpressionSettings();
