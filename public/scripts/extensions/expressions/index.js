@@ -196,6 +196,8 @@ async function visualNovelSetCharacterSprites(vnContainer, spriteFolderName, exp
         }
 
         const expressionImage = vnContainer.find(`.expression-holder[data-avatar="${avatar}"]`);
+        /** @type {JQuery<HTMLElement>} */
+        let img;
 
         const memberSpriteFolderName = getSpriteFolderName({ original_avatar: character.avatar }, character.name);
 
@@ -212,7 +214,7 @@ async function visualNovelSetCharacterSprites(vnContainer, spriteFolderName, exp
                 await validateImages(memberSpriteFolderName, true);
                 setExpressionOverrideHtml(true); // <= force clear expression override input
                 const path = spriteFile?.imageSrc || '';
-                const img = expressionImage.find('img');
+                img = expressionImage.find('img');
                 await setImage(img, path);
             }
             expressionImage.toggleClass('hidden', !spriteFile);
@@ -224,12 +226,18 @@ async function visualNovelSetCharacterSprites(vnContainer, spriteFolderName, exp
             $('#visual-novel-wrapper').append(template);
             dragElement($(template[0]));
             template.toggleClass('hidden', !spriteFile);
-            await setImage(template.find('img'), spriteFile?.imageSrc || '');
+            img = template.find('img');
+            await setImage(img, spriteFile?.imageSrc || '');
             const fadeInPromise = new Promise(resolve => {
                 template.fadeIn(250, () => resolve());
             });
             setSpritePromises.push(fadeInPromise);
         }
+
+        img.attr('data-sprite-folder-name', spriteFolderName);
+        img.attr('data-expression', expression);
+        img.attr('data-sprite-filename', spriteFile?.fileName || null);
+        img.attr('title', expression);
 
         if (spriteFile) console.info(`Expression set for group member ${character.name}`, { expression: spriteFile.expression, file: spriteFile.fileName });
         else if (expressionImage.length) console.info(`Expression unset for group member ${character.name} - No sprite found`, { expression: expression });
@@ -1395,6 +1403,7 @@ async function setExpression(spriteFolderName, expression, { force = false, over
             expressionClone.attr('data-sprite-folder-name', spriteFolderName);
             expressionClone.attr('data-expression', expression);
             expressionClone.attr('data-sprite-filename', spriteFile.fileName);
+            expressionClone.attr('title', expression);
             //add invisible clone to html
             expressionClone.appendTo($('#expression-holder'));
 
@@ -1454,9 +1463,8 @@ async function setExpression(spriteFolderName, expression, { force = false, over
     }
     else {
         img.attr('data-sprite-folder-name', spriteFolderName);
-        img.attr('data-expression', expression);
 
-        $(img).off('error');
+        img.off('error');
 
         if (extension_settings.expressions.showDefault && expression !== RESET_SPRITE_LABEL) {
             setDefaultEmojiForImage(img, expression);
@@ -1484,6 +1492,7 @@ function setDefaultEmojiForImage(img, expression) {
     img.attr('src', defImgUrl);
     img.attr('data-expression', expression);
     img.attr('data-sprite-filename', null);
+    img.attr('title', expression);
     img.addClass('default');
 }
 
@@ -1496,6 +1505,7 @@ function setNoneForImage(img, expression) {
     img.attr('src', '');
     img.attr('data-expression', expression);
     img.attr('data-sprite-filename', null);
+    img.attr('title', expression);
     img.removeClass('default');
 }
 
