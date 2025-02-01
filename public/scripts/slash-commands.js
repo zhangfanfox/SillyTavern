@@ -843,7 +843,8 @@ export function initDefaultSlashCommands() {
         helpString: 'Moves a group member down in the group chat list.',
     }));
     SlashCommandParser.addCommandObject(SlashCommand.fromProps({
-        name: 'peek',
+        name: 'member-peek',
+        aliases: ['peek', 'memberpeek', 'peekmember'],
         callback: peekCallback,
         unnamedArgumentList: [
             SlashCommandArgument.fromProps({
@@ -3047,7 +3048,7 @@ function performGroupMemberAction(chid, action) {
 
 async function disableGroupMemberCallback(_, arg) {
     if (!selected_group) {
-        toastr.warning('Cannot run /disable command outside of a group chat.');
+        toastr.warning('Cannot run /member-disable command outside of a group chat.');
         return '';
     }
 
@@ -3064,7 +3065,7 @@ async function disableGroupMemberCallback(_, arg) {
 
 async function enableGroupMemberCallback(_, arg) {
     if (!selected_group) {
-        toastr.warning('Cannot run /enable command outside of a group chat.');
+        toastr.warning('Cannot run /member-enable command outside of a group chat.');
         return '';
     }
 
@@ -3115,12 +3116,12 @@ async function moveGroupMemberDownCallback(_, arg) {
 
 async function peekCallback(_, arg) {
     if (!selected_group) {
-        toastr.warning('Cannot run /peek command outside of a group chat.');
+        toastr.warning('Cannot run /member-peek command outside of a group chat.');
         return '';
     }
 
     if (is_group_generating) {
-        toastr.warning('Cannot run /peek command while the group reply is generating.');
+        toastr.warning('Cannot run /member-peek command while the group reply is generating.');
         return '';
     }
 
@@ -3137,7 +3138,7 @@ async function peekCallback(_, arg) {
 
 async function removeGroupMemberCallback(_, arg) {
     if (!selected_group) {
-        toastr.warning('Cannot run /memberremove command outside of a group chat.');
+        toastr.warning('Cannot run /member-remove command outside of a group chat.');
         return '';
     }
 
