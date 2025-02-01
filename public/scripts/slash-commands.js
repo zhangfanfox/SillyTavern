@@ -736,16 +736,18 @@ export function initDefaultSlashCommands() {
     SlashCommandParser.addCommandObject(SlashCommand.fromProps({
         name: 'member-get',
         aliases: ['getmember', 'memberget'],
-        callback: (async ({field}, arg) => {
+        callback: (async ({field = 'name'}, arg) => {
             if (!selected_group) {
                 toastr.warning('Cannot run /member-get command outside of a group chat.');
                 return '';
             }
-            if (field === undefined) {
-                throw new Error('\'/member-get field=\' argument required!');
+            if (field === '') {
+                toastr.warning('\'/member-get field=\' argument required!');
+                return '';
             }
             if (!['name', 'index', 'id', 'avatar'].includes(field)) {
-                throw new Error(`Invalid '/member-get field=' argument '${field}' specified!`);
+                toastr.warning('\'/member-get field=\' argument required!');
+                return '';
             }
             const isId = !isNaN(parseInt(arg));
             const groupMember = findGroupMemberId(arg, true);
@@ -761,6 +763,7 @@ export function initDefaultSlashCommands() {
                 description: 'Whether to retrieve the name, index, id, or avatar.',
                 typeList: [ARGUMENT_TYPE.STRING],
                 isRequired: true,
+                defaultValue: 'name',
                 enumList: ['name', 'index', 'id', 'avatar'],
             }),
         ],
