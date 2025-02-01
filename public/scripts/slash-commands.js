@@ -3081,7 +3081,7 @@ async function enableGroupMemberCallback(_, arg) {
 
 async function moveGroupMemberUpCallback(_, arg) {
     if (!selected_group) {
-        toastr.warning('Cannot run /memberup command outside of a group chat.');
+        toastr.warning('Cannot run /member-up command outside of a group chat.');
         return '';
     }
 
@@ -3098,7 +3098,7 @@ async function moveGroupMemberUpCallback(_, arg) {
 
 async function moveGroupMemberDownCallback(_, arg) {
     if (!selected_group) {
-        toastr.warning('Cannot run /memberdown command outside of a group chat.');
+        toastr.warning('Cannot run /member-down command outside of a group chat.');
         return '';
     }
 
