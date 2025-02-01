@@ -5927,6 +5927,15 @@ export async function saveReply(type, getMessage, fromStreaming, title, swipes, 
         chat[chat.length - 1]['extra'] = {};
     }
 
+    // Coerce null/undefined to empty string
+    if (!chat[chat.length - 1]['extra']['reasoning']) {
+        chat[chat.length - 1]['extra']['reasoning'] = '';
+    }
+
+    if (!reasoning) {
+        reasoning = '';
+    }
+
     let oldMessage = '';
     const generationFinished = new Date();
     const img = extractImageFromMessage(getMessage);
