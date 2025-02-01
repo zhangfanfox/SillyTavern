@@ -296,7 +296,7 @@ export function getGroupNames() {
  * @param {Boolean} full Whether to return a key-value object containing extra data
  * @returns {number|Object} 0-based character ID or key-value object if full is true
  */
-export function findGroupMemberId(arg, full) {
+export function findGroupMemberId(arg, full = false) {
     arg = arg?.trim();
 
     if (!arg) {
