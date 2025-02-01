@@ -162,7 +162,7 @@ router.post('/transcript', jsonParser, async (request, response) => {
 
 router.post('/searxng', jsonParser, async (request, response) => {
     try {
-        const { baseUrl, query, preferences } = request.body;
+        const { baseUrl, query, preferences, categories } = request.body;
 
         if (!baseUrl || !query) {
             console.log('Missing required parameters for /searxng');
@@ -192,6 +192,9 @@ router.post('/searxng', jsonParser, async (request, response) => {
         searchParams.append('q', query);
         if (preferences) {
             searchParams.append('preferences', preferences);
+        }
+        if (categories) {
+            searchParams.append('categories', categories);
         }
         searchUrl.search = searchParams.toString();
 
