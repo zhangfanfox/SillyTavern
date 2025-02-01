@@ -734,6 +734,47 @@ export function initDefaultSlashCommands() {
         helpString: 'Unhides a message from the prompt.',
     }));
     SlashCommandParser.addCommandObject(SlashCommand.fromProps({
+        name: 'member-get',
+        aliases: ['getmember', 'memberget'],
+        callback: (async ({field}, arg) => {
+            if (!selected_group) {
+                toastr.warning('Cannot run /member-get command outside of a group chat.');
+                return '';
+            }
+            if (field === undefined) {
+                throw new Error('\'/member-get field=\' argument required!');
+            }
+            if (!['name', 'index', 'id', 'avatar'].includes(field)) {
+                throw new Error(`Invalid '/member-get field=' argument '${field}' specified!`);
+            }
+            const isId = !isNaN(parseInt(arg));
+            const groupMember = findGroupMemberId(arg, true);
+            if (!groupMember) {
+                toastr.warn(`No group member found using ${isId?'id':'string'} ${arg}`);
+                return '';
+            }
+            return groupMember[field];
+        }),
+        namedArgumentList: [
+            SlashCommandNamedArgument.fromProps({
+                name: 'field',
+                description: 'Whether to retrieve the name, index, id, or avatar.',
+                typeList: [ARGUMENT_TYPE.STRING],
+                isRequired: true,
+                enumList: ['name', 'index', 'id', 'avatar'],
+            }),
+        ],
+        unnamedArgumentList: [
+            SlashCommandArgument.fromProps({
+                description: 'member index (starts with 0), name, or avatar',
+                typeList: [ARGUMENT_TYPE.NUMBER, ARGUMENT_TYPE.STRING],
+                isRequired: true,
+                enumProvider: commonEnumProviders.groupMembers(),
+            }),
+        ],
+        helpString: 'Retrieves a group member\'s name, index, id, or avatar.',
+    }));
+    SlashCommandParser.addCommandObject(SlashCommand.fromProps({
         name: 'member-disable',
         callback: disableGroupMemberCallback,
         aliases: ['disable', 'disablemember', 'memberdisable'],
