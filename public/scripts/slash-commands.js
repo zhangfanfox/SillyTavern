@@ -736,7 +736,7 @@ export function initDefaultSlashCommands() {
     SlashCommandParser.addCommandObject(SlashCommand.fromProps({
         name: 'member-get',
         aliases: ['getmember', 'memberget'],
-        callback: (async ({field = 'name'}, arg) => {
+        callback: (async ({ field = 'name' }, arg) => {
             if (!selected_group) {
                 toastr.warning('Cannot run /member-get command outside of a group chat.');
                 return '';
@@ -745,6 +745,8 @@ export function initDefaultSlashCommands() {
                 toastr.warning('\'/member-get field=\' argument required!');
                 return '';
             }
+            field = field.toString();
+            arg = arg.toString();
             if (!['name', 'index', 'id', 'avatar'].includes(field)) {
                 toastr.warning('\'/member-get field=\' argument required!');
                 return '';
@@ -752,7 +754,7 @@ export function initDefaultSlashCommands() {
             const isId = !isNaN(parseInt(arg));
             const groupMember = findGroupMemberId(arg, true);
             if (!groupMember) {
-                toastr.warn(`No group member found using ${isId?'id':'string'} ${arg}`);
+                toastr.warn(`No group member found using ${isId ? 'id' : 'string'} ${arg}`);
                 return '';
             }
             return groupMember[field];
@@ -764,7 +766,12 @@ export function initDefaultSlashCommands() {
                 typeList: [ARGUMENT_TYPE.STRING],
                 isRequired: true,
                 defaultValue: 'name',
-                enumList: ['name', 'index', 'id', 'avatar'],
+                enumList: [
+                    new SlashCommandEnumValue('name', 'Character name'),
+                    new SlashCommandEnumValue('index', 'Group member index'),
+                    new SlashCommandEnumValue('avatar', 'Character avatar'),
+                    new SlashCommandEnumValue('id', 'Character index'),
+                ],
             }),
         ],
         unnamedArgumentList: [
