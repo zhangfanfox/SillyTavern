@@ -220,7 +220,7 @@ router.post('/tavily', jsonParser, async (request, response) => {
             return response.sendStatus(400);
         }
 
-        const { query } = request.body;
+        const { query, include_images } = request.body;
 
         const body = {
             query: query,
@@ -229,7 +229,7 @@ router.post('/tavily', jsonParser, async (request, response) => {
             topic: 'general',
             include_answer: true,
             include_raw_content: false,
-            include_images: false,
+            include_images: !!include_images,
             include_image_descriptions: false,
             include_domains: [],
             max_results: 10,
@@ -297,6 +297,7 @@ router.post('/koboldcpp', jsonParser, async (request, response) => {
 router.post('/visit', jsonParser, async (request, response) => {
     try {
         const url = request.body.url;
+        const html = Boolean(request.body.html ?? true);
 
         if (!url) {
             console.log('No url provided for /visit');
@@ -340,13 +341,20 @@ router.post('/visit', jsonParser, async (request, response) => {
         }
 
         const contentType = String(result.headers.get('content-type'));
-        if (!contentType.includes('text/html')) {
-            console.log(`Visit failed, content-type is ${contentType}, expected text/html`);
-            return response.sendStatus(500);
+
+        if (html) {
+            if (!contentType.includes('text/html')) {
+                console.log(`Visit failed, content-type is ${contentType}, expected text/html`);
+                return response.sendStatus(500);
+            }
+
+            const text = await result.text();
+            return response.send(text);
         }
 
-        const text = await result.text();
-        return response.send(text);
+        response.setHeader('Content-Type', contentType);
+        const buffer = await result.arrayBuffer();
+        return response.send(Buffer.from(buffer));
     } catch (error) {
         console.log(error);
         return response.sendStatus(500);
