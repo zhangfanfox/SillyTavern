@@ -4467,6 +4467,9 @@ export async function Generate(type, { automatic_trigger, force_name2, quiet_pro
                     // TODO: Make all extension prompts use an array/splice method
                     const lengthDiff = mesSend.length - cfgPrompt.depth;
                     const cfgDepth = lengthDiff >= 0 ? lengthDiff : 0;
+                    if (!Array.isArray(finalMesSend[cfgDepth].extensionPrompts)) {
+                        finalMesSend[cfgDepth].extensionPrompts = [];
+                    }
                     finalMesSend[cfgDepth].extensionPrompts.push(`${cfgPrompt.value}\n`);
                 }
             }
