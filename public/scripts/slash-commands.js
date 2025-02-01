@@ -42,6 +42,7 @@ import {
     showMoreMessages,
     stopGeneration,
     substituteParams,
+    syncCurrentSwipeInfoExtras,
     system_avatar,
     system_message_types,
     this_chid,
@@ -58,7 +59,7 @@ import { autoSelectPersona, retriggerFirstMessageOnEmptyChat, setPersonaLockStat
 import { addEphemeralStoppingString, chat_styles, flushEphemeralStoppingStrings, power_user } from './power-user.js';
 import { SERVER_INPUTS, textgen_types, textgenerationwebui_settings } from './textgen-settings.js';
 import { decodeTextTokens, getAvailableTokenizers, getFriendlyTokenizerName, getTextTokens, getTokenCountAsync, selectTokenizer } from './tokenizers.js';
-import { debounce, delay, equalsIgnoreCaseAndAccents, findChar, getCharIndex, isFalseBoolean, isTrueBoolean, onlyUnique, showFontAwesomePicker, stringToRange, trimToEndSentence, trimToStartSentence, waitUntilCondition } from './utils.js';
+import { debounce, delay, equalsIgnoreCaseAndAccents, findChar, getCharIndex, isFalseBoolean, isTrueBoolean, onlyUnique, regexFromString, showFontAwesomePicker, stringToRange, trimToEndSentence, trimToStartSentence, waitUntilCondition } from './utils.js';
 import { registerVariableCommands, resolveVariable } from './variables.js';
 import { background_settings } from './backgrounds.js';
 import { SlashCommandClosure } from './slash-commands/SlashCommandClosure.js';
@@ -1902,7 +1903,7 @@ export function initDefaultSlashCommands() {
         returns: 'uppercase string',
         unnamedArgumentList: [
             new SlashCommandArgument(
-                'string', [ARGUMENT_TYPE.STRING], true, false,
+                'text to affect', [ARGUMENT_TYPE.STRING], true, false,
             ),
         ],
         helpString: 'Converts the provided string to uppercase.',
@@ -1914,7 +1915,7 @@ export function initDefaultSlashCommands() {
         returns: 'lowercase string',
         unnamedArgumentList: [
             new SlashCommandArgument(
-                'string', [ARGUMENT_TYPE.STRING], true, false,
+                'text to affect', [ARGUMENT_TYPE.STRING], true, false,
             ),
         ],
         helpString: 'Converts the provided string to lowercase.',
@@ -1934,7 +1935,7 @@ export function initDefaultSlashCommands() {
         ],
         unnamedArgumentList: [
             new SlashCommandArgument(
-                'string', [ARGUMENT_TYPE.STRING], true, false,
+                'text to affect', [ARGUMENT_TYPE.STRING], true, false,
             ),
         ],
         helpString: `
@@ -1997,6 +1998,62 @@ export function initDefaultSlashCommands() {
             await reloadCurrentChat();
             return '';
         },
+    }));
+    SlashCommandParser.addCommandObject(SlashCommand.fromProps({
+        name: 'replace',
+        aliases: ['re'],
+        callback: (async ({ mode = 'literal', pattern, replacer = '' }, text) => {
+            if (pattern === '')
+                throw new Error('Argument of \'pattern=\' cannot be empty');
+            switch (mode) {
+                case 'literal':
+                    return text.replaceAll(pattern, replacer);
+                case 'regex':
+                    return text.replace(regexFromString(pattern), replacer);
+                default:
+                    throw new Error('Invalid \'/replace mode=\' argument specified!');
+            }
+        }),
+        returns: 'replaced text',
+        namedArgumentList: [
+            SlashCommandNamedArgument.fromProps({
+                name: 'mode',
+                description: 'Replaces occurrence(s) of a pattern',
+                typeList: [ARGUMENT_TYPE.STRING],
+                defaultValue: 'literal',
+                enumList: ['literal', 'regex'],
+            }),
+            new SlashCommandNamedArgument(
+                'pattern', 'pattern to search with', [ARGUMENT_TYPE.STRING], true, false,
+            ),
+            new SlashCommandNamedArgument(
+                'replacer', 'replacement text for matches', [ARGUMENT_TYPE.STRING], false, false, '',
+            ),
+        ],
+        unnamedArgumentList: [
+            new SlashCommandArgument(
+                'text to affect', [ARGUMENT_TYPE.STRING], true, false,
+            ),
+        ],
+        helpString: `
+            <div>
+                Replaces text within the provided string based on the pattern.
+            </div>
+            <div>
+                If <code>mode</code> is <code>literal</code> (or omitted), <code>pattern</code> is a literal search string (case-sensitive).<br />
+                If <code>mode</code> is <code>regex</code>, <code>pattern</code> is parsed as an ECMAScript Regular Expression.<br />
+                The <code>replacer</code> replaces based on the <code>pattern</code> in the input text.<br />
+                If <code>replacer</code> is omitted, the replacement(s) will be an empty string.<br />
+            </div>
+            <div>
+                <strong>Example:</strong>
+                <pre>/let x Blue house and blue car ||                                                                        </pre>
+                <pre>/replace pattern="blue" {{var::x}}                                | /echo  |/# Blue house and  car     ||</pre>
+                <pre>/replace pattern="blue" replacer="red" {{var::x}}                 | /echo  |/# Blue house and red car  ||</pre>
+                <pre>/replace mode=regex pattern="/blue/i" replacer="red" {{var::x}}   | /echo  |/# red house and blue car  ||</pre>
+                <pre>/replace mode=regex pattern="/blue/gi" replacer="red" {{var::x}}  | /echo  |/# red house and red car   ||</pre>
+            </div>
+        `,
     }));
 
     registerVariableCommands();
@@ -2814,8 +2871,11 @@ async function addSwipeCallback(args, value) {
     const newSwipeId = lastMessage.swipes.length - 1;
 
     if (isTrueBoolean(args.switch)) {
+        // Make sure ad-hoc changes to extras are saved before swiping away
+        syncCurrentSwipeInfoExtras();
         lastMessage.swipe_id = newSwipeId;
         lastMessage.mes = lastMessage.swipes[newSwipeId];
+        lastMessage.extra = structuredClone(lastMessage.swipe_info?.[newSwipeId]?.extra ?? lastMessage.extra ?? {});
     }
 
     await saveChatConditional();
@@ -3081,11 +3141,6 @@ async function removeGroupMemberCallback(_, arg) {
         return '';
     }
 
-    if (is_group_generating) {
-        toastr.warning('Cannot run /memberremove command while the group reply is generating.');
-        return '';
-    }
-
     const chid = findGroupMemberId(arg);
 
     if (chid === undefined) {
@@ -3190,12 +3245,7 @@ function findPersonaByName(name) {
 }
 
 async function sendUserMessageCallback(args, text) {
-    if (!text) {
-        toastr.warning('You must specify text to send');
-        return;
-    }
-
-    text = text.trim();
+    text = String(text ?? '').trim();
     const compact = isTrueBoolean(args?.compact);
     const bias = extractMessageBias(text);
 
@@ -3504,13 +3554,7 @@ export function getNameAndAvatarForMessage(character, name = null) {
 }
 
 export async function sendMessageAs(args, text) {
-    if (!text) {
-        toastr.warning('You must specify text to send as');
-        return '';
-    }
-
     let name = args.name?.trim();
-    let mesText;
 
     if (!name) {
         const namelessWarningKey = 'sendAsNamelessWarningShown';
@@ -3521,7 +3565,7 @@ export async function sendMessageAs(args, text) {
         name = name2;
     }
 
-    mesText = text.trim();
+    let mesText = String(text ?? '').trim();
 
     // Requires a regex check after the slash command is pushed to output
     mesText = getRegexedString(mesText, regex_placement.SLASH_COMMAND, { characterOverride: name });
@@ -3599,11 +3643,7 @@ export async function sendMessageAs(args, text) {
 }
 
 export async function sendNarratorMessage(args, text) {
-    if (!text) {
-        toastr.warning('You must specify text to send');
-        return '';
-    }
-
+    text = String(text ?? '');
     const name = chat_metadata[NARRATOR_NAME_KEY] || NARRATOR_NAME_DEFAULT;
     // Messages that do nothing but set bias will be hidden from the context
     const bias = extractMessageBias(text);
@@ -3694,18 +3734,13 @@ export async function promptQuietForLoudResponse(who, text) {
 }
 
 async function sendCommentMessage(args, text) {
-    if (!text) {
-        toastr.warning('You must specify text to send');
-        return '';
-    }
-
     const compact = isTrueBoolean(args?.compact);
     const message = {
         name: COMMENT_NAME_DEFAULT,
         is_user: false,
         is_system: true,
         send_date: getMessageTimeStamp(),
-        mes: substituteParams(text.trim()),
+        mes: substituteParams(String(text ?? '').trim()),
         force_avatar: comment_avatar,
         extra: {
             type: system_message_types.COMMENT,
