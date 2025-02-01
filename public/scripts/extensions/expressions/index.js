@@ -70,6 +70,12 @@ const DEFAULT_EXPRESSIONS = [
     'surprise',
     'neutral',
 ];
+
+const OPTION_NO_FALLBACK = '#none';
+const OPTION_EMOJI_FALLBACK = '#emoji';
+const RESET_SPRITE_LABEL = '#reset';
+
+
 /** @enum {number} */
 const EXPRESSION_API = {
     local: 0,
@@ -106,15 +112,6 @@ function getPlaceholderImage(expression, isCustom = false) {
     };
 }
 
-
-/**
- * Returns the fallback expression if explicitly chosen, otherwise the default one
- * @returns {string} expression name
- */
-function getFallbackExpression() {
-    return extension_settings.expressions.fallback_expression ?? DEFAULT_FALLBACK_EXPRESSION;
-}
-
 function isVisualNovelMode() {
     return Boolean(!isMobile() && power_user.waifuMode && getContext().groupId);
 }
@@ -127,12 +124,12 @@ async function forceUpdateVisualNovelMode() {
 
 const updateVisualNovelModeDebounced = debounce(forceUpdateVisualNovelMode, debounce_timeout.quick);
 
-async function updateVisualNovelMode(name, expression) {
+async function updateVisualNovelMode(spriteFolderName, expression) {
     const vnContainer = $('#visual-novel-wrapper');
 
     await visualNovelRemoveInactive(vnContainer);
 
-    const setSpritePromises = await visualNovelSetCharacterSprites(vnContainer, name, expression);
+    const setSpritePromises = await visualNovelSetCharacterSprites(vnContainer, spriteFolderName, expression);
 
     // calculate layer indices based on recent messages
     await visualNovelUpdateLayers(vnContainer);
@@ -414,23 +411,6 @@ async function setImage(img, path) {
     });
 }
 
-function onExpressionsShowDefaultInput() {
-    const value = $(this).prop('checked');
-    extension_settings.expressions.showDefault = value;
-    saveSettingsDebounced();
-
-    const existingImageSrc = $('img.expression').prop('src');
-    if (existingImageSrc !== undefined) {                      //if we have an image in src
-        if (!value && existingImageSrc.includes('/img/default-expressions/')) {    //and that image is from /img/ (default)
-            $('img.expression').prop('src', '');               //remove it
-            lastMessage = null;
-        }
-        if (value) {
-            lastMessage = null;
-        }
-    }
-}
-
 async function moduleWorker() {
     const context = getContext();
 
@@ -546,8 +526,8 @@ async function moduleWorker() {
         const force = !!context.groupId;
 
         // Character won't be angry on you for swiping
-        if (currentLastMessage.mes == '...' && expressionsList.includes(getFallbackExpression())) {
-            expression = getFallbackExpression();
+        if (currentLastMessage.mes == '...' && expressionsList.includes(extension_settings.expressions.fallback_expression)) {
+            expression = extension_settings.expressions.fallback_expression;
         }
 
         await sendExpressionCall(spriteFolderName, expression, { force: force, vnMode: vnMode });
@@ -599,23 +579,23 @@ function getFolderNameByMessage(message) {
 /**
  * Update the expression for the given character.
  *
- * @param {string} name The character name, optionally with a sprite folder override, e.g. "folder/expression".
+ * @param {string} spriteFolderName The character name, optionally with a sprite folder override, e.g. "folder/expression".
  * @param {string} expression The expression label, e.g. "amusement", "joy", etc.
  * @param {Object} [options] Additional options
  * @param {boolean} [options.force=false] If true, the expression will be sent even if it is the same as the current expression.
  * @param {boolean} [options.vnMode=null] If true, the expression will be sent in Visual Novel mode. If null, it will be determined by the current chat mode.
  * @param {string?} [options.overrideSpriteFile=null] - Set if a specific sprite file should be used. Must be sprite file name.
  */
-async function sendExpressionCall(name, expression, { force = false, vnMode = null, overrideSpriteFile = null } = {}) {
-    lastExpression[name.split('/')[0]] = expression;
+async function sendExpressionCall(spriteFolderName, expression, { force = false, vnMode = null, overrideSpriteFile = null } = {}) {
+    lastExpression[spriteFolderName.split('/')[0]] = expression;
     if (vnMode === null) {
         vnMode = isVisualNovelMode();
     }
 
     if (vnMode) {
-        await updateVisualNovelMode(name, expression);
+        await updateVisualNovelMode(spriteFolderName, expression);
     } else {
-        setExpression(name, expression, { force: force, overrideSpriteFile: overrideSpriteFile });
+        setExpression(spriteFolderName, expression, { force: force, overrideSpriteFile: overrideSpriteFile });
     }
 }
 
@@ -679,7 +659,7 @@ async function setSpriteSlashCommand({ type }, searchTerm) {
     await validateImages(spriteFolderName);
 
     // Handle reset as a special term and just reset the sprite via expression call
-    if (searchTerm === '#reset') {
+    if (searchTerm === RESET_SPRITE_LABEL) {
         await sendExpressionCall(spriteFolderName, label, { force: true });
         return lastExpression[spriteFolderName] ?? '';
     }
@@ -933,12 +913,12 @@ function onTextGenSettingsReady(args) {
  * @param {EXPRESSION_API} [expressionsApi=extension_settings.expressions.api] - The expressions API to use for classification.
  * @param {object} [options={}] - Optional arguments.
  * @param {string?} [options.customPrompt=null] - The custom prompt to use for classification.
- * @returns {Promise<string>} - The label of the expression.
+ * @returns {Promise<string?>} - The label of the expression.
  */
 export async function getExpressionLabel(text, expressionsApi = extension_settings.expressions.api, { customPrompt = null } = {}) {
     // Return if text is undefined, saving a costly fetch request
     if ((!modules.includes('classify') && expressionsApi == EXPRESSION_API.extras) || !text) {
-        return getFallbackExpression();
+        return extension_settings.expressions.fallback_expression;
     }
 
     if (extension_settings.expressions.translate && typeof window['translate'] === 'function') {
@@ -968,7 +948,7 @@ export async function getExpressionLabel(text, expressionsApi = extension_settin
                     await waitUntilCondition(() => online_status !== 'no_connection', 3000, 250);
                 } catch (error) {
                     console.warn('No LLM connection. Using fallback expression', error);
-                    return getFallbackExpression();
+                    return extension_settings.expressions.fallback_expression;
                 }
 
                 const expressionsList = await getExpressionsList();
@@ -981,7 +961,7 @@ export async function getExpressionLabel(text, expressionsApi = extension_settin
             case EXPRESSION_API.webllm: {
                 if (!isWebLlmSupported()) {
                     console.warn('WebLLM is not supported. Using fallback expression');
-                    return getFallbackExpression();
+                    return extension_settings.expressions.fallback_expression;
                 }
 
                 const expressionsList = await getExpressionsList();
@@ -1014,9 +994,9 @@ export async function getExpressionLabel(text, expressionsApi = extension_settin
             } break;
         }
     } catch (error) {
-        toastr.info('Could not classify expression. Check the console or your backend for more information.');
+        toastr.error('Could not classify expression. Check the console or your backend for more information.');
         console.error(error);
-        return getFallbackExpression();
+        return extension_settings.expressions.fallback_expression;
     }
 }
 
@@ -1231,13 +1211,20 @@ async function renderFallbackExpressionPicker() {
     const defaultPicker = $('#expression_fallback');
     defaultPicker.empty();
 
-    const fallbackExpression = getFallbackExpression();
+
+    addOption(OPTION_NO_FALLBACK, '[ No fallback ]', !extension_settings.expressions.fallback_expression);
+    addOption(OPTION_EMOJI_FALLBACK, '[ Default emojis ]', !!extension_settings.expressions.showDefault);
 
     for (const expression of expressions) {
+        addOption(expression, expression, expression == extension_settings.expressions.fallback_expression);
+    }
+
+    /** @type {(value: string, label: string, isSelected: boolean) => void} */
+    function addOption(value, label, isSelected) {
         const option = document.createElement('option');
-        option.value = expression;
-        option.text = expression;
-        option.selected = expression == fallbackExpression;
+        option.value = value;
+        option.text = label;
+        option.selected = isSelected;
         defaultPicker.append(option);
     }
 }
@@ -1326,12 +1313,19 @@ export async function getExpressionsList() {
  * @param {object} [options] - Options to select the sprite
  * @param {string} [options.prevExpressionSrc=null] - The source of the previous expression
  * @param {string} [options.overrideSpriteFile=null] - The file name of the sprite to select
- * @returns {ExpressionImage} - The selected sprite
+ * @returns {ExpressionImage?} - The selected sprite
  */
 function chooseSpriteForExpression(spriteFolderName, expression, { prevExpressionSrc = null, overrideSpriteFile = null } = {}) {
-    const sprite = (spriteCache[spriteFolderName] && spriteCache[spriteFolderName].find(x => x.label === expression));
-    if (!(sprite?.files.length > 0))
-        return null;
+    if (!spriteCache[spriteFolderName]) return null;
+    if (expression === RESET_SPRITE_LABEL) return null;
+
+    // Search for sprites of that expression - or fallback expression sprites if enabled
+    let sprite = spriteCache[spriteFolderName].find(x => x.label === expression);
+    if (!(sprite?.files.length > 0) && extension_settings.expressions.fallback_expression) {
+        sprite = spriteCache[spriteFolderName].find(x => x.label === extension_settings.expressions.fallback_expression);
+        console.debug('Expression', expression, 'not found. Using fallback expression', extension_settings.expressions.fallback_expression);
+    }
+    if (!(sprite?.files.length > 0)) return null;
 
     let spriteFile = sprite.files[0];
 
@@ -1397,6 +1391,10 @@ async function setExpression(spriteFolderName, expression, { force = false, over
             expressionClone.attr('id', '').css({ opacity: 0 });
             //add new sprite path to clone src
             expressionClone.attr('src', spriteFile.imageSrc);
+            //set relevant data tags
+            expressionClone.attr('data-sprite-folder-name', spriteFolderName);
+            expressionClone.attr('data-expression', expression);
+            expressionClone.attr('data-sprite-filename', spriteFile.fileName);
             //add invisible clone to html
             expressionClone.appendTo($('#expression-holder'));
 
@@ -1442,12 +1440,12 @@ async function setExpression(spriteFolderName, expression, { force = false, over
 
             expressionClone.removeClass('default');
             expressionClone.off('error');
-            expressionClone.on('error', function () {
-                console.debug('Expression image error', spriteFile.imageSrc);
+            expressionClone.on('error', function (error) {
+                console.debug('Expression image error', spriteFile.imageSrc, error);
                 $(this).attr('src', '');
                 $(this).off('error');
                 if (force && extension_settings.expressions.showDefault) {
-                    setDefault();
+                    setDefaultEmojiForImage(img, expression);
                 }
             });
         }
@@ -1455,28 +1453,50 @@ async function setExpression(spriteFolderName, expression, { force = false, over
         console.info('Expression set', { expression: spriteFile.expression, file: spriteFile.fileName });
     }
     else {
-        if (extension_settings.expressions.showDefault) {
-            setDefault();
+        img.attr('data-sprite-folder-name', spriteFolderName);
+        img.attr('data-expression', expression);
+
+        $(img).off('error');
+
+        if (extension_settings.expressions.showDefault && expression !== RESET_SPRITE_LABEL) {
+            setDefaultEmojiForImage(img, expression);
         } else {
-            setNone();
+            setNoneForImage(img, expression);
         }
         console.debug('Expression unset - No sprite found', { expression: expression });
     }
 
-    function setDefault() {
-        console.debug('setting default expression');
-        const defImgUrl = `/img/default-expressions/${expression}.png`;
-        //console.log(defImgUrl);
-        img.attr('src', defImgUrl);
-        img.addClass('default');
-    }
-    function setNone() {
-        console.debug('setting no expression');
-        img.attr('src', '');
-        img.removeClass('default');
+    document.getElementById('expression-holder').style.display = '';
+}
+
+/**
+ * Sets the default expression image for the given image element and expression
+ * @param {JQuery<HTMLElement>} img - The image element to set the default expression for
+ * @param {string} expression - The expression label to use for the default image
+ */
+function setDefaultEmojiForImage(img, expression) {
+    if (extension_settings.expressions.custom?.includes(expression)) {
+        console.debug(`Can't set default emoji for a custom expression (${expression}). setting to ${DEFAULT_FALLBACK_EXPRESSION} instead.`);
+        expression = DEFAULT_FALLBACK_EXPRESSION;
     }
 
-    document.getElementById('expression-holder').style.display = '';
+    const defImgUrl = `/img/default-expressions/${expression}.png`;
+    img.attr('src', defImgUrl);
+    img.attr('data-expression', expression);
+    img.attr('data-sprite-filename', null);
+    img.addClass('default');
+}
+
+/**
+ * Sets the image element to display no expression by clearing its source attribute.
+ * @param {JQuery<HTMLElement>} img - The image element to clear the expression for
+ * @param {string} expression - The expression label to use
+ */
+function setNoneForImage(img, expression) {
+    img.attr('src', '');
+    img.attr('data-expression', expression);
+    img.attr('data-sprite-filename', null);
+    img.removeClass('default');
 }
 
 function onClickExpressionImage() {
@@ -1504,19 +1524,15 @@ async function onClickExpressionAddCustom() {
 
     // a-z, 0-9, dashes and underscores only
     if (!/^[a-z0-9-_]+$/.test(expressionName)) {
-        toastr.info('Invalid custom expression name provided');
+        toastr.warning('Invalid custom expression name provided', 'Add Custom Expression');
         return;
     }
-
-    // Check if expression name already exists in default expressions
     if (DEFAULT_EXPRESSIONS.includes(expressionName)) {
-        toastr.info('Expression name already exists');
+        toastr.warning('Expression name already exists', 'Add Custom Expression');
         return;
     }
-
-    // Check if expression name already exists in custom expressions
     if (extension_settings.expressions.custom.includes(expressionName)) {
-        toastr.info('Custom expression already exists');
+        toastr.warning('Custom expression already exists', 'Add Custom Expression');
         return;
     }
 
@@ -1550,8 +1566,8 @@ async function onClickExpressionRemoveCustom() {
     // Remove custom expression from settings
     const index = extension_settings.expressions.custom.indexOf(selectedExpression);
     extension_settings.expressions.custom.splice(index, 1);
-    if (selectedExpression == getFallbackExpression()) {
-        toastr.warning(`Deleted custom expression '${selectedExpression}' that was also selected as the fallback expression.\nFallback expression has been reset to '${DEFAULT_FALLBACK_EXPRESSION}'.`);
+    if (selectedExpression == extension_settings.expressions.fallback_expression) {
+        toastr.warning(`Deleted custom expression '${selectedExpression}' that was also selected as the fallback expression.\nFallback expression has been reset to '${DEFAULT_FALLBACK_EXPRESSION}'.`, 'Remove Custom Expression');
         extension_settings.expressions.fallback_expression = DEFAULT_FALLBACK_EXPRESSION;
     }
     await renderAdditionalExpressionSettings();
@@ -1575,12 +1591,35 @@ function onExpressionApiChanged() {
     }
 }
 
-function onExpressionFallbackChanged() {
-    const expression = this.value;
-    if (expression) {
-        extension_settings.expressions.fallback_expression = expression;
-        saveSettingsDebounced();
+async function onExpressionFallbackChanged() {
+    /** @type {HTMLSelectElement} */
+    const select = this;
+    const selectedValue = select.value;
+
+    switch (selectedValue) {
+        case OPTION_NO_FALLBACK:
+            extension_settings.expressions.fallback_expression = null;
+            extension_settings.expressions.showDefault = false;
+            break;
+        case OPTION_EMOJI_FALLBACK:
+            extension_settings.expressions.fallback_expression = null;
+            extension_settings.expressions.showDefault = true;
+            break;
+        default:
+            extension_settings.expressions.fallback_expression = selectedValue;
+            extension_settings.expressions.showDefault = false;
+            break;
     }
+
+    const img = $('img.expression');
+    const spriteFolderName = img.attr('data-sprite-folder-name');
+    const expression = img.attr('data-expression');
+
+    if (spriteFolderName && expression) {
+        await sendExpressionCall(spriteFolderName, expression, { force: true });
+    }
+
+    saveSettingsDebounced();
 }
 
 async function handleFileUpload(url, formData) {
@@ -1924,6 +1963,16 @@ function migrateSettings() {
         extension_settings.expressions.llmPrompt = DEFAULT_LLM_PROMPT;
         saveSettingsDebounced();
     }
+
+    if (extension_settings.expressions.allowMultiple === undefined) {
+        extension_settings.expressions.allowMultiple = true;
+        saveSettingsDebounced();
+    }
+
+    if (extension_settings.expressions.showDefault && extension_settings.expressions.fallback_expression !== undefined) {
+        extension_settings.expressions.showDefault = false;
+        saveSettingsDebounced();
+    }
 }
 
 (async function () {
@@ -1950,9 +1999,7 @@ function migrateSettings() {
         const template = await renderExtensionTemplateAsync(MODULE_NAME, 'settings');
         $('#expressions_container').append(template);
         $('#expression_override_button').on('click', onClickExpressionOverrideButton);
-        $('#expressions_show_default').on('input', onExpressionsShowDefaultInput);
         $('#expression_upload_pack_button').on('click', onClickExpressionUploadPackButton);
-        $('#expressions_show_default').prop('checked', extension_settings.expressions.showDefault).trigger('input');
         $('#expression_translate').prop('checked', extension_settings.expressions.translate).on('input', function () {
             extension_settings.expressions.translate = !!$(this).prop('checked');
             saveSettingsDebounced();
@@ -2080,7 +2127,7 @@ function migrateSettings() {
                     if (type == 'sprite') return localEnumProviders.sprites();
                     else return [
                         ...localEnumProviders.expressions(),
-                        new SlashCommandEnumValue('#reset', 'Resets the expression (to either default or no sprite)', enumTypes.enum, '❌'),
+                        new SlashCommandEnumValue(RESET_SPRITE_LABEL, 'Resets the expression (to either default or no sprite)', enumTypes.enum, '❌'),
                     ];
                 },
             }),
