@@ -225,7 +225,7 @@ import {
     instruct_presets,
     selectContextPreset,
 } from './scripts/instruct-mode.js';
-import { initLocales, t } from './scripts/i18n.js';
+import { getCurrentLocale, initLocales, t } from './scripts/i18n.js';
 import { getFriendlyTokenizerName, getTokenCount, getTokenCountAsync, initTokenizers, saveTokenCache, TOKENIZER_SUPPORTED_KEY } from './scripts/tokenizers.js';
 import {
     user_avatar,
@@ -5803,7 +5803,8 @@ function extractReasoningFromData(data) {
  */
 function updateReasoningTimeUI(element, duration, { forceEnd = false } = {}) {
     if (duration) {
-        element.textContent = t`Thought for ${moment.duration(duration).humanize({ s: 50, ss: 9 })}`;
+        const durationStr = moment.duration(duration).locale(getCurrentLocale()).humanize({ s: 50, ss: 9 });
+        element.textContent = t`Thought for ${durationStr}`;
     } else if (forceEnd) {
         element.textContent = t`Thought for some time`;
     } else {
