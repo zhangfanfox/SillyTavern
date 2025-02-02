@@ -2189,26 +2189,29 @@ function insertSVGIcon(mes, extra) {
         modelName = extra.api;
     }
 
-    const image = new Image();
-    // Add classes for styling and identification
-    image.classList.add('icon-svg', 'timestamp-icon');
-    image.src = `/img/${modelName}.svg`;
-    image.title = `${extra?.api ? extra.api + ' - ' : ''}${extra?.model ?? ''}`;
-
-    image.onload = async function () {
-        // Check if an SVG already exists adjacent to the timestamp
-        let existingSVG = mes.find('.timestamp').next('.timestamp-icon');
-
-        if (existingSVG.length) {
-            // Replace existing SVG
-            existingSVG.replaceWith(image);
-        } else {
-            // Append the new SVG if none exists
-            mes.find('.timestamp').after(image);
-        }
-
-        await SVGInject(image);
+    const insertOrReplaceSVG = (image, className, targetSelector, insertBefore) => {
+        image.onload = async function () {
+            let existingSVG = insertBefore ? mes.find(targetSelector).prev(`.${className}`) : mes.find(targetSelector).next(`.${className}`);
+            if (existingSVG.length) {
+                existingSVG.replaceWith(image);
+            } else {
+                if (insertBefore) mes.find(targetSelector).before(image);
+                else mes.find(targetSelector).after(image);
+            }
+            await SVGInject(image);
+        };
     };
+
+    const createModelImage = (className, targetSelector, insertBefore) => {
+        const image = new Image();
+        image.classList.add('icon-svg', className);
+        image.src = `/img/${modelName}.svg`;
+        image.title = `${extra?.api ? extra.api + ' - ' : ''}${extra?.model ?? ''}`;
+        insertOrReplaceSVG(image, className, targetSelector, insertBefore);
+    };
+
+    createModelImage('timestamp-icon', '.timestamp');
+    createModelImage('thinking-icon', '.mes_reasoning_header_title', true);
 }
 
 
