@@ -495,6 +495,7 @@ export const event_types = {
     /** @deprecated The event is aliased to STREAM_TOKEN_RECEIVED. */
     SMOOTH_STREAM_TOKEN_RECEIVED: 'stream_token_received',
     STREAM_TOKEN_RECEIVED: 'stream_token_received',
+    STREAM_REASONING_DONE: 'stream_reasoning_done',
     FILE_ATTACHMENT_DELETED: 'file_attachment_deleted',
     WORLDINFO_FORCE_ACTIVATE: 'worldinfo_force_activate',
     OPEN_CHARACTER_LIBRARY: 'open_character_library',
@@ -2223,6 +2224,7 @@ function getMessageFromTemplate({
     avatarImg,
     bias,
     reasoning,
+    reasoningDuration,
     isSystem,
     title,
     timerValue,
@@ -2254,6 +2256,10 @@ function getMessageFromTemplate({
     title && mes.attr('title', title);
     timerValue && mes.find('.mes_timer').attr('title', timerTitle).text(timerValue);
     bookmarkLink && updateBookmarkDisplay(mes);
+
+    if (reasoningDuration) {
+        updateReasoningTimeUI(mes.find('.mes_reasoning_header_title')[0], reasoningDuration, { forceEnd: true });
+    }
 
     if (power_user.timestamp_model_icon && extra?.api) {
         insertSVGIcon(mes, extra);
@@ -2442,6 +2448,7 @@ export function addOneMessage(mes, { type = 'normal', insertAfter = null, scroll
         avatarImg: avatarImg,
         bias: bias,
         reasoning: reasoning,
+        reasoningDuration: mes.extra?.reasoning_duration,
         isSystem: isSystem,
         title: title,
         bookmarkLink: bookmarkLink,
@@ -3111,8 +3118,12 @@ class StreamingProcessor {
         this.messageDom = null;
         this.messageTextDom = null;
         this.messageTimerDom = null;
+        /** @type {HTMLElement} */
         this.messageTokenCounterDom = null;
+        /** @type {HTMLElement} */
         this.messageReasoningDom = null;
+        /** @type {HTMLElement} */
+        this.messageReasoningHeaderDom = null;
         /** @type {HTMLTextAreaElement} */
         this.sendTextarea = document.querySelector('#send_textarea');
         this.type = type;
@@ -3129,6 +3140,15 @@ class StreamingProcessor {
         this.messageLogprobs = [];
         this.toolCalls = [];
         this.reasoning = '';
+        this.reasoningStartTime = null;
+        this.reasoningEndTime = null;
+    }
+
+    #reasoningDuration() {
+        if (this.reasoningStartTime && this.reasoningEndTime) {
+            return (this.reasoningEndTime - this.reasoningStartTime);
+        }
+        return null;
     }
 
     #checkDomElements(messageId) {
@@ -3138,6 +3158,7 @@ class StreamingProcessor {
             this.messageTimerDom = this.messageDom?.querySelector('.mes_timer');
             this.messageTokenCounterDom = this.messageDom?.querySelector('.tokenCounterDisplay');
             this.messageReasoningDom = this.messageDom?.querySelector('.mes_reasoning');
+            this.messageReasoningHeaderDom = this.messageDom?.querySelector('.mes_reasoning_header_title');
         }
     }
 
@@ -3185,7 +3206,7 @@ class StreamingProcessor {
         return messageId;
     }
 
-    onProgressStreaming(messageId, text, isFinal) {
+    async onProgressStreaming(messageId, text, isFinal) {
         const isImpersonate = this.type == 'impersonate';
         const isContinue = this.type == 'continue';
 
@@ -3212,6 +3233,8 @@ class StreamingProcessor {
             this.sendTextarea.dispatchEvent(new Event('input', { bubbles: true }));
         }
         else {
+            const mesChanged = chat[messageId]['mes'] !== processedText;
+
             this.#checkDomElements(messageId);
             this.#updateMessageBlockVisibility();
             const currentTime = new Date();
@@ -3224,7 +3247,18 @@ class StreamingProcessor {
             }
 
             if (this.reasoning) {
-                chat[messageId]['extra']['reasoning'] = power_user.trim_spaces ? this.reasoning.trim() : this.reasoning;
+                const reasoning = power_user.trim_spaces ? this.reasoning.trim() : this.reasoning;
+                const reasoningChanged = chat[messageId]['extra']['reasoning'] !== reasoning;
+                chat[messageId]['extra']['reasoning'] = reasoning;
+
+                if (reasoningChanged && this.reasoningStartTime === null) {
+                    this.reasoningStartTime = Date.now();
+                }
+                if (!reasoningChanged && mesChanged && this.reasoningStartTime !== null && this.reasoningEndTime === null) {
+                    this.reasoningEndTime = Date.now();
+                }
+                await this.#updateReasoningTime(messageId);
+
                 if (this.messageReasoningDom instanceof HTMLElement) {
                     const formattedReasoning = messageFormatting(this.reasoning, '', false, false, messageId, {}, true);
                     this.messageReasoningDom.innerHTML = formattedReasoning;
@@ -3274,10 +3308,23 @@ class StreamingProcessor {
         }
     }
 
+    async #updateReasoningTime(messageId, { forceEnd = false } = {}) {
+        const duration = this.#reasoningDuration();
+        chat[messageId]['extra']['reasoning_duration'] = duration;
+        updateReasoningTimeUI(this.messageReasoningHeaderDom, duration, { forceEnd: forceEnd });
+        await eventSource.emit(event_types.STREAM_REASONING_DONE, this.reasoning, duration);
+    }
+
     async onFinishStreaming(messageId, text) {
         this.hideMessageButtons(this.messageId);
-        this.onProgressStreaming(messageId, text, true);
+        await this.onProgressStreaming(messageId, text, true);
         addCopyToCodeBlocks($(`#chat .mes[mesid="${messageId}"]`));
+
+        // Ensure reasoning finish time is recorded if not already
+        if (this.reasoningStartTime !== null && this.reasoningEndTime === null) {
+            this.reasoningEndTime = Date.now();
+            await this.#updateReasoningTime(messageId, { forceEnd: true });
+        }
 
         if (Array.isArray(this.swipes) && this.swipes.length > 0) {
             const message = chat[messageId];
@@ -3380,7 +3427,7 @@ class StreamingProcessor {
                 }
                 this.reasoning = getRegexedString(state?.reasoning ?? '', regex_placement.REASONING);
                 await eventSource.emit(event_types.STREAM_TOKEN_RECEIVED, text);
-                await sw.tick(() => this.onProgressStreaming(this.messageId, this.continueMessage + text));
+                await sw.tick(async () => await this.onProgressStreaming(this.messageId, this.continueMessage + text));
             }
             const seconds = (timestamps[timestamps.length - 1] - timestamps[0]) / 1000;
             console.warn(`Stream stats: ${timestamps.length} tokens, ${seconds.toFixed(2)} seconds, rate: ${Number(timestamps.length / seconds).toFixed(2)} TPS`);
@@ -5739,6 +5786,24 @@ function extractReasoningFromData(data) {
 
     return '';
 }
+
+/**
+ * Updates the Reasoning controls
+ * @param {HTMLElement} element The element to update
+ * @param {number?} duration The duration of the reasoning in milliseconds
+ * @param {object} [options={}] Options for the function
+ * @param {boolean} [options.forceEnd=false] If true, there will be no "Thinking..." when no duration exists
+ */
+function updateReasoningTimeUI(element, duration, { forceEnd = false } = {}) {
+    if (duration) {
+        element.textContent = t`Thought for ${moment.duration(duration).humanize({ s: 50, ss: 9 })}`;
+    } else if (forceEnd) {
+        element.textContent = t`Thought for some time`;
+    } else {
+        element.textContent = t`Thinking...`;
+    }
+}
+
 
 /**
  * Extracts multiswipe swipes from the response data.
