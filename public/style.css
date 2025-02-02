@@ -399,6 +399,11 @@ input[type='checkbox']:focus-visible {
     color: var(--SmartThemeEmColor);
 }
 
+.mes_text q i,
+.mes_text q em {
+    color: inherit;
+}
+
 .mes_text u,
 .mes_reasoning u {
     color: var(--SmartThemeUnderlineColor);
@@ -4595,23 +4600,6 @@ body .ui-widget-content li {
 body .ui-widget-content li:hover {
     /* background-color: var(--SmartThemeEmColor); */
     opacity: 1;
-}
-
-.typing_indicator {
-    position: sticky;
-    bottom: 10px;
-    margin: 10px;
-    opacity: 0.85;
-    text-shadow: 0px 0px calc(var(--shadowWidth) * 1px) var(--SmartThemeShadowColor);
-    order: 9999;
-}
-
-.typing_indicator:after {
-    display: inline-block;
-    vertical-align: bottom;
-    animation: ellipsis steps(4, end) 1500ms infinite;
-    content: "";
-    width: 0px;
 }
 
 #group_avatar_preview .missing-avatar {
