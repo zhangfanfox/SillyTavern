@@ -7306,6 +7306,11 @@ async function messageEditDone(div) {
     appendMediaToMessage(mes, div.closest('.mes'));
     addCopyToCodeBlocks(div.closest('.mes'));
 
+    const reasoningEditDone = mesBlock.find('.mes_reasoning_edit_done:visible');
+    if (reasoningEditDone.length > 0) {
+        reasoningEditDone.trigger('click');
+    }
+
     await eventSource.emit(event_types.MESSAGE_UPDATED, this_edit_mes_id);
     this_edit_mes_id = undefined;
     await saveChatConditional();
@@ -10813,6 +10818,12 @@ jQuery(async function () {
             var edit_mes_id = $(this).closest('.mes').attr('mesid');
             this_edit_mes_id = edit_mes_id;
 
+            // Also edit reasoning, if it exists
+            const reasoningEdit = $(this).closest('.mes_block').find('.mes_reasoning_edit:visible');
+            if (reasoningEdit.length > 0) {
+                reasoningEdit.trigger('click');
+            }
+
             var text = chat[edit_mes_id]['mes'];
             if (chat[edit_mes_id]['is_user']) {
                 this_edit_mes_chname = name1;
@@ -10945,6 +10956,11 @@ jQuery(async function () {
             ));
         appendMediaToMessage(chat[this_edit_mes_id], $(this).closest('.mes'));
         addCopyToCodeBlocks($(this).closest('.mes'));
+
+        const reasoningEditDone = $(this).closest('.mes_block').find('.mes_reasoning_edit_cancel:visible');
+        if (reasoningEditDone.length > 0) {
+            reasoningEditDone.trigger('click');
+        }
 
         await eventSource.emit(event_types.MESSAGE_UPDATED, this_edit_mes_id);
         this_edit_mes_id = undefined;
@@ -11398,6 +11414,11 @@ jQuery(async function () {
             control.select();
             console.debug('Auto-selecting content of input control', control);
         }
+    });
+
+    $(document).on('click', '.mes_reasoning_summary', function () {
+        // If you toggle summary header while editing reasoning, yup - we just cancel it
+        $(this).closest('.mes').find('.mes_reasoning_edit_cancel:visible').trigger('click');
     });
 
     $(document).keyup(function (e) {
