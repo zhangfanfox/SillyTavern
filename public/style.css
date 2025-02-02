@@ -3038,6 +3038,7 @@ input[type=search]:focus::-webkit-search-cancel-button {
 .mes_block .ch_name {
     max-width: 100%;
     min-height: 22px;
+    align-items: flex-start;
 }
 
 /*applies to both groups and solos chars in the char list*/
