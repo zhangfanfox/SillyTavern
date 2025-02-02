@@ -3266,9 +3266,9 @@ class StreamingProcessor {
                 if (this.messageReasoningDom instanceof HTMLElement) {
                     const formattedReasoning = messageFormatting(this.reasoning, '', false, false, messageId, {}, true);
                     this.messageReasoningDom.innerHTML = formattedReasoning;
-                    if (this.reasoning) {
-                        this.messageDom.classList.add('reasoning');
-                    }
+                }
+                if (this.messageDom instanceof HTMLElement) {
+                    this.messageDom.classList.add('reasoning');
                 }
             }
 
