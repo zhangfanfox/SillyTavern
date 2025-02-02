@@ -288,6 +288,8 @@ function setReasoningEventHandlers() {
         await saveChatConditional();
         updateMessageBlock(messageId, message);
         textarea.remove();
+
+        messageBlock.find('.mes_edit_done:visible').trigger('click');
     });
 
     $(document).on('click', '.mes_reasoning_edit_cancel', function (e) {
@@ -297,6 +299,8 @@ function setReasoningEventHandlers() {
         const { messageBlock } = getMessageFromJquery(this);
         const textarea = messageBlock.find('.reasoning_edit_textarea');
         textarea.remove();
+
+        messageBlock.find('.mes_reasoning_edit_cancel:visible').trigger('click');
     });
 
     $(document).on('click', '.mes_edit_add_reasoning', async function () {
@@ -311,9 +315,8 @@ function setReasoningEventHandlers() {
         }
 
         message.extra.reasoning = PromptReasoning.REASONING_PLACEHOLDER;
-        await saveChatConditional();
-        closeMessageEditor();
         updateMessageBlock(messageId, message);
+        await saveChatConditional();
     });
 
     $(document).on('click', '.mes_reasoning_delete', async function (e) {
