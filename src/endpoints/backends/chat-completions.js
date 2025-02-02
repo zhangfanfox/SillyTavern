@@ -179,7 +179,7 @@ async function sendClaudeRequest(request, response) {
             additionalHeaders['anthropic-beta'] = 'prompt-caching-2024-07-31';
         }
 
-        console.log('Claude request:', requestBody);
+        console.debug('Claude request:', requestBody);
 
         const generateResponse = await fetch(apiUrl + '/messages', {
             method: 'POST',
@@ -199,21 +199,21 @@ async function sendClaudeRequest(request, response) {
         } else {
             if (!generateResponse.ok) {
                 const generateResponseText = await generateResponse.text();
-                console.log(color.red(`Claude API returned error: ${generateResponse.status} ${generateResponse.statusText}\n${generateResponseText}\n${divider}`));
+                console.warn(color.red(`Claude API returned error: ${generateResponse.status} ${generateResponse.statusText}\n${generateResponseText}\n${divider}`));
                 return response.status(generateResponse.status).send({ error: true });
             }
 
             /** @type {any} */
             const generateResponseJson = await generateResponse.json();
             const responseText = generateResponseJson?.content?.[0]?.text || '';
-            console.log('Claude response:', generateResponseJson);
+            console.debug('Claude response:', generateResponseJson);
 
             // Wrap it back to OAI format + save the original content
             const reply = { choices: [{ 'message': { 'content': responseText } }], content: generateResponseJson.content };
             return response.send(reply);
         }
     } catch (error) {
-        console.log(color.red(`Error communicating with Claude: ${error}\n${divider}`));
+        console.error(color.red(`Error communicating with Claude: ${error}\n${divider}`));
         if (!response.headersSent) {
             return response.status(500).send({ error: true });
         }
@@ -383,7 +383,7 @@ async function sendMakerSuiteRequest(request, response) {
             const candidates = generateResponseJson?.candidates;
             if (!candidates || candidates.length === 0) {
                 let message = 'Google AI Studio API returned no candidate';
-                console.log(message, generateResponseJson);
+                console.warn(message, generateResponseJson);
                 if (generateResponseJson?.promptFeedback?.blockReason) {
                     message += `\nPrompt was blocked due to : ${generateResponseJson.promptFeedback.blockReason}`;
                 }
@@ -699,7 +699,7 @@ async function sendDeepSeekRequest(request, response) {
             signal: controller.signal,
         };
 
-        console.log('DeepSeek request:', requestBody);
+        console.debug('DeepSeek request:', requestBody);
 
         const generateResponse = await fetch(apiUrl + '/chat/completions', config);
 
@@ -708,16 +708,16 @@ async function sendDeepSeekRequest(request, response) {
         } else {
             if (!generateResponse.ok) {
                 const errorText = await generateResponse.text();
-                console.log(`DeepSeek API returned error: ${generateResponse.status} ${generateResponse.statusText} ${errorText}`);
+                console.warn(`DeepSeek API returned error: ${generateResponse.status} ${generateResponse.statusText} ${errorText}`);
                 const errorJson = tryParse(errorText) ?? { error: true };
                 return response.status(500).send(errorJson);
             }
             const generateResponseJson = await generateResponse.json();
-            console.log('DeepSeek response:', generateResponseJson);
+            console.debug('DeepSeek response:', generateResponseJson);
             return response.send(generateResponseJson);
         }
     } catch (error) {
-        console.log('Error communicating with DeepSeek API: ', error);
+        console.error('Error communicating with DeepSeek API: ', error);
         if (!response.headersSent) {
             response.send({ error: true });
         } else {

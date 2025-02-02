@@ -211,9 +211,9 @@ router.post('/change-name', jsonParser, async (request, response) => {
 router.post('/reset-step1', jsonParser, async (request, response) => {
     try {
         const resetCode = String(crypto.randomInt(1000, 9999));
-        console.info();
-        console.info(color.magenta(`${request.user.profile.name}, your account reset code is: `) + color.red(resetCode));
-        console.info();
+        console.log();
+        console.log(color.magenta(`${request.user.profile.name}, your account reset code is: `) + color.red(resetCode));
+        console.log();
         RESET_CACHE.set(request.user.profile.handle, resetCode);
         return response.sendStatus(204);
     } catch (error) {

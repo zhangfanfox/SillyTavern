@@ -170,7 +170,7 @@ export async function extractFileFromZipBuffer(archiveBuffer, fileExtension) {
         zipfile.readEntry();
         zipfile.on('entry', (entry) => {
             if (entry.fileName.endsWith(fileExtension) && !entry.fileName.startsWith('__MACOSX')) {
-                console.log(`Extracting ${entry.fileName}`);
+                console.info(`Extracting ${entry.fileName}`);
                 zipfile.openReadStream(entry, (err, readStream) => {
                     if (err) {
                         reject(err);
@@ -218,7 +218,7 @@ export async function getImageBuffers(zipFilePath) {
                 zipfile.on('entry', (entry) => {
                     const mimeType = mime.lookup(entry.fileName);
                     if (mimeType && mimeType.startsWith('image/') && !entry.fileName.startsWith('__MACOSX')) {
-                        console.log(`Extracting ${entry.fileName}`);
+                        console.info(`Extracting ${entry.fileName}`);
                         zipfile.openReadStream(entry, (err, readStream) => {
                             if (err) {
                                 reject(err);
@@ -448,7 +448,7 @@ export function forwardFetchResponse(from, to) {
     let statusText = from.statusText;
 
     if (!from.ok) {
-        console.log(`Streaming request failed with status ${statusCode} ${statusText}`);
+        console.warn(`Streaming request failed with status ${statusCode} ${statusText}`);
     }
 
     // Avoid sending 401 responses as they reset the client Basic auth.
@@ -473,7 +473,7 @@ export function forwardFetchResponse(from, to) {
         });
 
         from.body.on('end', function () {
-            console.log('Streaming request finished');
+            console.info('Streaming request finished');
             to.end();
         });
     } else {
@@ -518,7 +518,7 @@ export function makeHttp2Request(endpoint, method, body, headers) {
                 });
 
                 req.on('end', () => {
-                    console.log(data);
+                    console.debug(data);
                     resolve(data);
                 });
             });
@@ -701,7 +701,6 @@ export function setupLogLevel() {
     const logLevel = getConfigValue('minLogLevel', LOG_LEVELS.DEBUG);
 
     globalThis.console.debug = logLevel <= LOG_LEVELS.DEBUG ? console.debug : () => {};
-    globalThis.console.log = logLevel <= LOG_LEVELS.INFO ? console.log : () => {};
     globalThis.console.info = logLevel <= LOG_LEVELS.INFO ? console.info : () => {};
     globalThis.console.warn = logLevel <= LOG_LEVELS.WARN ? console.warn : () => {};
     globalThis.console.error = logLevel <= LOG_LEVELS.ERROR ? console.error : () => {};

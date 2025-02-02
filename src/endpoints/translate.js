@@ -301,12 +301,12 @@ router.post('/onering', jsonParser, async (request, response) => {
         const url = secretUrl || ONERING_URL_DEFAULT;
 
         if (!url) {
-            console.log('OneRing URL is not configured.');
+            console.warn('OneRing URL is not configured.');
             return response.sendStatus(400);
         }
 
         if (!secretUrl && url === ONERING_URL_DEFAULT) {
-            console.log('OneRing URL is using default value.', ONERING_URL_DEFAULT);
+            console.info('OneRing URL is using default value.', ONERING_URL_DEFAULT);
         }
 
         if (request.body.lang === 'pt-BR' || request.body.lang === 'pt-PT') {
@@ -326,7 +326,7 @@ router.post('/onering', jsonParser, async (request, response) => {
         params.append('from_lang', from_lang);
         params.append('to_lang', to_lang);
 
-        console.log('Input text: ' + text);
+        console.debug('Input text: ' + text);
 
         const fetchUrl = new URL(url);
         fetchUrl.search = params.toString();
@@ -337,17 +337,17 @@ router.post('/onering', jsonParser, async (request, response) => {
 
         if (!result.ok) {
             const error = await result.text();
-            console.log('OneRing error: ', result.statusText, error);
+            console.warn('OneRing error: ', result.statusText, error);
             return response.sendStatus(500);
         }
 
         /** @type {any} */
         const data = await result.json();
-        console.log('Translated text: ' + data.result);
+        console.debug('Translated text: ' + data.result);
 
         return response.send(data.result);
     } catch (error) {
-        console.log('Translation error: ' + error.message);
+        console.error('Translation error: ' + error.message);
         return response.sendStatus(500);
     }
 });
@@ -358,12 +358,12 @@ router.post('/deeplx', jsonParser, async (request, response) => {
         const url = secretUrl || DEEPLX_URL_DEFAULT;
 
         if (!url) {
-            console.log('DeepLX URL is not configured.');
+            console.warn('DeepLX URL is not configured.');
             return response.sendStatus(400);
         }
 
         if (!secretUrl && url === DEEPLX_URL_DEFAULT) {
-            console.log('DeepLX URL is using default value.', DEEPLX_URL_DEFAULT);
+            console.info('DeepLX URL is using default value.', DEEPLX_URL_DEFAULT);
         }
 
         const text = request.body.text;

@@ -125,9 +125,9 @@ router.post('/recover-step1', jsonParser, async (request, response) => {
         }
 
         const mfaCode = String(crypto.randomInt(1000, 9999));
-        console.info();
-        console.info(color.blue(`${user.name}, your password recovery code is: `) + color.magenta(mfaCode));
-        console.info();
+        console.log();
+        console.log(color.blue(`${user.name}, your password recovery code is: `) + color.magenta(mfaCode));
+        console.log();
         MFA_CACHE.set(user.handle, mfaCode);
         return response.sendStatus(204);
     } catch (error) {
