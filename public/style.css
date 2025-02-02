@@ -1129,12 +1129,8 @@ body .panelControlBar {
     /*only affects bubblechat to make it sit nicely at the bottom*/
 }
 
-.last_mes:has(.mes_text:empty):has(.mes_reasoning_details[open]) .mes_reasoning:not(:empty) {
+.last_mes:has(.mes_text:empty):has(.mes_reasoning_details) .mes_reasoning:not(:empty) {
     margin-bottom: var(--mes-right-spacing);
-}
-
-.last_mes .mes_text {
-    padding-right: var(--mes-right-spacing);
 }
 
 /* SWIPE RELATED STYLES*/
@@ -1358,6 +1354,7 @@ body.swipeAllMessages .mes:not(.last_mes) .swipes-counter {
     padding-left: 0;
     padding-top: 5px;
     padding-bottom: 5px;
+    padding-right: var(--mes-right-spacing);
 }
 
 br {
@@ -4252,6 +4249,11 @@ input[type="range"]::-webkit-slider-thumb {
     transition: 0.3s ease-in-out;
 }
 
+.mes_reasoning_actions {
+    margin: 0;
+    margin-top: 0.5rem;
+}
+
 .mes_edit_buttons .menu_button,
 .mes_reasoning_actions .edit_button {
     opacity: 0.5;
@@ -4296,6 +4298,10 @@ input[type="range"]::-webkit-slider-thumb {
     max-height: 75vh;
     max-height: 75dvh;
     field-sizing: content;
+}
+
+.mes.reasoning .mes_edit_add_reasoning {
+    display: none;
 }
 
 #anchor_order {

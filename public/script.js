@@ -2257,6 +2257,9 @@ function getMessageFromTemplate({
     timerValue && mes.find('.mes_timer').attr('title', timerTitle).text(timerValue);
     bookmarkLink && updateBookmarkDisplay(mes);
 
+    if (reasoning) {
+        mes.addClass('reasoning');
+    }
     if (reasoningDuration) {
         updateReasoningTimeUI(mes.find('.mes_reasoning_header_title')[0], reasoningDuration, { forceEnd: true });
     }
@@ -2278,6 +2281,7 @@ export function updateMessageBlock(messageId, message) {
     const text = message?.extra?.display_text ?? message.mes;
     messageElement.find('.mes_text').html(messageFormatting(text, message.name, message.is_system, message.is_user, messageId, {}, false));
     messageElement.find('.mes_reasoning').html(messageFormatting(message.extra?.reasoning ?? '', '', false, false, messageId, {}, true));
+    messageElement.toggleClass('reasoning', !!message.extra?.reasoning);
     addCopyToCodeBlocks(messageElement);
     appendMediaToMessage(message, messageElement);
 }
@@ -3262,6 +3266,9 @@ class StreamingProcessor {
                 if (this.messageReasoningDom instanceof HTMLElement) {
                     const formattedReasoning = messageFormatting(this.reasoning, '', false, false, messageId, {}, true);
                     this.messageReasoningDom.innerHTML = formattedReasoning;
+                    if (this.reasoning) {
+                        this.messageDom.classList.add('reasoning');
+                    }
                 }
             }
 
@@ -10862,6 +10869,18 @@ jQuery(async function () {
         }
     });
 
+    $(document).on('click', '.mes_reasoning_header', function () {
+        // If we are in message edit mode and reasoning area is closed, a click opens and edits it
+        const mes = $(this).closest('.mes');
+        const mesEditArea = mes.find('#curEditTextarea');
+        if (mesEditArea.length) {
+            const summary = $(mes).find('.mes_reasoning_summary');
+            if (!summary.attr('open')) {
+                summary.find('.mes_reasoning_edit').trigger('click');
+            }
+        }
+    });
+
     $(document).on('input', '#curEditTextarea', function () {
         if (power_user.auto_save_msg_edits === true) {
             messageEditAuto($(this));
@@ -11419,6 +11438,12 @@ jQuery(async function () {
     $(document).on('click', '.mes_reasoning_summary', function () {
         // If you toggle summary header while editing reasoning, yup - we just cancel it
         $(this).closest('.mes').find('.mes_reasoning_edit_cancel:visible').trigger('click');
+    });
+
+    $(document).on('click', '.mes_reasoning_details', function (e) {
+        if (!e.target.closest('.mes_reasoning_actions') && !e.target.closest('.mes_reasoning_header')) {
+            e.preventDefault();
+        }
     });
 
     $(document).keyup(function (e) {
