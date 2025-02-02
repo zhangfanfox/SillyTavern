@@ -386,6 +386,7 @@ input[type='checkbox']:focus-visible {
     user-select: none;
     margin: 0.5em 2px;
     padding: 7px 14px;
+    padding-right: calc(0.7em + 14px);
     border-radius: 10px;
     background-color: var(--grey30);
     font-size: calc(var(--mainFontSize) * 0.9);
@@ -415,13 +416,17 @@ input[type='checkbox']:focus-visible {
 }
 
 .mes_reasoning_details .mes_reasoning_arrow {
+    position: absolute;
+    top: 50%;
+    right: 7px;
+    transform: translateY(-50%);
     font-size: calc(var(--mainFontSize) * 0.7);
     width: calc(var(--mainFontSize) * 0.7);
     height: calc(var(--mainFontSize) * 0.7);
 }
 
 .mes_reasoning_details:not([open]) .mes_reasoning_arrow {
-    transform: rotate(180deg);
+    transform: translateY(-50%) rotate(180deg);
 }
 
 .mes_reasoning_summary>span {
