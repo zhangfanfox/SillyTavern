@@ -1,6 +1,7 @@
 import { getRequestHeaders, substituteParams } from '../../../../script.js';
 import { Popup, POPUP_RESULT, POPUP_TYPE } from '../../../popup.js';
 import { executeSlashCommandsOnChatInput, executeSlashCommandsWithOptions } from '../../../slash-commands.js';
+import { SlashCommandScope } from '../../../slash-commands/SlashCommandScope.js';
 import { SlashCommandParser } from '../../../slash-commands/SlashCommandParser.js';
 import { debounceAsync, warn } from '../index.js';
 import { QuickReply } from './QuickReply.js';

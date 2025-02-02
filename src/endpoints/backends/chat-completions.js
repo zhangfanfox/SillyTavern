@@ -418,9 +418,7 @@ async function sendMakerSuiteRequest(request, response) {
  * @param {express.Response} response Express response
  */
 async function sendAI21Request(request, response) {
-    if (!request.body) {
-        return response.sendStatus(400);
-    }
+    if (!request.body) return response.sendStatus(400);
 
     const controller = new AbortController();
     console.debug(request.body.messages);
@@ -848,7 +846,8 @@ router.post('/status', jsonParser, async function (request, response_getstatus_o
 });
 
 router.post('/bias', jsonParser, async function (request, response) {
-    if (!request.body || !Array.isArray(request.body)) return response.sendStatus(400);
+    if (!request.body || !Array.isArray(request.body))
+        return response.sendStatus(400);
 
     try {
         const result = {};

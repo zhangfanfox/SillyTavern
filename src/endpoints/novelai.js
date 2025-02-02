@@ -276,7 +276,7 @@ router.post('/generate', jsonParser, async function (req, res) {
 
             /** @type {any} */
             const data = await response.json();
-            console.debug('NovelAI Output', data?.output);
+            console.info('NovelAI Output', data?.output);
             return res.send(data);
         }
     } catch (error) {

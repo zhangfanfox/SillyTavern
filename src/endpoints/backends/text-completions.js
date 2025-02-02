@@ -101,8 +101,7 @@ router.post('/status', jsonParser, async function (request, response) {
             request.body.api_server = request.body.api_server.replace('localhost', '127.0.0.1');
         }
 
-        console.info('Trying to connect to API');
-        console.debug(request.body);
+        console.debug('Trying to connect to API', request.body);
         const baseUrl = trimV1(request.body.api_server);
 
         const args = {
@@ -229,9 +228,7 @@ router.post('/status', jsonParser, async function (request, response) {
 });
 
 router.post('/props', jsonParser, async function (request, response) {
-    if (!request.body.api_server) {
-        return response.sendStatus(400);
-    }
+    if (!request.body.api_server) return response.sendStatus(400);
 
     try {
         const baseUrl = trimV1(request.body.api_server);
@@ -265,9 +262,7 @@ router.post('/props', jsonParser, async function (request, response) {
 });
 
 router.post('/generate', jsonParser, async function (request, response) {
-    if (!request.body) {
-        return response.sendStatus(400);
-    }
+    if (!request.body) return response.sendStatus(400);
 
     try {
         if (request.body.api_server.indexOf('localhost') !== -1) {
@@ -435,9 +430,7 @@ const ollama = express.Router();
 
 ollama.post('/download', jsonParser, async function (request, response) {
     try {
-        if (!request.body.name || !request.body.api_server) {
-            return response.sendStatus(400);
-        }
+        if (!request.body.name || !request.body.api_server) return response.sendStatus(400);
 
         const name = request.body.name;
         const url = String(request.body.api_server).replace(/\/$/, '');

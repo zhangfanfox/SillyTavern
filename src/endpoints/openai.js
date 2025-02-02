@@ -164,7 +164,7 @@ router.post('/caption-image', jsonParser, async (request, response) => {
 
         /** @type {any} */
         const data = await result.json();
-        console.debug('Multimodal captioning response', data);
+        console.info('Multimodal captioning response', data);
         const caption = data?.choices[0]?.message?.content;
 
         if (!caption) {

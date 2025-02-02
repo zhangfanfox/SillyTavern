@@ -224,9 +224,7 @@ router.post('/download', jsonParser, async (request, response) => {
         // Delete if previous download failed
         if (fs.existsSync(temp_path)) {
             fs.unlink(temp_path, (err) => {
-                if (err) {
-                    throw err;
-                }
+                if (err) throw err;
             });
         }
         const fileStream = fs.createWriteStream(destination, { flags: 'wx' });
@@ -288,9 +286,7 @@ router.post('/delete', jsonParser, async (request, response) => {
         // Delete if previous download failed
         if (fs.existsSync(file_path)) {
             fs.unlink(file_path, (err) => {
-                if (err) {
-                    throw err;
-                }
+                if (err) throw err;
             });
             console.info('Asset deleted.');
         }
@@ -317,9 +313,7 @@ router.post('/delete', jsonParser, async (request, response) => {
  * @returns {void}
  */
 router.post('/character', jsonParser, async (request, response) => {
-    if (request.query.name === undefined) {
-        return response.sendStatus(400);
-    }
+    if (request.query.name === undefined) return response.sendStatus(400);
 
     // For backwards compatibility, don't reject invalid character names, just sanitize them
     const name = sanitize(request.query.name.toString());
@@ -327,11 +321,9 @@ router.post('/character', jsonParser, async (request, response) => {
 
     // Check category
     let category = null;
-    for (let i of VALID_CATEGORIES) {
-        if (i == inputCategory) {
+    for (let i of VALID_CATEGORIES)
+        if (i == inputCategory)
             category = i;
-        }
-    }
 
     if (category === null) {
         console.error('Bad request: unsupported asset category.');
@@ -348,9 +340,7 @@ router.post('/character', jsonParser, async (request, response) => {
             if (category == 'live2d') {
                 const folders = fs.readdirSync(folderPath, { withFileTypes: true });
                 for (const folderInfo of folders) {
-                    if (!folderInfo.isDirectory()) {
-                        continue;
-                    }
+                    if (!folderInfo.isDirectory()) continue;
 
                     const modelFolder = folderInfo.name;
                     const live2dModelPath = path.join(folderPath, modelFolder);

@@ -35,7 +35,7 @@ function decodeBuffer(buffer) {
     try {
         return iconv.decode(Buffer.from(buffer), 'utf-8');
     } catch (error) {
-        console.warn('Failed to decode buffer:', error);
+        console.error('Failed to decode buffer:', error);
         return Buffer.from(buffer).toString('utf-8');
     }
 }

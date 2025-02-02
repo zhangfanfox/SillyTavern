@@ -364,12 +364,12 @@ router.post('/generate-image', jsonParser, async (request, response) => {
             return response.sendStatus(400);
         }
 
-        console.debug('Horde image generation request:', generation);
+        console.info('Horde image generation request:', generation);
 
         const controller = new AbortController();
         request.socket.removeAllListeners('close');
         request.socket.on('close', function () {
-            console.info('Horde image generation request aborted.');
+            console.warn('Horde image generation request aborted.');
             controller.abort();
             if (generation.id) ai_horde.deleteImageGenerationRequest(generation.id);
         });

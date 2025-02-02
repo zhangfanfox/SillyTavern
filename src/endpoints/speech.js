@@ -43,8 +43,8 @@ router.post('/recognize', jsonParser, async (req, res) => {
         const start = performance.now();
         const result = await pipe(wav, { language: lang || null, task: 'transcribe' });
         const end = performance.now();
-        console.debug(`Execution duration: ${(end - start) / 1000} seconds`);
-        console.debug('Transcribed audio:', result.text);
+        console.info(`Execution duration: ${(end - start) / 1000} seconds`);
+        console.info('Transcribed audio:', result.text);
 
         return res.json({ text: result.text });
     } catch (error) {

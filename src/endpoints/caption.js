@@ -20,7 +20,7 @@ router.post('/', jsonParser, async (req, res) => {
         const pipe = await getPipeline(TASK);
         const result = await pipe(rawImage);
         const text = result[0].generated_text;
-        console.debug('Image caption:', text);
+        console.info('Image caption:', text);
 
         return res.json({ caption: text });
     } catch (error) {

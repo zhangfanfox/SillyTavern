@@ -202,8 +202,7 @@ router.post('/transcribe-audio', urlencodedParser, async function (request, resp
             return response.sendStatus(400);
         }
 
-        console.info('Transcribing audio with KoboldCpp');
-        console.debug(server);
+        console.debug('Transcribing audio with KoboldCpp', server);
 
         const fileBase64 = fs.readFileSync(request.file.path).toString('base64');
         fs.rmSync(request.file.path);

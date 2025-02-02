@@ -165,9 +165,7 @@ export function formatBytes(bytes) {
  */
 export async function extractFileFromZipBuffer(archiveBuffer, fileExtension) {
     return await new Promise((resolve, reject) => yauzl.fromBuffer(Buffer.from(archiveBuffer), { lazyEntries: true }, (err, zipfile) => {
-        if (err) {
-            reject(err);
-        }
+        if (err) reject(err);
 
         zipfile.readEntry();
         zipfile.on('entry', (entry) => {
@@ -469,9 +467,8 @@ export function forwardFetchResponse(from, to) {
         from.body.pipe(to);
 
         to.socket.on('close', function () {
-            if (from.body instanceof Readable) {
-                from.body.destroy(); // Close the remote stream
-            }
+            if (from.body instanceof Readable) from.body.destroy(); // Close the remote stream
+
             to.end(); // End the Express response
         });
 
