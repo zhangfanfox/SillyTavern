@@ -387,10 +387,10 @@ input[type='checkbox']:focus-visible {
     padding: 7px 14px;
     border-radius: 10px;
     background-color: var(--grey30);
-    font-size: 0.9rem;
+    font-size: calc(var(--mainFontSize) * 0.9);
 }
 
-@supports not selector(:has(*)) {
+@supports not selector(:has(*)) { 
     .mes_reasoning_details {
         display: none !important;
     }
