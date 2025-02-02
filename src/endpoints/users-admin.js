@@ -53,12 +53,12 @@ router.post('/get', requireAdminMiddleware, jsonParser, async (_request, respons
 router.post('/disable', requireAdminMiddleware, jsonParser, async (request, response) => {
     try {
         if (!request.body.handle) {
-            console.error('Disable user failed: Missing required fields');
+            console.warn('Disable user failed: Missing required fields');
             return response.status(400).json({ error: 'Missing required fields' });
         }
 
         if (request.body.handle === request.user.profile.handle) {
-            console.error('Disable user failed: Cannot disable yourself');
+            console.warn('Disable user failed: Cannot disable yourself');
             return response.status(400).json({ error: 'Cannot disable yourself' });
         }
 
@@ -82,7 +82,7 @@ router.post('/disable', requireAdminMiddleware, jsonParser, async (request, resp
 router.post('/enable', requireAdminMiddleware, jsonParser, async (request, response) => {
     try {
         if (!request.body.handle) {
-            console.error('Enable user failed: Missing required fields');
+            console.warn('Enable user failed: Missing required fields');
             return response.status(400).json({ error: 'Missing required fields' });
         }
 
@@ -106,7 +106,7 @@ router.post('/enable', requireAdminMiddleware, jsonParser, async (request, respo
 router.post('/promote', requireAdminMiddleware, jsonParser, async (request, response) => {
     try {
         if (!request.body.handle) {
-            console.error('Promote user failed: Missing required fields');
+            console.warn('Promote user failed: Missing required fields');
             return response.status(400).json({ error: 'Missing required fields' });
         }
 
@@ -130,12 +130,12 @@ router.post('/promote', requireAdminMiddleware, jsonParser, async (request, resp
 router.post('/demote', requireAdminMiddleware, jsonParser, async (request, response) => {
     try {
         if (!request.body.handle) {
-            console.error('Demote user failed: Missing required fields');
+            console.warn('Demote user failed: Missing required fields');
             return response.status(400).json({ error: 'Missing required fields' });
         }
 
         if (request.body.handle === request.user.profile.handle) {
-            console.error('Demote user failed: Cannot demote yourself');
+            console.warn('Demote user failed: Cannot demote yourself');
             return response.status(400).json({ error: 'Cannot demote yourself' });
         }
 
@@ -159,7 +159,7 @@ router.post('/demote', requireAdminMiddleware, jsonParser, async (request, respo
 router.post('/create', requireAdminMiddleware, jsonParser, async (request, response) => {
     try {
         if (!request.body.handle || !request.body.name) {
-            console.error('Create user failed: Missing required fields');
+            console.warn('Create user failed: Missing required fields');
             return response.status(400).json({ error: 'Missing required fields' });
         }
 
@@ -167,12 +167,12 @@ router.post('/create', requireAdminMiddleware, jsonParser, async (request, respo
         const handle = lodash.kebabCase(String(request.body.handle).toLowerCase().trim());
 
         if (!handle) {
-            console.error('Create user failed: Invalid handle');
+            console.warn('Create user failed: Invalid handle');
             return response.status(400).json({ error: 'Invalid handle' });
         }
 
         if (handles.some(x => x === handle)) {
-            console.error('Create user failed: User with that handle already exists');
+            console.warn('Create user failed: User with that handle already exists');
             return response.status(409).json({ error: 'User already exists' });
         }
 
@@ -206,17 +206,17 @@ router.post('/create', requireAdminMiddleware, jsonParser, async (request, respo
 router.post('/delete', requireAdminMiddleware, jsonParser, async (request, response) => {
     try {
         if (!request.body.handle) {
-            console.error('Delete user failed: Missing required fields');
+            console.warn('Delete user failed: Missing required fields');
             return response.status(400).json({ error: 'Missing required fields' });
         }
 
         if (request.body.handle === request.user.profile.handle) {
-            console.error('Delete user failed: Cannot delete yourself');
+            console.warn('Delete user failed: Cannot delete yourself');
             return response.status(400).json({ error: 'Cannot delete yourself' });
         }
 
         if (request.body.handle === DEFAULT_USER.handle) {
-            console.error('Delete user failed: Cannot delete default user');
+            console.warn('Delete user failed: Cannot delete default user');
             return response.status(400).json({ error: 'Sorry, but the default user cannot be deleted. It is required as a fallback.' });
         }
 
@@ -238,7 +238,7 @@ router.post('/delete', requireAdminMiddleware, jsonParser, async (request, respo
 router.post('/slugify', requireAdminMiddleware, jsonParser, async (request, response) => {
     try {
         if (!request.body.text) {
-            console.error('Slugify failed: Missing required fields');
+            console.warn('Slugify failed: Missing required fields');
             return response.status(400).json({ error: 'Missing required fields' });
         }
 

@@ -13,7 +13,7 @@ router.post('/', jsonParser, async (req, res) => {
         const rawImage = await getRawImage(image);
 
         if (!rawImage) {
-            console.error('Failed to parse captioned image');
+            console.warn('Failed to parse captioned image');
             return res.sendStatus(400);
         }
 

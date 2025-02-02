@@ -812,13 +812,13 @@ router.post('/rename', jsonParser, validateAvatarUrlMiddleware, async function (
 
 router.post('/edit', urlencodedParser, validateAvatarUrlMiddleware, async function (request, response) {
     if (!request.body) {
-        console.error('Error: no response body detected');
+        console.warn('Error: no response body detected');
         response.status(400).send('Error: no response body detected');
         return;
     }
 
     if (request.body.ch_name === '' || request.body.ch_name === undefined || request.body.ch_name === '.') {
-        console.error('Error: invalid name.');
+        console.warn('Error: invalid name.');
         response.status(400).send('Error: invalid name.');
         return;
     }
@@ -862,12 +862,12 @@ router.post('/edit', urlencodedParser, validateAvatarUrlMiddleware, async functi
 router.post('/edit-attribute', jsonParser, validateAvatarUrlMiddleware, async function (request, response) {
     console.debug(request.body);
     if (!request.body) {
-        console.error('Error: no response body detected');
+        console.warn('Error: no response body detected');
         return response.status(400).send('Error: no response body detected');
     }
 
     if (request.body.ch_name === '' || request.body.ch_name === undefined || request.body.ch_name === '.') {
-        console.error('Error: invalid name.');
+        console.warn('Error: invalid name.');
         return response.status(400).send('Error: invalid name.');
     }
 
@@ -879,7 +879,7 @@ router.post('/edit-attribute', jsonParser, validateAvatarUrlMiddleware, async fu
         const char = JSON.parse(charJSON);
         //check if the field exists
         if (char[request.body.field] === undefined && char.data[request.body.field] === undefined) {
-            console.error('Error: invalid field.');
+            console.warn('Error: invalid field.');
             response.status(400).send('Error: invalid field.');
             return;
         }
@@ -928,7 +928,7 @@ router.post('/merge-attributes', jsonParser, getFileNameValidationFunction('avat
             await writeCharacterData(avatarPath, JSON.stringify(character), targetImg, request);
             response.sendStatus(200);
         } else {
-            console.error(validator.lastValidationError);
+            console.warn(validator.lastValidationError);
             response.status(400).send({ message: `Validation failed for ${character.name}`, error: validator.lastValidationError });
         }
     } catch (exception) {
@@ -1152,7 +1152,7 @@ router.post('/import', urlencodedParser, async function (request, response) {
         const fileName = await importFunction(uploadPath, { request, response }, preservedFileName);
 
         if (!fileName) {
-            console.error('Failed to import character');
+            console.warn('Failed to import character');
             return response.sendStatus(400);
         }
 
@@ -1170,7 +1170,7 @@ router.post('/import', urlencodedParser, async function (request, response) {
 router.post('/duplicate', jsonParser, validateAvatarUrlMiddleware, async function (request, response) {
     try {
         if (!request.body.avatar_url) {
-            console.error('avatar URL not found in request body');
+            console.warn('avatar URL not found in request body');
             console.debug(request.body);
             return response.sendStatus(400);
         }

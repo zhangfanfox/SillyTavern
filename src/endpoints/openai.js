@@ -63,7 +63,7 @@ router.post('/caption-image', jsonParser, async (request, response) => {
         }
 
         if (!key && !request.body.reverse_proxy && ['custom', 'ooba', 'koboldcpp', 'vllm'].includes(request.body.api) === false) {
-            console.error('No key found for API', request.body.api);
+            console.warn('No key found for API', request.body.api);
             return response.sendStatus(400);
         }
 
@@ -93,7 +93,7 @@ router.post('/caption-image', jsonParser, async (request, response) => {
             excludeKeysByYaml(body, request.body.custom_exclude_body);
         }
 
-        console.error('Multimodal captioning request', body);
+        console.debug('Multimodal captioning request', body);
 
         let apiUrl = '';
 
@@ -158,7 +158,7 @@ router.post('/caption-image', jsonParser, async (request, response) => {
 
         if (!result.ok) {
             const text = await result.text();
-            console.error('Multimodal captioning request failed', result.statusText, text);
+            console.warn('Multimodal captioning request failed', result.statusText, text);
             return response.status(500).send(text);
         }
 
@@ -184,12 +184,12 @@ router.post('/transcribe-audio', urlencodedParser, async (request, response) => 
         const key = readSecret(request.user.directories, SECRET_KEYS.OPENAI);
 
         if (!key) {
-            console.error('No OpenAI key found');
+            console.warn('No OpenAI key found');
             return response.sendStatus(400);
         }
 
         if (!request.file) {
-            console.error('No audio file found');
+            console.warn('No audio file found');
             return response.sendStatus(400);
         }
 
@@ -213,7 +213,7 @@ router.post('/transcribe-audio', urlencodedParser, async (request, response) => 
 
         if (!result.ok) {
             const text = await result.text();
-            console.error('OpenAI request failed', result.statusText, text);
+            console.warn('OpenAI request failed', result.statusText, text);
             return response.status(500).send(text);
         }
 
@@ -232,7 +232,7 @@ router.post('/generate-voice', jsonParser, async (request, response) => {
         const key = readSecret(request.user.directories, SECRET_KEYS.OPENAI);
 
         if (!key) {
-            console.error('No OpenAI key found');
+            console.warn('No OpenAI key found');
             return response.sendStatus(400);
         }
 
@@ -253,7 +253,7 @@ router.post('/generate-voice', jsonParser, async (request, response) => {
 
         if (!result.ok) {
             const text = await result.text();
-            console.error('OpenAI request failed', result.statusText, text);
+            console.warn('OpenAI request failed', result.statusText, text);
             return response.status(500).send(text);
         }
 
@@ -271,7 +271,7 @@ router.post('/generate-image', jsonParser, async (request, response) => {
         const key = readSecret(request.user.directories, SECRET_KEYS.OPENAI);
 
         if (!key) {
-            console.error('No OpenAI key found');
+            console.warn('No OpenAI key found');
             return response.sendStatus(400);
         }
 
@@ -288,7 +288,7 @@ router.post('/generate-image', jsonParser, async (request, response) => {
 
         if (!result.ok) {
             const text = await result.text();
-            console.error('OpenAI request failed', result.statusText, text);
+            console.warn('OpenAI request failed', result.statusText, text);
             return response.status(500).send(text);
         }
 
@@ -308,7 +308,7 @@ custom.post('/generate-voice', jsonParser, async (request, response) => {
         const { input, provider_endpoint, response_format, voice, speed, model } = request.body;
 
         if (!provider_endpoint) {
-            console.error('No OpenAI-compatible TTS provider endpoint provided');
+            console.warn('No OpenAI-compatible TTS provider endpoint provided');
             return response.sendStatus(400);
         }
 
@@ -329,7 +329,7 @@ custom.post('/generate-voice', jsonParser, async (request, response) => {
 
         if (!result.ok) {
             const text = await result.text();
-            console.error('OpenAI request failed', result.statusText, text);
+            console.warn('OpenAI request failed', result.statusText, text);
             return response.status(500).send(text);
         }
 

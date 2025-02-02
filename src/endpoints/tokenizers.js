@@ -988,7 +988,7 @@ router.post('/remote/kobold/count', jsonParser, async function (request, respons
         const result = await fetch(url, args);
 
         if (!result.ok) {
-            console.error(`API returned error: ${result.status} ${result.statusText}`);
+            console.warn(`API returned error: ${result.status} ${result.statusText}`);
             return response.send({ error: true });
         }
 
@@ -1052,7 +1052,7 @@ router.post('/remote/textgenerationwebui/encode', jsonParser, async function (re
         const result = await fetch(url, args);
 
         if (!result.ok) {
-            console.error(`API returned error: ${result.status} ${result.statusText}`);
+            console.warn(`API returned error: ${result.status} ${result.statusText}`);
             return response.send({ error: true });
         }
 

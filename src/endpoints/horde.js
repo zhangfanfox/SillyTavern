@@ -360,7 +360,7 @@ router.post('/generate-image', jsonParser, async (request, response) => {
             { token: api_key_horde });
 
         if (!generation.id) {
-            console.error('Image generation request is not satisfyable:', generation.message || 'unknown error');
+            console.warn('Image generation request is not satisfyable:', generation.message || 'unknown error');
             return response.sendStatus(400);
         }
 

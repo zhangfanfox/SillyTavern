@@ -105,7 +105,7 @@ router.post('/generate', jsonParser, async function (request, response_generate)
             } else {
                 if (!response.ok) {
                     const errorText = await response.text();
-                    console.error(`Kobold returned error: ${response.status} ${response.statusText} ${errorText}`);
+                    console.warn(`Kobold returned error: ${response.status} ${response.statusText} ${errorText}`);
 
                     try {
                         const errorJson = JSON.parse(errorText);

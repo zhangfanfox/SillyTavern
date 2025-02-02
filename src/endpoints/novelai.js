@@ -120,7 +120,7 @@ router.post('/status', jsonParser, async function (req, res) {
     const api_key_novel = readSecret(req.user.directories, SECRET_KEYS.NOVEL);
 
     if (!api_key_novel) {
-        console.error('NovelAI Access Token is missing.');
+        console.warn('NovelAI Access Token is missing.');
         return res.sendStatus(400);
     }
 
@@ -141,7 +141,7 @@ router.post('/status', jsonParser, async function (req, res) {
             return res.send({ error: true });
         }
         else {
-            console.error('NovelAI returned an error:', response.statusText);
+            console.warn('NovelAI returned an error:', response.statusText);
             return res.send({ error: true });
         }
     } catch (error) {
@@ -156,7 +156,7 @@ router.post('/generate', jsonParser, async function (req, res) {
     const api_key_novel = readSecret(req.user.directories, SECRET_KEYS.NOVEL);
 
     if (!api_key_novel) {
-        console.error('NovelAI Access Token is missing.');
+        console.warn('NovelAI Access Token is missing.');
         return res.sendStatus(400);
     }
 
@@ -261,7 +261,7 @@ router.post('/generate', jsonParser, async function (req, res) {
             if (!response.ok) {
                 const text = await response.text();
                 let message = text;
-                console.error(`Novel API returned error: ${response.status} ${response.statusText} ${text}`);
+                console.warn(`Novel API returned error: ${response.status} ${response.statusText} ${text}`);
 
                 try {
                     const data = JSON.parse(text);
@@ -292,7 +292,7 @@ router.post('/generate-image', jsonParser, async (request, response) => {
     const key = readSecret(request.user.directories, SECRET_KEYS.NOVEL);
 
     if (!key) {
-        console.error('NovelAI Access Token is missing.');
+        console.warn('NovelAI Access Token is missing.');
         return response.sendStatus(400);
     }
 
@@ -358,7 +358,7 @@ router.post('/generate-image', jsonParser, async (request, response) => {
 
         if (!generateResult.ok) {
             const text = await generateResult.text();
-            console.error('NovelAI returned an error.', generateResult.statusText, text);
+            console.warn('NovelAI returned an error.', generateResult.statusText, text);
             return response.sendStatus(500);
         }
 

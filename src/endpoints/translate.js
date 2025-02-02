@@ -46,7 +46,7 @@ router.post('/libre', jsonParser, async (request, response) => {
         const url = readSecret(request.user.directories, SECRET_KEYS.LIBRE_URL);
 
         if (!url) {
-            console.error('LibreTranslate URL is not configured.');
+            console.warn('LibreTranslate URL is not configured.');
             return response.sendStatus(400);
         }
 
@@ -85,7 +85,7 @@ router.post('/libre', jsonParser, async (request, response) => {
 
         if (!result.ok) {
             const error = await result.text();
-            console.error('LibreTranslate error: ', result.statusText, error);
+            console.warn('LibreTranslate error: ', result.statusText, error);
             return response.sendStatus(500);
         }
 
@@ -116,7 +116,7 @@ router.post('/google', jsonParser, async (request, response) => {
         const result = await fetch(requestUrl);
 
         if (!result.ok) {
-            console.error('Google Translate error: ', result.statusText);
+            console.warn('Google Translate error: ', result.statusText);
             return response.sendStatus(500);
         }
 
@@ -173,7 +173,7 @@ router.post('/yandex', jsonParser, async (request, response) => {
 
         if (!result.ok) {
             const error = await result.text();
-            console.error('Yandex error: ', result.statusText, error);
+            console.warn('Yandex error: ', result.statusText, error);
             return response.sendStatus(500);
         }
 
@@ -220,7 +220,7 @@ router.post('/lingva', jsonParser, async (request, response) => {
 
         if (!result.ok) {
             const error = await result.text();
-            console.error('Lingva error: ', result.statusText, error);
+            console.warn('Lingva error: ', result.statusText, error);
         }
 
         /** @type {any} */
@@ -238,7 +238,7 @@ router.post('/deepl', jsonParser, async (request, response) => {
         const key = readSecret(request.user.directories, SECRET_KEYS.DEEPL);
 
         if (!key) {
-            console.error('DeepL key is not configured.');
+            console.warn('DeepL key is not configured.');
             return response.sendStatus(400);
         }
 
@@ -280,7 +280,7 @@ router.post('/deepl', jsonParser, async (request, response) => {
 
         if (!result.ok) {
             const error = await result.text();
-            console.error('DeepL error: ', result.statusText, error);
+            console.warn('DeepL error: ', result.statusText, error);
             return response.sendStatus(500);
         }
 
@@ -393,7 +393,7 @@ router.post('/deeplx', jsonParser, async (request, response) => {
 
         if (!result.ok) {
             const error = await result.text();
-            console.error('DeepLX error: ', result.statusText, error);
+            console.warn('DeepLX error: ', result.statusText, error);
             return response.sendStatus(500);
         }
 

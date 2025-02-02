@@ -604,7 +604,7 @@ together.post('/models', jsonParser, async (request, response) => {
         const key = readSecret(request.user.directories, SECRET_KEYS.TOGETHERAI);
 
         if (!key) {
-            console.error('TogetherAI key not found.');
+            console.warn('TogetherAI key not found.');
             return response.sendStatus(400);
         }
 
@@ -616,14 +616,14 @@ together.post('/models', jsonParser, async (request, response) => {
         });
 
         if (!modelsResponse.ok) {
-            console.error('TogetherAI returned an error.');
+            console.warn('TogetherAI returned an error.');
             return response.sendStatus(500);
         }
 
         const data = await modelsResponse.json();
 
         if (!Array.isArray(data)) {
-            console.error('TogetherAI returned invalid data.');
+            console.warn('TogetherAI returned invalid data.');
             return response.sendStatus(500);
         }
 
@@ -643,7 +643,7 @@ together.post('/generate', jsonParser, async (request, response) => {
         const key = readSecret(request.user.directories, SECRET_KEYS.TOGETHERAI);
 
         if (!key) {
-            console.error('TogetherAI key not found.');
+            console.warn('TogetherAI key not found.');
             return response.sendStatus(400);
         }
 
@@ -669,7 +669,7 @@ together.post('/generate', jsonParser, async (request, response) => {
         });
 
         if (!result.ok) {
-            console.error('TogetherAI returned an error.', { body: await result.text() });
+            console.warn('TogetherAI returned an error.', { body: await result.text() });
             return response.sendStatus(500);
         }
 
@@ -794,14 +794,14 @@ pollinations.post('/models', jsonParser, async (_request, response) => {
         const result = await fetch(modelsUrl);
 
         if (!result.ok) {
-            console.error('Pollinations returned an error.', result.status, result.statusText);
+            console.warn('Pollinations returned an error.', result.status, result.statusText);
             throw new Error('Pollinations request failed.');
         }
 
         const data = await result.json();
 
         if (!Array.isArray(data)) {
-            console.error('Pollinations returned invalid data.');
+            console.warn('Pollinations returned invalid data.');
             throw new Error('Pollinations request failed.');
         }
 
@@ -834,7 +834,7 @@ pollinations.post('/generate', jsonParser, async (request, response) => {
         const result = await fetch(promptUrl);
 
         if (!result.ok) {
-            console.error('Pollinations returned an error.', result.status, result.statusText);
+            console.warn('Pollinations returned an error.', result.status, result.statusText);
             throw new Error('Pollinations request failed.');
         }
 
@@ -855,7 +855,7 @@ stability.post('/generate', jsonParser, async (request, response) => {
         const key = readSecret(request.user.directories, SECRET_KEYS.STABILITY);
 
         if (!key) {
-            console.error('Stability AI key not found.');
+            console.warn('Stability AI key not found.');
             return response.sendStatus(400);
         }
 
@@ -896,7 +896,7 @@ stability.post('/generate', jsonParser, async (request, response) => {
 
         if (!result.ok) {
             const text = await result.text();
-            console.error('Stability AI returned an error.', result.status, result.statusText, text);
+            console.warn('Stability AI returned an error.', result.status, result.statusText, text);
             return response.sendStatus(500);
         }
 
@@ -915,7 +915,7 @@ blockentropy.post('/models', jsonParser, async (request, response) => {
         const key = readSecret(request.user.directories, SECRET_KEYS.BLOCKENTROPY);
 
         if (!key) {
-            console.error('Block Entropy key not found.');
+            console.warn('Block Entropy key not found.');
             return response.sendStatus(400);
         }
 
@@ -927,14 +927,14 @@ blockentropy.post('/models', jsonParser, async (request, response) => {
         });
 
         if (!modelsResponse.ok) {
-            console.error('Block Entropy returned an error.');
+            console.warn('Block Entropy returned an error.');
             return response.sendStatus(500);
         }
 
         const data = await modelsResponse.json();
 
         if (!Array.isArray(data)) {
-            console.error('Block Entropy returned invalid data.');
+            console.warn('Block Entropy returned invalid data.');
             return response.sendStatus(500);
         }
         const models = data.map(x => ({ value: x.name, text: x.name }));
@@ -951,7 +951,7 @@ blockentropy.post('/generate', jsonParser, async (request, response) => {
         const key = readSecret(request.user.directories, SECRET_KEYS.BLOCKENTROPY);
 
         if (!key) {
-            console.error('Block Entropy key not found.');
+            console.warn('Block Entropy key not found.');
             return response.sendStatus(400);
         }
 
@@ -976,7 +976,7 @@ blockentropy.post('/generate', jsonParser, async (request, response) => {
         });
 
         if (!result.ok) {
-            console.error('Block Entropy returned an error.');
+            console.warn('Block Entropy returned an error.');
             return response.sendStatus(500);
         }
 
@@ -998,7 +998,7 @@ huggingface.post('/generate', jsonParser, async (request, response) => {
         const key = readSecret(request.user.directories, SECRET_KEYS.HUGGINGFACE);
 
         if (!key) {
-            console.error('Hugging Face key not found.');
+            console.warn('Hugging Face key not found.');
             return response.sendStatus(400);
         }
 
@@ -1016,7 +1016,7 @@ huggingface.post('/generate', jsonParser, async (request, response) => {
         });
 
         if (!result.ok) {
-            console.error('Hugging Face returned an error.');
+            console.warn('Hugging Face returned an error.');
             return response.sendStatus(500);
         }
 
@@ -1037,7 +1037,7 @@ nanogpt.post('/models', jsonParser, async (request, response) => {
         const key = readSecret(request.user.directories, SECRET_KEYS.NANOGPT);
 
         if (!key) {
-            console.error('NanoGPT key not found.');
+            console.warn('NanoGPT key not found.');
             return response.sendStatus(400);
         }
 
@@ -1050,7 +1050,7 @@ nanogpt.post('/models', jsonParser, async (request, response) => {
         });
 
         if (!modelsResponse.ok) {
-            console.error('NanoGPT returned an error.');
+            console.warn('NanoGPT returned an error.');
             return response.sendStatus(500);
         }
 
@@ -1059,7 +1059,7 @@ nanogpt.post('/models', jsonParser, async (request, response) => {
         const imageModels = data?.models?.image;
 
         if (!imageModels || typeof imageModels !== 'object') {
-            console.error('NanoGPT returned invalid data.');
+            console.warn('NanoGPT returned invalid data.');
             return response.sendStatus(500);
         }
 
@@ -1077,7 +1077,7 @@ nanogpt.post('/generate', jsonParser, async (request, response) => {
         const key = readSecret(request.user.directories, SECRET_KEYS.NANOGPT);
 
         if (!key) {
-            console.error('NanoGPT key not found.');
+            console.warn('NanoGPT key not found.');
             return response.sendStatus(400);
         }
 
@@ -1093,7 +1093,7 @@ nanogpt.post('/generate', jsonParser, async (request, response) => {
         });
 
         if (!result.ok) {
-            console.error('NanoGPT returned an error.');
+            console.warn('NanoGPT returned an error.');
             return response.sendStatus(500);
         }
 
@@ -1102,7 +1102,7 @@ nanogpt.post('/generate', jsonParser, async (request, response) => {
 
         const image = data?.data?.[0]?.b64_json;
         if (!image) {
-            console.error('NanoGPT returned invalid data.');
+            console.warn('NanoGPT returned invalid data.');
             return response.sendStatus(500);
         }
 
@@ -1121,7 +1121,7 @@ bfl.post('/generate', jsonParser, async (request, response) => {
         const key = readSecret(request.user.directories, SECRET_KEYS.BFL);
 
         if (!key) {
-            console.error('BFL key not found.');
+            console.warn('BFL key not found.');
             return response.sendStatus(400);
         }
 
@@ -1185,7 +1185,7 @@ bfl.post('/generate', jsonParser, async (request, response) => {
         });
 
         if (!result.ok) {
-            console.error('BFL returned an error.');
+            console.warn('BFL returned an error.');
             return response.sendStatus(500);
         }
 
@@ -1201,7 +1201,7 @@ bfl.post('/generate', jsonParser, async (request, response) => {
 
             if (!statusResult.ok) {
                 const text = await statusResult.text();
-                console.error('BFL returned an error.', text);
+                console.warn('BFL returned an error.', text);
                 return response.sendStatus(500);
             }
 

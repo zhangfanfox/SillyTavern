@@ -56,7 +56,7 @@ router.post('/list', async (_request, response) => {
 router.post('/login', jsonParser, async (request, response) => {
     try {
         if (!request.body.handle) {
-            console.error('Login failed: Missing required fields');
+            console.warn('Login failed: Missing required fields');
             return response.status(400).json({ error: 'Missing required fields' });
         }
 
@@ -72,12 +72,12 @@ router.post('/login', jsonParser, async (request, response) => {
         }
 
         if (!user.enabled) {
-            console.error('Login failed: User', user.handle, 'is disabled');
+            console.warn('Login failed: User', user.handle, 'is disabled');
             return response.status(403).json({ error: 'User is disabled' });
         }
 
         if (user.password && user.password !== getPasswordHash(request.body.password, user.salt)) {
-            console.error('Login failed: Incorrect password for', user.handle);
+            console.warn('Login failed: Incorrect password for', user.handle);
             return response.status(403).json({ error: 'Incorrect credentials' });
         }
 
@@ -104,7 +104,7 @@ router.post('/login', jsonParser, async (request, response) => {
 router.post('/recover-step1', jsonParser, async (request, response) => {
     try {
         if (!request.body.handle) {
-            console.error('Recover step 1 failed: Missing required fields');
+            console.warn('Recover step 1 failed: Missing required fields');
             return response.status(400).json({ error: 'Missing required fields' });
         }
 
@@ -144,7 +144,7 @@ router.post('/recover-step1', jsonParser, async (request, response) => {
 router.post('/recover-step2', jsonParser, async (request, response) => {
     try {
         if (!request.body.handle || !request.body.code) {
-            console.error('Recover step 2 failed: Missing required fields');
+            console.warn('Recover step 2 failed: Missing required fields');
             return response.status(400).json({ error: 'Missing required fields' });
         }
 
@@ -158,7 +158,7 @@ router.post('/recover-step2', jsonParser, async (request, response) => {
         }
 
         if (!user.enabled) {
-            console.error('Recover step 2 failed: User', user.handle, 'is disabled');
+            console.warn('Recover step 2 failed: User', user.handle, 'is disabled');
             return response.status(403).json({ error: 'User is disabled' });
         }
 
@@ -166,7 +166,7 @@ router.post('/recover-step2', jsonParser, async (request, response) => {
 
         if (request.body.code !== mfaCode) {
             await recoverLimiter.consume(ip);
-            console.error('Recover step 2 failed: Incorrect code');
+            console.warn('Recover step 2 failed: Incorrect code');
             return response.status(403).json({ error: 'Incorrect code' });
         }
 

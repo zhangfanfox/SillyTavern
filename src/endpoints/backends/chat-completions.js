@@ -114,7 +114,7 @@ async function sendClaudeRequest(request, response) {
     }
 
     if (!apiKey) {
-        console.log(color.red(`Claude API key is missing.\n${divider}`));
+        console.warn(color.red(`Claude API key is missing.\n${divider}`));
         return response.status(400).send({ error: true });
     }
 
@@ -230,7 +230,7 @@ async function sendScaleRequest(request, response) {
     const apiKey = readSecret(request.user.directories, SECRET_KEYS.SCALE);
 
     if (!apiKey) {
-        console.log('Scale API key is missing.');
+        console.warn('Scale API key is missing.');
         return response.status(400).send({ error: true });
     }
 
@@ -254,7 +254,7 @@ async function sendScaleRequest(request, response) {
         });
 
         if (!generateResponse.ok) {
-            console.error(`Scale API returned error: ${generateResponse.status} ${generateResponse.statusText} ${await generateResponse.text()}`);
+            console.warn(`Scale API returned error: ${generateResponse.status} ${generateResponse.statusText} ${await generateResponse.text()}`);
             return response.status(500).send({ error: true });
         }
 
@@ -282,7 +282,7 @@ async function sendMakerSuiteRequest(request, response) {
     const apiKey = request.body.reverse_proxy ? request.body.proxy_password : readSecret(request.user.directories, SECRET_KEYS.MAKERSUITE);
 
     if (!request.body.reverse_proxy && !apiKey) {
-        console.error('Google AI Studio API key is missing.');
+        console.warn('Google AI Studio API key is missing.');
         return response.status(400).send({ error: true });
     }
 
@@ -373,7 +373,7 @@ async function sendMakerSuiteRequest(request, response) {
             }
         } else {
             if (!generateResponse.ok) {
-                console.error(`Google AI Studio API returned error: ${generateResponse.status} ${generateResponse.statusText} ${await generateResponse.text()}`);
+                console.warn(`Google AI Studio API returned error: ${generateResponse.status} ${generateResponse.statusText} ${await generateResponse.text()}`);
                 return response.status(generateResponse.status).send({ error: true });
             }
 
@@ -391,12 +391,12 @@ async function sendMakerSuiteRequest(request, response) {
             }
 
             const responseContent = candidates[0].content ?? candidates[0].output;
-            console.error('Google AI Studio response:', responseContent);
+            console.warn('Google AI Studio response:', responseContent);
 
             const responseText = typeof responseContent === 'string' ? responseContent : responseContent?.parts?.filter(part => !part.thought)?.map(part => part.text)?.join('\n\n');
             if (!responseText) {
                 let message = 'Google AI Studio Candidate text empty';
-                console.error(message, generateResponseJson);
+                console.warn(message, generateResponseJson);
                 return response.send({ error: { message } });
             }
 
@@ -456,7 +456,7 @@ async function sendAI21Request(request, response) {
         } else {
             if (!generateResponse.ok) {
                 const errorText = await generateResponse.text();
-                console.error(`AI21 API returned error: ${generateResponse.status} ${generateResponse.statusText} ${errorText}`);
+                console.warn(`AI21 API returned error: ${generateResponse.status} ${generateResponse.statusText} ${errorText}`);
                 const errorJson = tryParse(errorText) ?? { error: true };
                 return response.status(500).send(errorJson);
             }
@@ -484,7 +484,7 @@ async function sendMistralAIRequest(request, response) {
     const apiKey = request.body.reverse_proxy ? request.body.proxy_password : readSecret(request.user.directories, SECRET_KEYS.MISTRALAI);
 
     if (!apiKey) {
-        console.error('MistralAI API key is missing.');
+        console.warn('MistralAI API key is missing.');
         return response.status(400).send({ error: true });
     }
 
@@ -533,7 +533,7 @@ async function sendMistralAIRequest(request, response) {
         } else {
             if (!generateResponse.ok) {
                 const errorText = await generateResponse.text();
-                console.error(`MistralAI API returned error: ${generateResponse.status} ${generateResponse.statusText} ${errorText}`);
+                console.warn(`MistralAI API returned error: ${generateResponse.status} ${generateResponse.statusText} ${errorText}`);
                 const errorJson = tryParse(errorText) ?? { error: true };
                 return response.status(500).send(errorJson);
             }
@@ -565,7 +565,7 @@ async function sendCohereRequest(request, response) {
     });
 
     if (!apiKey) {
-        console.error('Cohere API key is missing.');
+        console.warn('Cohere API key is missing.');
         return response.status(400).send({ error: true });
     }
 
@@ -626,7 +626,7 @@ async function sendCohereRequest(request, response) {
             const generateResponse = await fetch(apiUrl, config);
             if (!generateResponse.ok) {
                 const errorText = await generateResponse.text();
-                console.error(`Cohere API returned error: ${generateResponse.status} ${generateResponse.statusText} ${errorText}`);
+                console.warn(`Cohere API returned error: ${generateResponse.status} ${generateResponse.statusText} ${errorText}`);
                 const errorJson = tryParse(errorText) ?? { error: true };
                 return response.status(500).send(errorJson);
             }
@@ -654,7 +654,7 @@ async function sendDeepSeekRequest(request, response) {
     const apiKey = request.body.reverse_proxy ? request.body.proxy_password : readSecret(request.user.directories, SECRET_KEYS.DEEPSEEK);
 
     if (!apiKey && !request.body.reverse_proxy) {
-        console.log('DeepSeek API key is missing.');
+        console.warn('DeepSeek API key is missing.');
         return response.status(400).send({ error: true });
     }
 
@@ -775,12 +775,12 @@ router.post('/status', jsonParser, async function (request, response_getstatus_o
         api_key_openai = request.body.reverse_proxy ? request.body.proxy_password : readSecret(request.user.directories, SECRET_KEYS.DEEPSEEK);
         headers = {};
     } else {
-        console.error('This chat completion source is not supported yet.');
+        console.warn('This chat completion source is not supported yet.');
         return response_getstatus_openai.status(400).send({ error: true });
     }
 
     if (!api_key_openai && !request.body.reverse_proxy && request.body.chat_completion_source !== CHAT_COMPLETION_SOURCES.CUSTOM) {
-        console.error('Chat Completion API key is missing.');
+        console.warn('Chat Completion API key is missing.');
         return response_getstatus_openai.status(400).send({ error: true });
     }
 
@@ -1059,12 +1059,12 @@ router.post('/generate', jsonParser, function (request, response) {
         headers = {};
         bodyParams = {};
     } else {
-        console.error('This chat completion source is not supported yet.');
+        console.warn('This chat completion source is not supported yet.');
         return response.status(400).send({ error: true });
     }
 
     if (!apiKey && !request.body.reverse_proxy && request.body.chat_completion_source !== CHAT_COMPLETION_SOURCES.CUSTOM) {
-        console.error('OpenAI API key is missing.');
+        console.warn('OpenAI API key is missing.');
         return response.status(400).send({ error: true });
     }
 
