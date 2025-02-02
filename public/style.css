@@ -347,6 +347,7 @@ input[type='checkbox']:focus-visible {
     border-left: 2px solid var(--SmartThemeEmColor);
     border-radius: 2px;
     padding: 5px;
+    padding-left: 14px;
     margin-bottom: 0.5em;
     overflow-y: auto;
     color: var(--SmartThemeEmColor);
