@@ -23,6 +23,18 @@ function getMessageFromJquery(element) {
 }
 
 /**
+ * Toggles the auto-expand state of reasoning blocks.
+ */
+function toggleReasoningAutoExpand() {
+    const reasoningBlocks = document.querySelectorAll('details.mes_reasoning_details');
+    reasoningBlocks.forEach((block) => {
+        if (block instanceof HTMLDetailsElement) {
+            block.open = power_user.reasoning.auto_expand;
+        }
+    });
+}
+
+/**
  * Helper class for adding reasoning to messages.
  * Keeps track of the number of reasoning additions.
  */
@@ -116,6 +128,13 @@ function loadReasoningSettings() {
     $('#reasoning_auto_parse').prop('checked', power_user.reasoning.auto_parse);
     $('#reasoning_auto_parse').on('change', function () {
         power_user.reasoning.auto_parse = !!$(this).prop('checked');
+        saveSettingsDebounced();
+    });
+
+    $('#reasoning_auto_expand').prop('checked', power_user.reasoning.auto_expand);
+    $('#reasoning_auto_expand').on('change', function () {
+        power_user.reasoning.auto_expand = !!$(this).prop('checked');
+        toggleReasoningAutoExpand();
         saveSettingsDebounced();
     });
 }
@@ -444,6 +463,7 @@ function registerReasoningAppEvents() {
 
 export function initReasoning() {
     loadReasoningSettings();
+    toggleReasoningAutoExpand();
     setReasoningEventHandlers();
     registerReasoningSlashCommands();
     registerReasoningMacros();
