@@ -967,6 +967,11 @@ router.post('/generate', jsonParser, function (request, response) {
         if (getConfigValue('openai.randomizeUserId', false)) {
             bodyParams['user'] = uuidv4();
         }
+
+        // A few of OpenAIs reasoning models support reasoning effort
+        if (['o1', 'o3-mini', 'o3-mini-2025-01-31'].includes(request.body.model)) {
+            bodyParams['reasoning_effort'] = request.body.reasoning_effort;
+        }
     } else if (request.body.chat_completion_source === CHAT_COMPLETION_SOURCES.OPENROUTER) {
         apiUrl = 'https://openrouter.ai/api/v1';
         apiKey = readSecret(request.user.directories, SECRET_KEYS.OPENROUTER);
