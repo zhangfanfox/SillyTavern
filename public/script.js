@@ -6004,7 +6004,7 @@ export async function saveReply(type, getMessage, fromStreaming, title, swipes, 
     }
 
     // Coerce null/undefined to empty string
-    if (!chat[chat.length - 1]['extra']['reasoning']) {
+    if (chat.length && !chat[chat.length - 1]['extra']['reasoning']) {
         chat[chat.length - 1]['extra']['reasoning'] = '';
     }
 
