@@ -6049,7 +6049,7 @@ export async function saveReply(type, getMessage, fromStreaming, title, swipes, 
         chat[chat.length - 1]['send_date'] = getMessageTimeStamp();
         chat[chat.length - 1]['extra']['api'] = getGeneratingApi();
         chat[chat.length - 1]['extra']['model'] = getGeneratingModel();
-        chat[chat.length - 1]['extra']['reasoning'] += reasoning;
+        chat[chat.length - 1]['extra']['reasoning'] = reasoning;
         if (power_user.message_token_count_enabled) {
             const tokenCountText = (reasoning || '') + chat[chat.length - 1]['mes'];
             chat[chat.length - 1]['extra']['token_count'] = await getTokenCountAsync(tokenCountText, 0);
