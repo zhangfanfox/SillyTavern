@@ -396,7 +396,6 @@ function getSessionCookieAge() {
     return undefined;
 }
 
-
 /**
  * Checks the network interfaces to determine the presence of IPv6 and IPv4 addresses.
  *
@@ -796,7 +795,6 @@ async function getAutorunHostname(useIPv6, useIPv4) {
         }
     }
 
-
     return autorunHostname;
 }
 
@@ -1034,10 +1032,8 @@ async function startServer() {
         hasIPv6Any = false,
         hasIPv4Any = false;
 
-
     if (enableIPv6 === 'auto' || enableIPv4 === 'auto') {
         [hasIPv6Any, hasIPv4Any, hasIPv6Local, hasIPv4Local] = await getHasIP();
-
 
         hasIPv6 = listen ? hasIPv6Any : hasIPv6Local;
         if (enableIPv6 === 'auto') {
@@ -1051,7 +1047,6 @@ async function startServer() {
             }
         }
 
-
         hasIPv4 = listen ? hasIPv4Any : hasIPv4Local;
         if (enableIPv4 === 'auto') {
             useIPv4 = hasIPv4;
@@ -1064,7 +1059,6 @@ async function startServer() {
             }
         }
 
-
         if (enableIPv6 === 'auto' && enableIPv4 === 'auto') {
             if (!hasIPv6 && !hasIPv4) {
                 console.error('Both IPv6 and IPv4 are not detected');
@@ -1076,19 +1070,13 @@ async function startServer() {
         console.log('Neither protocol: ipv6, nor ipv4 are set to auto, skipping detection');
     }
 
-
-
-
     if (!useIPv6 && !useIPv4) {
         console.error('Both IPv6 and IPv4 are disabled,\nP.S. you should never see this error, at least at one point it was checked for before this, with the rest of the config options');
         process.exit(1);
     }
 
-
     const [v6Failed, v4Failed] = await startHTTPorHTTPS(useIPv6, useIPv4);
-
     handleServerListenFail(v6Failed, v4Failed, useIPv6, useIPv4);
-
     postSetupTasks(v6Failed, v4Failed, useIPv6, useIPv4);
 }
 
