@@ -1027,6 +1027,11 @@ router.post('/generate', jsonParser, function (request, response) {
             bodyParams.logprobs = true;
         }
 
+        // A few of OpenAIs reasoning models support reasoning effort
+        if (['o1', 'o3-mini', 'o3-mini-2025-01-31'].includes(request.body.model)) {
+            bodyParams['reasoning_effort'] = request.body.reasoning_effort;
+        }
+
         mergeObjectWithYaml(bodyParams, request.body.custom_include_body);
         mergeObjectWithYaml(headers, request.body.custom_include_headers);
 
