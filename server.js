@@ -984,7 +984,6 @@ function createHttpServer(url, ipVersion) {
     });
 }
 
-
 /**
  * Starts the server using http or https depending on config
  * @param {boolean} useIPv6 If use IPv6
@@ -1065,9 +1064,6 @@ async function startServer() {
                 process.exit(1);
             }
         }
-
-    } else {
-        console.log('Neither protocol: ipv6, nor ipv4 are set to auto, skipping detection');
     }
 
     if (!useIPv6 && !useIPv4) {
