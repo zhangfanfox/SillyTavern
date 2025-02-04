@@ -137,8 +137,8 @@ const DEFAULT_CSRF_DISABLED = false;
 const DEFAULT_BASIC_AUTH = false;
 const DEFAULT_PER_USER_BASIC_AUTH = false;
 
-const DEFAULT_ENABLE_IPV6 = 'auto';
-const DEFAULT_ENABLE_IPV4 = 'auto';
+const DEFAULT_ENABLE_IPV6 = false;
+const DEFAULT_ENABLE_IPV4 = true;
 
 const DEFAULT_PREFER_IPV6 = false;
 
