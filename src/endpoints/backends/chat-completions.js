@@ -967,11 +967,6 @@ router.post('/generate', jsonParser, function (request, response) {
         if (getConfigValue('openai.randomizeUserId', false)) {
             bodyParams['user'] = uuidv4();
         }
-
-        // A few of OpenAIs reasoning models support reasoning effort
-        if (['o1', 'o3-mini', 'o3-mini-2025-01-31'].includes(request.body.model)) {
-            bodyParams['reasoning_effort'] = request.body.reasoning_effort;
-        }
     } else if (request.body.chat_completion_source === CHAT_COMPLETION_SOURCES.OPENROUTER) {
         apiUrl = 'https://openrouter.ai/api/v1';
         apiKey = readSecret(request.user.directories, SECRET_KEYS.OPENROUTER);
@@ -1027,11 +1022,6 @@ router.post('/generate', jsonParser, function (request, response) {
             bodyParams.logprobs = true;
         }
 
-        // A few of OpenAIs reasoning models support reasoning effort
-        if (['o1', 'o3-mini', 'o3-mini-2025-01-31'].includes(request.body.model)) {
-            bodyParams['reasoning_effort'] = request.body.reasoning_effort;
-        }
-
         mergeObjectWithYaml(bodyParams, request.body.custom_include_body);
         mergeObjectWithYaml(headers, request.body.custom_include_headers);
 
@@ -1071,6 +1061,13 @@ router.post('/generate', jsonParser, function (request, response) {
     } else {
         console.warn('This chat completion source is not supported yet.');
         return response.status(400).send({ error: true });
+    }
+
+    // A few of OpenAIs reasoning models support reasoning effort
+    if ([CHAT_COMPLETION_SOURCES.CUSTOM, CHAT_COMPLETION_SOURCES.OPENAI].includes(request.body.chat_completion_source)) {
+        if (['o1', 'o3-mini', 'o3-mini-2025-01-31'].includes(request.body.model)) {
+            bodyParams['reasoning_effort'] = request.body.reasoning_effort;
+        }
     }
 
     if (!apiKey && !request.body.reverse_proxy && request.body.chat_completion_source !== CHAT_COMPLETION_SOURCES.CUSTOM) {
