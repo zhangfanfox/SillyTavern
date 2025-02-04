@@ -19,10 +19,9 @@ import { hideBin } from 'yargs/helpers';
 
 // express/server related library imports
 import cors from 'cors';
-import { doubleCsrf } from 'csrf-csrf';
+import { csrfSync } from 'csrf-sync';
 import express from 'express';
 import compression from 'compression';
-import cookieParser from 'cookie-parser';
 import cookieSession from 'cookie-session';
 import multer from 'multer';
 import responseTime from 'response-time';
@@ -41,7 +40,6 @@ util.inspect.defaultOptions.depth = 4;
 import { loadPlugins } from './src/plugin-loader.js';
 import {
     initUserStorage,
-    getCsrfSecret,
     getCookieSecret,
     getCookieSessionName,
     getAllEnabledUsers,
@@ -71,6 +69,8 @@ import {
     stringToBool,
     urlHostnameToIPv6,
     canResolve,
+    safeReadFileSync,
+    setupLogLevel,
 } from './src/util.js';
 import { UPLOADS_DIRECTORY } from './src/constants.js';
 import { ensureThumbnailCache } from './src/endpoints/thumbnails.js';
@@ -311,7 +311,7 @@ if (!ipOptions.includes(enableIPv4)) {
     enableIPv4 = DEFAULT_ENABLE_IPV4;
 }
 
-if (enableIPv6 === false  && enableIPv4 === false) {
+if (enableIPv6 === false && enableIPv4 === false) {
     console.error('error: You can\'t disable all internet protocols: at least IPv6 or IPv4 must be enabled.');
     process.exit(1);
 }
@@ -378,8 +378,8 @@ if (enableCorsProxy) {
 }
 
 function getSessionCookieAge() {
-    // Defaults to 24 hours in seconds if not set
-    const configValue = getConfigValue('sessionTimeout', 24 * 60 * 60);
+    // Defaults to "no expiration" if not set
+    const configValue = getConfigValue('sessionTimeout', -1);
 
     // Convert to milliseconds
     if (configValue > 0) {
@@ -458,27 +458,38 @@ app.use(setUserDataMiddleware);
 
 // CSRF Protection //
 if (!disableCsrf) {
-    const COOKIES_SECRET = getCookieSecret();
-
-    const { generateToken, doubleCsrfProtection } = doubleCsrf({
-        getSecret: getCsrfSecret,
-        cookieName: 'X-CSRF-Token',
-        cookieOptions: {
-            sameSite: 'strict',
-            secure: false,
+    const csrfSyncProtection = csrfSync({
+        getTokenFromState: (req) => {
+            if (!req.session) {
+                console.error('(CSRF error) getTokenFromState: Session object not initialized');
+                return;
+            }
+            return req.session.csrfToken;
         },
-        size: 64,
-        getTokenFromRequest: (req) => req.headers['x-csrf-token'],
+        getTokenFromRequest: (req) => {
+            return req.headers['x-csrf-token']?.toString();
+        },
+        storeTokenInState: (req, token) => {
+            if (!req.session) {
+                console.error('(CSRF error) storeTokenInState: Session object not initialized');
+                return;
+            }
+            req.session.csrfToken = token;
+        },
+        size: 32,
     });
 
     app.get('/csrf-token', (req, res) => {
         res.json({
-            'token': generateToken(res, req),
+            'token': csrfSyncProtection.generateToken(req),
         });
     });
 
-    app.use(cookieParser(COOKIES_SECRET));
-    app.use(doubleCsrfProtection);
+    // Customize the error message
+    csrfSyncProtection.invalidCsrfTokenError.message = color.red('Invalid CSRF token. Please refresh the page and try again.');
+    csrfSyncProtection.invalidCsrfTokenError.stack = undefined;
+
+    app.use(csrfSyncProtection.csrfSynchronisedProtection);
 } else {
     console.warn('\nCSRF protection is disabled. This will make your server vulnerable to CSRF attacks.\n');
     app.get('/csrf-token', (req, res) => {
@@ -773,8 +784,7 @@ async function getAutorunHostname(useIPv6, useIPv4) {
         let localhostResolve = await canResolve('localhost', useIPv6, useIPv4);
 
         if (useIPv6 && useIPv4) {
-            if (avoidLocalhost || !localhostResolve) return '[::1]';
-            return 'localhost';
+            return (avoidLocalhost || !localhostResolve) ? '[::1]' : 'localhost';
         }
 
         if (useIPv6) {
@@ -815,13 +825,13 @@ const postSetupTasks = async function (v6Failed, v4Failed, useIPv6, useIPv4) {
 
     if (useIPv6 && !v6Failed) {
         logListen += color.green(
-            ' IPv6: ' + tavernUrlV6.host
+            ' IPv6: ' + tavernUrlV6.host,
         );
     }
 
     if (useIPv4 && !v4Failed) {
         logListen += color.green(
-            ' IPv4: ' + tavernUrl.host
+            ' IPv4: ' + tavernUrl.host,
         );
     }
 
@@ -835,24 +845,26 @@ const postSetupTasks = async function (v6Failed, v4Failed, useIPv6, useIPv4) {
 
     if (listen) {
         console.log(
-            '[::] or 0.0.0.0 means SillyTavern is listening on all network interfaces (Wi-Fi, LAN, localhost). If you want to limit it only to internal localhost ([::1] or 127.0.0.1), change the setting in config.yaml to "listen: false". Check "access.log" file in the SillyTavern directory if you want to inspect incoming connections.\n'
+            '[::] or 0.0.0.0 means SillyTavern is listening on all network interfaces (Wi-Fi, LAN, localhost). If you want to limit it only to internal localhost ([::1] or 127.0.0.1), change the setting in config.yaml to "listen: false". Check "access.log" file in the SillyTavern directory if you want to inspect incoming connections.\n',
         );
     }
 
     if (basicAuthMode) {
         if (perUserBasicAuth && !enableAccounts) {
             console.error(color.red(
-                'Per-user basic authentication is enabled, but user accounts are disabled. This configuration may be insecure.'
+                'Per-user basic authentication is enabled, but user accounts are disabled. This configuration may be insecure.',
             ));
         } else if (!perUserBasicAuth) {
             const basicAuthUser = getConfigValue('basicAuthUser', {});
             if (!basicAuthUser?.username || !basicAuthUser?.password) {
                 console.warn(color.yellow(
-                    'Basic Authentication is enabled, but username or password is not set or empty!'
+                    'Basic Authentication is enabled, but username or password is not set or empty!',
                 ));
             }
         }
     }
+
+    setupLogLevel();
 };
 
 /**
@@ -1107,6 +1119,16 @@ async function verifySecuritySettings() {
     }
 }
 
+/**
+ * Registers a not-found error response if a not-found error page exists. Should only be called after all other middlewares have been registered.
+ */
+function apply404Middleware() {
+    const notFoundWebpage = safeReadFileSync('./public/error/url-not-found.html') ?? '';
+    app.use((req, res) => {
+        res.status(404).send(notFoundWebpage);
+    });
+}
+
 // User storage module needs to be initialized before starting the server
 initUserStorage(dataRoot)
     .then(ensurePublicDirectoriesExist)
@@ -1114,4 +1136,5 @@ initUserStorage(dataRoot)
     .then(migrateSystemPrompts)
     .then(verifySecuritySettings)
     .then(preSetupTasks)
+    .then(apply404Middleware)
     .finally(startServer);
