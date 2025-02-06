@@ -225,7 +225,7 @@ import {
     instruct_presets,
     selectContextPreset,
 } from './scripts/instruct-mode.js';
-import { getCurrentLocale, initLocales, t } from './scripts/i18n.js';
+import { initLocales, t } from './scripts/i18n.js';
 import { getFriendlyTokenizerName, getTokenCount, getTokenCountAsync, initTokenizers, saveTokenCache, TOKENIZER_SUPPORTED_KEY } from './scripts/tokenizers.js';
 import {
     user_avatar,
@@ -269,7 +269,7 @@ import { initSettingsSearch } from './scripts/setting-search.js';
 import { initBulkEdit } from './scripts/bulk-edit.js';
 import { deriveTemplatesFromChatTemplate } from './scripts/chat-templates.js';
 import { getContext } from './scripts/st-context.js';
-import { initReasoning, PromptReasoning } from './scripts/reasoning.js';
+import { extractReasoningFromData, initReasoning, PromptReasoning, updateReasoningTimeUI } from './scripts/reasoning.js';
 
 // API OBJECT FOR EXTERNAL WIRING
 globalThis.SillyTavern = {
@@ -5764,56 +5764,6 @@ function extractMessageFromData(data) {
 }
 
 /**
- * Extracts the reasoning from the response data.
- * @param {object} data Response data
- * @returns {string} Extracted reasoning
- */
-function extractReasoningFromData(data) {
-    switch (main_api) {
-        case 'textgenerationwebui':
-            switch (textgen_settings.type) {
-                case textgen_types.OPENROUTER:
-                    return data?.choices?.[0]?.reasoning ?? '';
-            }
-            break;
-
-        case 'openai':
-            if (!oai_settings.show_thoughts) break;
-
-            switch (oai_settings.chat_completion_source) {
-                case chat_completion_sources.DEEPSEEK:
-                    return data?.choices?.[0]?.message?.reasoning_content ?? '';
-                case chat_completion_sources.OPENROUTER:
-                    return data?.choices?.[0]?.message?.reasoning ?? '';
-                case chat_completion_sources.MAKERSUITE:
-                    return data?.responseContent?.parts?.filter(part => part.thought)?.map(part => part.text)?.join('\n\n') ?? '';
-            }
-            break;
-    }
-
-    return '';
-}
-
-/**
- * Updates the Reasoning controls
- * @param {HTMLElement} element The element to update
- * @param {number?} duration The duration of the reasoning in milliseconds
- * @param {object} [options={}] Options for the function
- * @param {boolean} [options.forceEnd=false] If true, there will be no "Thinking..." when no duration exists
- */
-function updateReasoningTimeUI(element, duration, { forceEnd = false } = {}) {
-    if (duration) {
-        const durationStr = moment.duration(duration).locale(getCurrentLocale()).humanize({ s: 50, ss: 9 });
-        element.textContent = t`Thought for ${durationStr}`;
-    } else if (forceEnd) {
-        element.textContent = t`Thought for some time`;
-    } else {
-        element.textContent = t`Thinking...`;
-    }
-}
-
-
-/**
  * Extracts multiswipe swipes from the response data.
  * @param {Object} data Response data
  * @param {string} type Type of generation
@@ -10872,18 +10822,6 @@ jQuery(async function () {
         }
     });
 
-    $(document).on('click', '.mes_reasoning_header', function () {
-        // If we are in message edit mode and reasoning area is closed, a click opens and edits it
-        const mes = $(this).closest('.mes');
-        const mesEditArea = mes.find('#curEditTextarea');
-        if (mesEditArea.length) {
-            const summary = $(mes).find('.mes_reasoning_summary');
-            if (!summary.attr('open')) {
-                summary.find('.mes_reasoning_edit').trigger('click');
-            }
-        }
-    });
-
     $(document).on('input', '#curEditTextarea', function () {
         if (power_user.auto_save_msg_edits === true) {
             messageEditAuto($(this));
@@ -11435,17 +11373,6 @@ jQuery(async function () {
         if (control instanceof HTMLInputElement || control instanceof HTMLTextAreaElement) {
             control.select();
             console.debug('Auto-selecting content of input control', control);
-        }
-    });
-
-    $(document).on('click', '.mes_reasoning_summary', function () {
-        // If you toggle summary header while editing reasoning, yup - we just cancel it
-        $(this).closest('.mes').find('.mes_reasoning_edit_cancel:visible').trigger('click');
-    });
-
-    $(document).on('click', '.mes_reasoning_details', function (e) {
-        if (!e.target.closest('.mes_reasoning_actions') && !e.target.closest('.mes_reasoning_header')) {
-            e.preventDefault();
         }
     });
 
