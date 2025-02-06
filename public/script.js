@@ -2276,10 +2276,12 @@ function getMessageFromTemplate({
  * @param {number} messageId Message ID
  * @param {object} message Message object
  */
-export function updateMessageBlock(messageId, message) {
+export function updateMessageBlock(messageId, message, { rerenderMessage = true } = {}) {
     const messageElement = $(`#chat [mesid="${messageId}"]`);
-    const text = message?.extra?.display_text ?? message.mes;
-    messageElement.find('.mes_text').html(messageFormatting(text, message.name, message.is_system, message.is_user, messageId, {}, false));
+    if (rerenderMessage) {
+        const text = message?.extra?.display_text ?? message.mes;
+        messageElement.find('.mes_text').html(messageFormatting(text, message.name, message.is_system, message.is_user, messageId, {}, false));
+    }
     messageElement.find('.mes_reasoning').html(messageFormatting(message.extra?.reasoning ?? '', '', false, false, messageId, {}, true));
     messageElement.toggleClass('reasoning', !!message.extra?.reasoning);
     addCopyToCodeBlocks(messageElement);

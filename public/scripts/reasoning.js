@@ -401,7 +401,7 @@ function setReasoningEventHandlers() {
     });
 
     $(document).on('click', '.mes_edit_add_reasoning', async function () {
-        const { message, messageId } = getMessageFromJquery(this);
+        const { message, messageId, messageBlock } = getMessageFromJquery(this);
         if (!message?.extra) {
             return;
         }
@@ -412,7 +412,8 @@ function setReasoningEventHandlers() {
         }
 
         message.extra.reasoning = PromptReasoning.REASONING_PLACEHOLDER;
-        updateMessageBlock(messageId, message);
+        updateMessageBlock(messageId, message, { rerenderMessage: false });
+        messageBlock.find('.mes_reasoning_edit').trigger('click');
         await saveChatConditional();
     });
 
@@ -426,13 +427,15 @@ function setReasoningEventHandlers() {
             return;
         }
 
-        const { message, messageId } = getMessageFromJquery(this);
+        const { message, messageId, messageBlock } = getMessageFromJquery(this);
         if (!message?.extra) {
             return;
         }
         message.extra.reasoning = '';
         await saveChatConditional();
         updateMessageBlock(messageId, message);
+        const textarea = messageBlock.find('.reasoning_edit_textarea');
+        textarea.remove();
     });
 
     $(document).on('pointerup', '.mes_reasoning_copy', async function () {
