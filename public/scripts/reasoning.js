@@ -302,11 +302,6 @@ function registerReasoningMacros() {
 }
 
 function setReasoningEventHandlers() {
-    $(document).on('click', '.mes_reasoning_summary', function () {
-        // If you toggle summary header while editing reasoning, yup - we just cancel it
-        $(this).closest('.mes').find('.mes_reasoning_edit_cancel:visible').trigger('click');
-    });
-
     $(document).on('click', '.mes_reasoning_details', function (e) {
         if (!e.target.closest('.mes_reasoning_actions') && !e.target.closest('.mes_reasoning_header')) {
             e.preventDefault();
