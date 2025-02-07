@@ -2275,6 +2275,8 @@ function getMessageFromTemplate({
  * Re-renders a message block with updated content.
  * @param {number} messageId Message ID
  * @param {object} message Message object
+ * @param {object} [options={}] Optional arguments
+ * @param {boolean} [options.rerenderMessage=true] Whether to re-render the message content (inside <c>.mes_text</c>)
  */
 export function updateMessageBlock(messageId, message, { rerenderMessage = true } = {}) {
     const messageElement = $(`#chat [mesid="${messageId}"]`);
