@@ -79,7 +79,7 @@ export function extractReasoningFromData(data) {
  */
 export function updateReasoningTimeUI(element, duration, { forceEnd = false } = {}) {
     if (duration) {
-        const durationStr = moment.duration(duration).locale(getCurrentLocale()).humanize({ s: 50, ss: 9 });
+        const durationStr = moment.duration(duration).locale(getCurrentLocale()).humanize({ s: 50, ss: 3 });
         const secondsStr = moment.duration(duration).asSeconds();
         element.innerHTML = t`Thought for <span title="${secondsStr} seconds">${durationStr}</span>`;
     } else if (forceEnd) {
