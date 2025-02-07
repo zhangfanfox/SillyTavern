@@ -1,11 +1,11 @@
 import {
     moment,
 } from '../lib.js';
-import { chat, closeMessageEditor, event_types, eventSource, main_api, saveChatConditional, saveSettingsDebounced, substituteParams, updateMessageBlock } from '../script.js';
+import { chat, closeMessageEditor, event_types, eventSource, main_api, messageFormatting, saveChatConditional, saveSettingsDebounced, substituteParams, updateMessageBlock } from '../script.js';
 import { getRegexedString, regex_placement } from './extensions/regex/engine.js';
 import { getCurrentLocale, t } from './i18n.js';
 import { MacrosParser } from './macros.js';
-import { chat_completion_sources, oai_settings } from './openai.js';
+import { chat_completion_sources, isHiddenReasoningModel, oai_settings } from './openai.js';
 import { Popup } from './popup.js';
 import { power_user } from './power-user.js';
 import { SlashCommand } from './slash-commands/SlashCommand.js';
@@ -68,6 +68,34 @@ export function extractReasoningFromData(data) {
     }
 
     return '';
+}
+
+/**
+ * Updates the Reasoning UI.
+ * @param {number|JQuery<HTMLElement>|HTMLElement} messageIdOrElement The message ID or the message element.
+ * @param {string|null} [reasoning=null] The reasoning content.
+ * @param {number|null} [reasoningDuration=null] The duration of the reasoning in milliseconds.
+ * @param {object} [options={}] Options for the function.
+ * @param {boolean} [options.forceEnd=false] If true, there will be no "Thinking..." when no duration exists.
+ */
+export function updateReasoningUI(messageIdOrElement, reasoning = null, reasoningDuration = null, { forceEnd = false } = {}) {
+    const messageElement = typeof messageIdOrElement === 'number'
+        ? $(`#chat [mesid="${messageIdOrElement}"]`)
+        : $(messageIdOrElement);
+    const mesReasoningElement = messageElement.find('.mes_reasoning');
+    const mesReasoningHeaderTitle = messageElement.find('.mes_reasoning_header_title');
+    const mesId = Number(messageElement.attr('mesid'));
+
+    mesReasoningElement.html(messageFormatting(reasoning ?? '', '', false, false, mesId, {}, true));
+    const reasoningText = mesReasoningElement.text().trim();
+
+    const hasReasoningText = !!reasoningText;
+    const isReasoningHidden = (!!reasoningDuration && !hasReasoningText) || (!forceEnd && isHiddenReasoningModel());
+    const isReasoning = hasReasoningText || isReasoningHidden;
+
+    messageElement.toggleClass('reasoning', isReasoning);
+    messageElement.toggleClass('reasoning_hidden', isReasoningHidden);
+    updateReasoningTimeUI(mesReasoningHeaderTitle[0], reasoningDuration, { forceEnd });
 }
 
 /**

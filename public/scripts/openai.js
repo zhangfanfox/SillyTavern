@@ -4995,6 +4995,53 @@ export function isImageInliningSupported() {
     }
 }
 
+
+
+/**
+ * Check if the model supports reasoning, but does not send back the reasoning
+ * @returns {boolean} True if the model supports reasoning
+ */
+export function isHiddenReasoningModel() {
+    if (main_api !== 'openai') {
+        return false;
+    }
+
+    /** @typedef {Object.<chat_completion_sources, { currentModel: string; models: ({ name: string; startsWith: boolean?; matchingFunc: (model: string) => boolean?; }|string)[]; }>} */
+    const hiddenReasoningModels = {
+        [chat_completion_sources.OPENAI]: {
+            currentModel: oai_settings.openai_model,
+            models: [
+                { name: 'o1', startsWith: true },
+                { name: 'o3', startsWith: true },
+            ],
+        },
+        [chat_completion_sources.MAKERSUITE]: {
+            currentModel: oai_settings.google_model,
+            models: [
+                { name: 'gemini-2.0-flash-thinking-exp', startsWith: true },
+            ],
+        },
+    };
+
+    const sourceConfig = hiddenReasoningModels[oai_settings.chat_completion_source];
+    if (!sourceConfig) {
+        return false;
+    }
+
+    return sourceConfig.models.some(model => {
+        if (typeof model === 'string') {
+            return sourceConfig.currentModel === model;
+        }
+        if (model.startsWith) {
+            return (sourceConfig.currentModel).startsWith(model.name);
+        }
+        if (model.matchingFunc) {
+            return model.matchingFunc(sourceConfig.currentModel);
+        }
+        return false;
+    });
+}
+
 /**
  * Proxy stuff
  */

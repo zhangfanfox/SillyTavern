@@ -413,8 +413,18 @@ input[type='checkbox']:focus-visible {
 .mes_reasoning_details:has(.reasoning_edit_textarea) .mes_reasoning_header,
 .mes_reasoning_details:not(:has(.reasoning_edit_textarea)) .mes_reasoning_actions .edit_button,
 .mes_reasoning_details:has(.reasoning_edit_textarea) .mes_reasoning_actions .mes_button:not(.edit_button),
-.mes_block:has(.edit_textarea):has(.reasoning_edit_textarea) .mes_reasoning_actions {
+.mes_block:has(.edit_textarea):has(.reasoning_edit_textarea) .mes_reasoning_actions,
+.mes.reasoning:not(.reasoning_hidden) .mes_edit_add_reasoning,
+.mes.reasoning_hidden .mes_reasoning_arrow,
+.mes.reasoning_hidden .mes_reasoning_actions {
     display: none;
+}
+
+.mes.reasoning_hidden .mes_reasoning_details {
+    display: block;
+}
+.mes.reasoning_hidden .mes_reasoning_header {
+    cursor: initial;
 }
 
 .mes_reasoning_details .mes_reasoning_arrow {
@@ -4313,10 +4323,6 @@ input[type="range"]::-webkit-slider-thumb {
     max-height: 75vh;
     max-height: 75dvh;
     field-sizing: content;
-}
-
-.mes.reasoning .mes_edit_add_reasoning {
-    display: none;
 }
 
 #anchor_order {

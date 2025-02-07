@@ -113,6 +113,7 @@ import {
     loadProxyPresets,
     selected_proxy,
     initOpenAI,
+    isHiddenReasoningModel,
 } from './scripts/openai.js';
 
 import {
@@ -269,7 +270,7 @@ import { initSettingsSearch } from './scripts/setting-search.js';
 import { initBulkEdit } from './scripts/bulk-edit.js';
 import { deriveTemplatesFromChatTemplate } from './scripts/chat-templates.js';
 import { getContext } from './scripts/st-context.js';
-import { extractReasoningFromData, initReasoning, PromptReasoning, updateReasoningTimeUI } from './scripts/reasoning.js';
+import { extractReasoningFromData, initReasoning, PromptReasoning, updateReasoningTimeUI, updateReasoningUI } from './scripts/reasoning.js';
 
 // API OBJECT FOR EXTERNAL WIRING
 globalThis.SillyTavern = {
@@ -2249,7 +2250,6 @@ function getMessageFromTemplate({
     mes.find('.avatar img').attr('src', avatarImg);
     mes.find('.ch_name .name_text').text(characterName);
     mes.find('.mes_bias').html(bias);
-    mes.find('.mes_reasoning').html(reasoning);
     mes.find('.timestamp').text(timestamp).attr('title', `${extra?.api ? extra.api + ' - ' : ''}${extra?.model ?? ''}`);
     mes.find('.mesIDDisplay').text(`#${mesId}`);
     tokenCount && mes.find('.tokenCounterDisplay').text(`${tokenCount}t`);
@@ -2257,12 +2257,7 @@ function getMessageFromTemplate({
     timerValue && mes.find('.mes_timer').attr('title', timerTitle).text(timerValue);
     bookmarkLink && updateBookmarkDisplay(mes);
 
-    if (reasoning) {
-        mes.addClass('reasoning');
-    }
-    if (reasoningDuration) {
-        updateReasoningTimeUI(mes.find('.mes_reasoning_header_title')[0], reasoningDuration, { forceEnd: true });
-    }
+    updateReasoningUI(mes, reasoning, reasoningDuration, { forceEnd: true });
 
     if (power_user.timestamp_model_icon && extra?.api) {
         insertSVGIcon(mes, extra);
@@ -2284,8 +2279,9 @@ export function updateMessageBlock(messageId, message, { rerenderMessage = true 
         const text = message?.extra?.display_text ?? message.mes;
         messageElement.find('.mes_text').html(messageFormatting(text, message.name, message.is_system, message.is_user, messageId, {}, false));
     }
-    messageElement.find('.mes_reasoning').html(messageFormatting(message.extra?.reasoning ?? '', '', false, false, messageId, {}, true));
-    messageElement.toggleClass('reasoning', !!message.extra?.reasoning);
+
+    updateReasoningUI(messageElement, message?.extra?.reasoning, message?.extra?.reasoning_duration, { forceEnd: true });
+
     addCopyToCodeBlocks(messageElement);
     appendMediaToMessage(message, messageElement);
 }
@@ -3123,8 +3119,11 @@ class StreamingProcessor {
     constructor(type, forceName2, timeStarted, continueMessage) {
         this.result = '';
         this.messageId = -1;
+        /** @type {HTMLElement} */
         this.messageDom = null;
+        /** @type {HTMLElement} */
         this.messageTextDom = null;
+        /** @type {HTMLElement} */
         this.messageTimerDom = null;
         /** @type {HTMLElement} */
         this.messageTokenCounterDom = null;
@@ -3148,13 +3147,17 @@ class StreamingProcessor {
         this.messageLogprobs = [];
         this.toolCalls = [];
         this.reasoning = '';
+        /** @type {Date} */
         this.reasoningStartTime = null;
+        /** @type {Date} */
         this.reasoningEndTime = null;
+        this.isHiddenReasoning = isHiddenReasoningModel();
     }
 
+    /** @type {() => number} Reasoning duration in milliseconds */
     #reasoningDuration() {
         if (this.reasoningStartTime && this.reasoningEndTime) {
-            return (this.reasoningEndTime - this.reasoningStartTime);
+            return (this.reasoningEndTime.getTime() - this.reasoningStartTime.getTime());
         }
         return null;
     }
@@ -3168,6 +3171,8 @@ class StreamingProcessor {
             this.messageReasoningDom = this.messageDom?.querySelector('.mes_reasoning');
             this.messageReasoningHeaderDom = this.messageDom?.querySelector('.mes_reasoning_header_title');
         }
+
+        this.messageDom.classList.toggle('reasoning_hidden', this.isHiddenReasoning);
     }
 
     #updateMessageBlockVisibility() {
@@ -3254,16 +3259,17 @@ class StreamingProcessor {
                 chat[messageId]['extra'] = {};
             }
 
-            if (this.reasoning) {
+            if (this.reasoning || this.isHiddenReasoning) {
                 const reasoning = power_user.trim_spaces ? this.reasoning.trim() : this.reasoning;
                 const reasoningChanged = chat[messageId]['extra']['reasoning'] !== reasoning;
                 chat[messageId]['extra']['reasoning'] = reasoning;
 
-                if (reasoningChanged && this.reasoningStartTime === null) {
-                    this.reasoningStartTime = Date.now();
+                if ((this.isHiddenReasoning || reasoningChanged) && this.reasoningStartTime === null) {
+                    this.reasoningStartTime = this.timeStarted;
                 }
-                if (!reasoningChanged && mesChanged && this.reasoningStartTime !== null && this.reasoningEndTime === null) {
-                    this.reasoningEndTime = Date.now();
+                if ((this.isHiddenReasoning || !reasoningChanged) && mesChanged && this.reasoningStartTime !== null && this.reasoningEndTime === null) {
+                    this.reasoningEndTime = currentTime;
+                    await eventSource.emit(event_types.STREAM_REASONING_DONE, this.reasoning, this.#reasoningDuration);
                 }
                 await this.#updateReasoningTime(messageId);
 
@@ -3322,8 +3328,7 @@ class StreamingProcessor {
     async #updateReasoningTime(messageId, { forceEnd = false } = {}) {
         const duration = this.#reasoningDuration();
         chat[messageId]['extra']['reasoning_duration'] = duration;
-        updateReasoningTimeUI(this.messageReasoningHeaderDom, duration, { forceEnd: forceEnd });
-        await eventSource.emit(event_types.STREAM_REASONING_DONE, this.reasoning, duration);
+        updateReasoningUI(this.messageDom, this.reasoning, duration, { forceEnd: forceEnd });
     }
 
     async onFinishStreaming(messageId, text) {
@@ -3333,7 +3338,8 @@ class StreamingProcessor {
 
         // Ensure reasoning finish time is recorded if not already
         if (this.reasoningStartTime !== null && this.reasoningEndTime === null) {
-            this.reasoningEndTime = Date.now();
+            this.reasoningEndTime = new Date();
+            await eventSource.emit(event_types.STREAM_REASONING_DONE, this.reasoning, this.#reasoningDuration);
             await this.#updateReasoningTime(messageId, { forceEnd: true });
         }
 
@@ -8785,7 +8791,7 @@ const swipe_right = () => {
                     // resets the timer
                     swipeMessage.find('.mes_timer').html('');
                     swipeMessage.find('.tokenCounterDisplay').text('');
-                    swipeMessage.find('.mes_reasoning').html('');
+                    updateReasoningUI(swipeMessage, null);
                 } else {
                     //console.log('showing previously generated swipe candidate, or "..."');
                     //console.log('onclick right swipe calling addOneMessage');
