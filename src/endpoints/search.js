@@ -112,6 +112,7 @@ router.post('/serpapi', jsonParser, async (request, response) => {
         }
 
         const data = await result.json();
+        console.debug('SerpApi response', data);
         return response.json(data);
     } catch (error) {
         console.error(error);
@@ -255,6 +256,7 @@ router.post('/tavily', jsonParser, async (request, response) => {
         }
 
         const data = await result.json();
+        console.debug('Tavily response', data);
         return response.json(data);
     } catch (error) {
         console.error(error);
@@ -290,6 +292,7 @@ router.post('/koboldcpp', jsonParser, async (request, response) => {
         }
 
         const data = await result.json();
+        console.debug('KoboldCpp search response', data);
         return response.json(data);
     } catch (error) {
         console.error(error);
@@ -331,6 +334,7 @@ router.post('/serper', jsonParser, async (request, response) => {
         }
 
         const data = await result.json();
+        console.debug('Serper response', data);
         return response.json(data);
     } catch (error) {
         console.error(error);
