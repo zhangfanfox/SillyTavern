@@ -3514,7 +3514,7 @@ export async function generateRaw(prompt, api, instructOverride, quietToLoud, sy
                 break;
             }
             case 'textgenerationwebui':
-                generateData = getTextGenGenerationData(prompt, amount_gen, false, false, null, 'quiet');
+                generateData = await getTextGenGenerationData(prompt, amount_gen, false, false, null, 'quiet');
                 TempResponseLength.restore(api);
                 break;
             case 'openai': {
@@ -4651,7 +4651,7 @@ export async function Generate(type, { automatic_trigger, force_name2, quiet_pro
             break;
         case 'textgenerationwebui': {
             const cfgValues = useCfgPrompt ? { guidanceScale: cfgGuidanceScale, negativePrompt: await getCombinedPrompt(true) } : null;
-            generate_data = getTextGenGenerationData(finalPrompt, maxLength, isImpersonate, isContinue, cfgValues, type);
+            generate_data = await getTextGenGenerationData(finalPrompt, maxLength, isImpersonate, isContinue, cfgValues, type);
             break;
         }
         case 'novel': {
@@ -6991,7 +6991,7 @@ export async function getSettings() {
         loadProxyPresets(settings);
 
         // Allow subscribers to mutate settings
-        eventSource.emit(event_types.SETTINGS_LOADED_AFTER, settings);
+        await eventSource.emit(event_types.SETTINGS_LOADED_AFTER, settings);
 
         // Set context size after loading power user (may override the max value)
         $('#max_context').val(max_context);
@@ -7051,7 +7051,7 @@ export async function getSettings() {
     }
     await validateDisabledSamplers();
     settingsReady = true;
-    eventSource.emit(event_types.SETTINGS_LOADED);
+    await eventSource.emit(event_types.SETTINGS_LOADED);
 }
 
 function selectKoboldGuiPreset() {
@@ -11468,7 +11468,7 @@ jQuery(async function () {
                 );
                 break;*/
             default:
-                eventSource.emit('charManagementDropdown', target);
+                await eventSource.emit('charManagementDropdown', target);
         }
         $('#char-management-dropdown').prop('selectedIndex', 0);
     });
@@ -11630,7 +11630,7 @@ jQuery(async function () {
 
     $(document).on('click', '.open_characters_library', async function () {
         await getCharacters();
-        eventSource.emit(event_types.OPEN_CHARACTER_LIBRARY);
+        await eventSource.emit(event_types.OPEN_CHARACTER_LIBRARY);
     });
 
     // Added here to prevent execution before script.js is loaded and get rid of quirky timeouts
