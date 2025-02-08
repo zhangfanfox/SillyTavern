@@ -297,6 +297,47 @@ router.post('/koboldcpp', jsonParser, async (request, response) => {
     }
 });
 
+router.post('/serper', jsonParser, async (request, response) => {
+    try {
+        const key = readSecret(request.user.directories, SECRET_KEYS.SERPER);
+
+        if (!key) {
+            console.error('No Serper key found');
+            return response.sendStatus(400);
+        }
+
+        const { query, images } = request.body;
+
+        const url = images
+            ? 'https://google.serper.dev/images'
+            : 'https://google.serper.dev/search';
+
+        const result = await fetch(url, {
+            method: 'POST',
+            headers: {
+                'X-API-KEY': key,
+                'Content-Type': 'application/json',
+            },
+            redirect: 'follow',
+            body: JSON.stringify({ q: query }),
+        });
+
+        console.debug('Serper query', query);
+
+        if (!result.ok) {
+            const text = await result.text();
+            console.warn('Serper request failed', result.statusText, text);
+            return response.status(500).send(text);
+        }
+
+        const data = await result.json();
+        return response.json(data);
+    } catch (error) {
+        console.error(error);
+        return response.sendStatus(500);
+    }
+});
+
 router.post('/visit', jsonParser, async (request, response) => {
     try {
         const url = request.body.url;
