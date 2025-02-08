@@ -113,7 +113,6 @@ import {
     loadProxyPresets,
     selected_proxy,
     initOpenAI,
-    isHiddenReasoningModel,
 } from './scripts/openai.js';
 
 import {
@@ -270,7 +269,7 @@ import { initSettingsSearch } from './scripts/setting-search.js';
 import { initBulkEdit } from './scripts/bulk-edit.js';
 import { deriveTemplatesFromChatTemplate } from './scripts/chat-templates.js';
 import { getContext } from './scripts/st-context.js';
-import { extractReasoningFromData, initReasoning, PromptReasoning, updateReasoningTimeUI, updateReasoningUI } from './scripts/reasoning.js';
+import { extractReasoningFromData, initReasoning, isHiddenReasoningModel, PromptReasoning, updateReasoningUI } from './scripts/reasoning.js';
 
 // API OBJECT FOR EXTERNAL WIRING
 globalThis.SillyTavern = {

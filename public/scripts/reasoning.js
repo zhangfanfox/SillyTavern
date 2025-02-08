@@ -5,7 +5,7 @@ import { chat, closeMessageEditor, event_types, eventSource, main_api, messageFo
 import { getRegexedString, regex_placement } from './extensions/regex/engine.js';
 import { getCurrentLocale, t } from './i18n.js';
 import { MacrosParser } from './macros.js';
-import { chat_completion_sources, isHiddenReasoningModel, oai_settings } from './openai.js';
+import { chat_completion_sources, oai_settings } from './openai.js';
 import { Popup } from './popup.js';
 import { power_user } from './power-user.js';
 import { SlashCommand } from './slash-commands/SlashCommand.js';
@@ -68,6 +68,52 @@ export function extractReasoningFromData(data) {
     }
 
     return '';
+}
+
+/**
+ * Check if the model supports reasoning, but does not send back the reasoning
+ * @returns {boolean} True if the model supports reasoning
+ */
+export function isHiddenReasoningModel() {
+    if (main_api !== 'openai') {
+        return false;
+    }
+
+    /** @typedef {Object.<chat_completion_sources, { currentModel: string; models: ({ name: string; startsWith: boolean?; matchingFunc: (model: string) => boolean?; }|string)[]; }>} */
+    const hiddenReasoningModels = {
+        [chat_completion_sources.OPENAI]: {
+            currentModel: oai_settings.openai_model,
+            models: [
+                { name: 'o1', startsWith: true },
+                { name: 'o3', startsWith: true },
+            ],
+        },
+        [chat_completion_sources.MAKERSUITE]: {
+            currentModel: oai_settings.google_model,
+            models: [
+                { name: 'gemini-2.0-flash-thinking-exp', startsWith: true },
+                { name: 'gemini-2.0-pro-exp', startsWith: true },
+            ],
+        },
+    };
+
+    const sourceConfig = hiddenReasoningModels[oai_settings.chat_completion_source];
+    if (!sourceConfig) {
+        return false;
+    }
+
+    return sourceConfig.models.some(model => {
+        if (typeof model === 'string') {
+            return sourceConfig.currentModel === model;
+        }
+        if (model.startsWith) {
+            return (sourceConfig.currentModel).startsWith(model.name);
+        }
+        if (model.matchingFunc) {
+            return model.matchingFunc(sourceConfig.currentModel);
+        }
+        return false;
+    });
 }
 
 /**
