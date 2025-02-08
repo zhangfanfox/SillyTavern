@@ -2459,7 +2459,7 @@ export function addOneMessage(mes, { type = 'normal', insertAfter = null, scroll
         timestamp: timestamp,
         extra: mes.extra,
         tokenCount: mes.extra?.token_count ?? 0,
-        ...formatGenerationTimer(mes.gen_started, mes.gen_finished, mes.extra?.token_count),
+        ...formatGenerationTimer(mes.gen_started, mes.gen_finished, mes.extra?.token_count, mes.extra?.reasoning_duration),
     };
 
     const renderedMessage = getMessageFromTemplate(params);
@@ -2579,13 +2579,14 @@ export function formatCharacterAvatar(characterAvatar) {
  * @param {Date} gen_started Date when generation was started
  * @param {Date} gen_finished Date when generation was finished
  * @param {number} tokenCount Number of tokens generated (0 if not available)
+ * @param {number?} [reasoningDuration=null] Reasoning duration (null if no reasoning was done)
  * @returns {Object} Object containing the formatted timer value and title
  * @example
  * const { timerValue, timerTitle } = formatGenerationTimer(gen_started, gen_finished, tokenCount);
  * console.log(timerValue); // 1.2s
  * console.log(timerTitle); // Generation queued: 12:34:56 7 Jan 2021\nReply received: 12:34:57 7 Jan 2021\nTime to generate: 1.2 seconds\nToken rate: 5 t/s
  */
-function formatGenerationTimer(gen_started, gen_finished, tokenCount) {
+function formatGenerationTimer(gen_started, gen_finished, tokenCount, reasoningDuration = null) {
     if (!gen_started || !gen_finished) {
         return {};
     }
@@ -2599,6 +2600,7 @@ function formatGenerationTimer(gen_started, gen_finished, tokenCount) {
         `Generation queued: ${start.format(dateFormat)}`,
         `Reply received: ${finish.format(dateFormat)}`,
         `Time to generate: ${seconds} seconds`,
+        reasoningDuration > 0 ? `Time to think: ${reasoningDuration / 1000} seconds` : '',
         tokenCount > 0 ? `Token rate: ${Number(tokenCount / seconds).toFixed(1)} t/s` : '',
     ].join('\n');
 
@@ -3310,7 +3312,7 @@ class StreamingProcessor {
                 this.messageTextDom.innerHTML = formattedText;
             }
 
-            const timePassed = formatGenerationTimer(this.timeStarted, currentTime, currentTokenCount);
+            const timePassed = formatGenerationTimer(this.timeStarted, currentTime, currentTokenCount, this.#reasoningDuration());
             if (this.messageTimerDom instanceof HTMLElement) {
                 this.messageTimerDom.textContent = timePassed.timerValue;
                 this.messageTimerDom.title = timePassed.timerTitle;
