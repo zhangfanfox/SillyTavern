@@ -5019,6 +5019,7 @@ export function isHiddenReasoningModel() {
             currentModel: oai_settings.google_model,
             models: [
                 { name: 'gemini-2.0-flash-thinking-exp', startsWith: true },
+                { name: 'gemini-2.0-pro-exp', startsWith: true },
             ],
         },
     };
