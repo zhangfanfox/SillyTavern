@@ -2223,8 +2223,6 @@ function getMessageFromTemplate({
     isUser,
     avatarImg,
     bias,
-    reasoning,
-    reasoningDuration,
     isSystem,
     title,
     timerValue,
@@ -2256,7 +2254,7 @@ function getMessageFromTemplate({
     timerValue && mes.find('.mes_timer').attr('title', timerTitle).text(timerValue);
     bookmarkLink && updateBookmarkDisplay(mes);
 
-    updateReasoningUI(mes, reasoning, reasoningDuration, { forceEnd: true });
+    updateReasoningUI(mes);
 
     if (power_user.timestamp_model_icon && extra?.api) {
         insertSVGIcon(mes, extra);
@@ -2279,7 +2277,7 @@ export function updateMessageBlock(messageId, message, { rerenderMessage = true 
         messageElement.find('.mes_text').html(messageFormatting(text, message.name, message.is_system, message.is_user, messageId, {}, false));
     }
 
-    updateReasoningUI(messageElement, message?.extra?.reasoning, message?.extra?.reasoning_duration, { forceEnd: true });
+    updateReasoningUI(messageElement);
 
     addCopyToCodeBlocks(messageElement);
     appendMediaToMessage(message, messageElement);
@@ -2440,7 +2438,6 @@ export function addOneMessage(mes, { type = 'normal', insertAfter = null, scroll
         false,
     );
     const bias = messageFormatting(mes.extra?.bias ?? '', '', false, false, -1, {}, false);
-    const reasoning = messageFormatting(mes.extra?.reasoning ?? '', '', false, false, chat.indexOf(mes), {}, true);
     let bookmarkLink = mes?.extra?.bookmark_link ?? '';
 
     let params = {
@@ -2450,8 +2447,6 @@ export function addOneMessage(mes, { type = 'normal', insertAfter = null, scroll
         isUser: mes.is_user,
         avatarImg: avatarImg,
         bias: bias,
-        reasoning: reasoning,
-        reasoningDuration: mes.extra?.reasoning_duration,
         isSystem: isSystem,
         title: title,
         bookmarkLink: bookmarkLink,
@@ -3144,7 +3139,7 @@ class StreamingProcessor {
         this.messageLogprobs = [];
         this.toolCalls = [];
         // Initialize reasoning in its own handler
-        this.reasoningHandler = new ReasoningHandler(type, timeStarted);
+        this.reasoningHandler = new ReasoningHandler(timeStarted);
     }
 
     #checkDomElements(messageId) {
@@ -3154,7 +3149,7 @@ class StreamingProcessor {
             this.messageTimerDom = this.messageDom?.querySelector('.mes_timer');
             this.messageTokenCounterDom = this.messageDom?.querySelector('.tokenCounterDisplay');
         }
-        this.reasoningHandler.checkDomElements(messageId);
+        this.reasoningHandler.updateDom(messageId);
     }
 
     #updateMessageBlockVisibility() {
@@ -3378,7 +3373,7 @@ class StreamingProcessor {
                     this.messageLogprobs.push(...(Array.isArray(logprobs) ? logprobs : [logprobs]));
                 }
                 // Get the updated reasoning string into the handler
-                this.reasoningHandler.updateReasoning(state?.reasoning ?? '');
+                this.reasoningHandler.updateReasoning(this.messageId, state?.reasoning ?? '');
                 await eventSource.emit(event_types.STREAM_TOKEN_RECEIVED, text);
                 await sw.tick(async () => await this.onProgressStreaming(this.messageId, this.continueMessage + text));
             }
@@ -8727,7 +8722,7 @@ const swipe_right = () => {
                     // resets the timer
                     swipeMessage.find('.mes_timer').html('');
                     swipeMessage.find('.tokenCounterDisplay').text('');
-                    updateReasoningUI(swipeMessage, null);
+                    updateReasoningUI(swipeMessage);
                 } else {
                     //console.log('showing previously generated swipe candidate, or "..."');
                     //console.log('onclick right swipe calling addOneMessage');
