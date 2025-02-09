@@ -2506,8 +2506,8 @@ export function addOneMessage(mes, { type = 'normal', insertAfter = null, scroll
         const swipeMessage = chatElement.find(`[mesid="${chat.length - 1}"]`);
         swipeMessage.attr('swipeid', params.swipeId);
         swipeMessage.find('.mes_text').html(messageText).attr('title', title);
-        swipeMessage.find('.mes_reasoning').html(reasoning);
         swipeMessage.find('.timestamp').text(timestamp).attr('title', `${params.extra.api} - ${params.extra.model}`);
+        updateReasoningUI(swipeMessage, { reset: true });
         appendMediaToMessage(mes, swipeMessage);
         if (power_user.timestamp_model_icon && params.extra?.api) {
             insertSVGIcon(swipeMessage, params.extra);
@@ -8722,7 +8722,7 @@ const swipe_right = () => {
                     // resets the timer
                     swipeMessage.find('.mes_timer').html('');
                     swipeMessage.find('.tokenCounterDisplay').text('');
-                    updateReasoningUI(swipeMessage);
+                    updateReasoningUI(swipeMessage, { reset: true });
                 } else {
                     //console.log('showing previously generated swipe candidate, or "..."');
                     //console.log('onclick right swipe calling addOneMessage');

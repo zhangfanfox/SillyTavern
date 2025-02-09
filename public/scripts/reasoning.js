@@ -96,11 +96,11 @@ export function isHiddenReasoningModel() {
 
     function isModelSupported(model) {
         for (const hiddenReasoningModel of hiddenReasoningModels) {
-            if (typeof model === 'string') {
+            if (typeof hiddenReasoningModel === 'string') {
                 return hiddenReasoningModel === model;
             }
-            if (model.matchingFunc) {
-                return model.matchingFunc(model, hiddenReasoningModel);
+            if (hiddenReasoningModel.func) {
+                return hiddenReasoningModel.func(model, hiddenReasoningModel.name);
             }
         }
         return false;
@@ -121,10 +121,12 @@ export function isHiddenReasoningModel() {
 /**
  * Updates the Reasoning UI for a specific message
  * @param {number|JQuery<HTMLElement>|HTMLElement} messageIdOrElement The message ID or the message element
+ * @param {Object} [options={}] - Optional arguments
+ * @param {boolean} [options.reset=false] - Whether to reset state, and not take the current mess properties (for example when swiping)
  */
-export function updateReasoningUI(messageIdOrElement) {
+export function updateReasoningUI(messageIdOrElement, { reset = false } = {}) {
     const handler = new ReasoningHandler();
-    handler.initHandleMessage(messageIdOrElement);
+    handler.initHandleMessage(messageIdOrElement, { reset });
 }
 
 
@@ -185,8 +187,10 @@ export class ReasoningHandler {
      * The state will always be either done/hidden or none.
      *
      * @param {number|JQuery<HTMLElement>|HTMLElement} messageIdOrElement - The message ID or the message element
+     * @param {Object} [options={}] - Optional arguments
+     * @param {boolean} [options.reset=false] - Whether to reset state of the handler, and not take the current mess properties (for example when swiping)
      */
-    initHandleMessage(messageIdOrElement) {
+    initHandleMessage(messageIdOrElement, { reset = false } = {}) {
         /** @type {HTMLElement} */
         const messageElement = typeof messageIdOrElement === 'number'
             ? document.querySelector(`#chat [mesid="${messageIdOrElement}"]`)
@@ -197,7 +201,7 @@ export class ReasoningHandler {
 
         if (isNaN(messageId)) return;
 
-        const extra = chat[messageId]['extra'];
+        const extra = chat[messageId].extra;
 
         if (extra.reasoning) {
             this.state = ReasoningState.Done;
@@ -215,6 +219,15 @@ export class ReasoningHandler {
 
         // Prefill main dom element, as message might not have been rendered yet
         this.messageDom = messageElement;
+
+        // Make sure reset correctly clears all relevant states
+        if (reset) {
+            this.state = this.#isHiddenReasoningModel ? ReasoningState.Thinking : ReasoningState.None;
+            this.reasoning = '';
+            this.initialTime = new Date();
+            this.startTime = null;
+            this.endTime = null;
+        }
 
         this.updateDom(messageId);
     }
@@ -242,19 +255,21 @@ export class ReasoningHandler {
      */
     updateReasoning(messageId, reasoning = null, { persist = false } = {}) {
         reasoning = reasoning ?? this.reasoning;
-        const reasoningChanged = this.reasoning !== reasoning;
+        reasoning = power_user.trim_spaces ? reasoning.trim() : reasoning;
+
+        // Ensure the chat extra exists
+        if (!chat[messageId].extra) {
+            chat[messageId].extra = {};
+        }
+        const extra = chat[messageId].extra;
+
+        const reasoningChanged = extra.reasoning !== reasoning;
         this.reasoning = getRegexedString(reasoning ?? '', regex_placement.REASONING);
 
         if (persist) {
-            // Ensure the chat extra exists
-            if (!chat[messageId]['extra']) {
-                chat[messageId]['extra'] = {};
-            }
-
             // Build and save the reasoning data to message extras
-            const extra = chat[messageId]['extra'];
-            extra['reasoning'] = power_user.trim_spaces ? this.reasoning.trim() : this.reasoning;
-            extra['reasoning_duration'] = this.getDuration();
+            extra.reasoning = this.reasoning;
+            extra.reasoning_duration = this.getDuration();
         }
 
         return reasoningChanged;
