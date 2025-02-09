@@ -79,41 +79,43 @@ export function isHiddenReasoningModel() {
         return false;
     }
 
-    /** @typedef {Object.<chat_completion_sources, { currentModel: string; models: ({ name: string; startsWith: boolean?; matchingFunc: (model: string) => boolean?; }|string)[]; }>} */
-    const hiddenReasoningModels = {
-        [chat_completion_sources.OPENAI]: {
-            currentModel: oai_settings.openai_model,
-            models: [
-                { name: 'o1', startsWith: true },
-                { name: 'o3', startsWith: true },
-            ],
-        },
-        [chat_completion_sources.MAKERSUITE]: {
-            currentModel: oai_settings.google_model,
-            models: [
-                { name: 'gemini-2.0-flash-thinking-exp', startsWith: true },
-                { name: 'gemini-2.0-pro-exp', startsWith: true },
-            ],
-        },
+    /** @typedef {{ (currentModel: string, supportedModel: string): boolean }} MatchingFunc */
+
+    /** @type {Record.<string, MatchingFunc>} */
+    const FUNCS = {
+        startsWith: (currentModel, supportedModel) => currentModel.startsWith(supportedModel),
     };
 
-    const sourceConfig = hiddenReasoningModels[oai_settings.chat_completion_source];
-    if (!sourceConfig) {
+    /** @type {({ name: string; func?: MatchingFunc; }|string)[]} */
+    const hiddenReasoningModels = [
+        { name: 'o1', func: FUNCS.startsWith },
+        { name: 'o3', func: FUNCS.startsWith },
+        { name: 'gemini-2.0-flash-thinking-exp', func: FUNCS.startsWith },
+        { name: 'gemini-2.0-pro-exp', func: FUNCS.startsWith },
+    ];
+
+    function isModelSupported(model) {
+        for (const hiddenReasoningModel of hiddenReasoningModels) {
+            if (typeof model === 'string') {
+                return hiddenReasoningModel === model;
+            }
+            if (model.matchingFunc) {
+                return model.matchingFunc(model, hiddenReasoningModel);
+            }
+        }
         return false;
     }
 
-    return sourceConfig.models.some(model => {
-        if (typeof model === 'string') {
-            return sourceConfig.currentModel === model;
-        }
-        if (model.startsWith) {
-            return (sourceConfig.currentModel).startsWith(model.name);
-        }
-        if (model.matchingFunc) {
-            return model.matchingFunc(sourceConfig.currentModel);
-        }
-        return false;
-    });
+    switch (oai_settings.chat_completion_source) {
+        case chat_completion_sources.OPENAI: return isModelSupported(oai_settings.openai_model);
+        case chat_completion_sources.MAKERSUITE: return isModelSupported(oai_settings.google_model);
+        case chat_completion_sources.CLAUDE: return isModelSupported(oai_settings.claude_model);
+        case chat_completion_sources.OPENROUTER: return isModelSupported(oai_settings.openrouter_model);
+        case chat_completion_sources.ZEROONEAI: return isModelSupported(oai_settings.zerooneai_model);
+        case chat_completion_sources.MISTRALAI: return isModelSupported(oai_settings.mistralai_model);
+        case chat_completion_sources.CUSTOM: return isModelSupported(oai_settings.custom_model);
+        default: return false;
+    }
 }
 
 /**
