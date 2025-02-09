@@ -372,15 +372,28 @@ export class ReasoningHandler {
     #updateReasoningTimeUI() {
         const element = this.messageReasoningHeaderDom;
         const duration = this.getDuration();
+        let data = null;
         if (duration) {
             const durationStr = moment.duration(duration).locale(getCurrentLocale()).humanize({ s: 50, ss: 3 });
             const secondsStr = moment.duration(duration).asSeconds();
-            element.innerHTML = t`Thought for <span title="${secondsStr} seconds">${durationStr}</span>`;
+
+            const span = document.createElement('span');
+            span.title = t`${secondsStr} seconds`;
+            span.textContent = durationStr;
+
+            element.textContent = t`Thought for `;
+            element.appendChild(span);
+            data = String(secondsStr);
         } else if (this.state === ReasoningState.Thinking) {
             element.textContent = t`Thinking...`;
+            data = null;
         } else {
             element.textContent = t`Thought for some time`;
+            data = 'unknown';
         }
+
+        this.messageReasoningDetailsDom.dataset.duration = data;
+        element.dataset.duration = data;
     }
 }
 
@@ -711,7 +724,7 @@ function setReasoningEventHandlers() {
         e.stopPropagation();
         e.preventDefault();
 
-        const confirm = await Popup.show.confirm(t`Are you sure you want to clear the reasoning?`, t`Visible message contents will stay intact.`);
+        const confirm = await Popup.show.confirm(t`Remove Reasoning`, t`Are you sure you want to clear the reasoning?<br />Visible message contents will stay intact.`);
 
         if (!confirm) {
             return;
