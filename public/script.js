@@ -3222,7 +3222,7 @@ class StreamingProcessor {
             }
 
             // Update reasoning
-            await this.reasoningHandler.process(messageId, mesChanged, currentTime);
+            await this.reasoningHandler.process(messageId, mesChanged);
 
             // Token count update.
             const tokenCountText = this.reasoningHandler.reasoning + processedText;

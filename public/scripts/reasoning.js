@@ -324,7 +324,7 @@ export class ReasoningHandler {
         this.messageDom.classList.toggle('reasoning', this.state !== ReasoningState.None);
 
         // Update states to the relevant DOM elements
-        this.messageDom.dataset.state = this.state !== ReasoningState.None ? this.state : null;
+        this.messageDom.dataset.reasoningState = this.state !== ReasoningState.None ? this.state : null;
         this.messageReasoningDetailsDom.dataset.state = this.state;
 
         // Update the reasoning message
