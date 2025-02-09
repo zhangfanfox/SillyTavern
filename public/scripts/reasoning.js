@@ -151,7 +151,7 @@ export function updateReasoningUI(messageIdOrElement, reasoning = null, reasonin
  * @param {object} [options={}] Options for the function
  * @param {boolean} [options.forceEnd=false] If true, there will be no "Thinking..." when no duration exists
  */
-export function updateReasoningTimeUI(element, duration, { forceEnd = false } = {}) {
+function updateReasoningTimeUI(element, duration, { forceEnd = false } = {}) {
     if (duration) {
         const durationStr = moment.duration(duration).locale(getCurrentLocale()).humanize({ s: 50, ss: 3 });
         const secondsStr = moment.duration(duration).asSeconds();
@@ -160,6 +160,160 @@ export function updateReasoningTimeUI(element, duration, { forceEnd = false } = 
         element.textContent = t`Thought for some time`;
     } else {
         element.textContent = t`Thinking...`;
+    }
+}
+
+/** @enum {string} */
+export const ReasoningState = {
+    None: 'none',
+    Thinking: 'thinking',
+    Done: 'done',
+    Hidden: 'hidden',
+};
+
+/**
+ * Handles reasoning-specific logic and DOM updates for messages.
+ * Used inside the @see {StreamingProcessor}
+ */
+export class ReasoningHandler {
+    #isHidden;
+
+    /**
+     * @param {string} type - The streaming type
+     * @param {Date} timeStarted - When the generation started
+     */
+    constructor(type, timeStarted) {
+        /** @type {ReasoningState} The current state of the reasoning process */
+        this.state = ReasoningState.None;
+        /** @type {string} The reasoning output */
+        this.reasoning = '';
+        /** @type {Date} When the reasoning started */
+        this.startTime = null;
+        /** @type {Date} When the reasoning ended */
+        this.endTime = null;
+
+        /** @type {string} Generation type (normal, continue, impersonation, etc) */
+        this.type = type;
+        /** @type {Date} Initial starting time of the generation */
+        this.initialTime = timeStarted;
+
+        /** @type {boolean} True if the model supports reasoning, but hides the reasoning output */
+        this.#isHidden = isHiddenReasoningModel();
+
+        // Cached DOM elements for reasoning
+        /** @type {HTMLElement} Main message DOM element `.mes` */
+        this.messageDom = null;
+        /** @type {HTMLElement} Reasoning details DOM element `.mes_reasoning_details` */
+        this.messageReasoningDetailsDom = null;
+        /** @type {HTMLElement} Reasoning content DOM element `.mes_reasoning_content` */
+        this.messageReasoningContentDom = null;
+        /** @type {HTMLElement} Reasoning header DOM element `.mes_reasoning_header` */
+        this.messageReasoningHeaderDom = null;
+    }
+
+    /**
+     * Gets the duration of the reasoning in milliseconds.
+     * @returns {number|null} The duration in milliseconds, or null if the start or end time is not set.
+     */
+    getDuration() {
+        if (this.startTime && this.endTime) {
+            return this.endTime.getTime() - this.startTime.getTime();
+        }
+        return null;
+    }
+
+    /**
+     * Finds and caches reasoning-related DOM elements for the given message.
+     * @param {number} messageId The message ID
+     */
+    checkDomElements(messageId) {
+        // Make sure we reset dom elements if we are checking for a different message (shouldn't happen, but be sure)
+        if (this.messageDom !== null && this.messageDom.getAttribute('mesid') !== messageId.toString()) {
+            this.messageDom = null;
+        }
+
+        // Cache the DOM elements once
+        if (this.messageDom === null) {
+            this.messageDom = document.querySelector(`#chat .mes[mesid="${messageId}"]`);
+            this.messageReasoningDetailsDom = this.messageDom.querySelector('.mes_reasoning_details');
+            this.messageReasoningContentDom = this.messageDom.querySelector('.mes_reasoning');
+            this.messageReasoningHeaderDom = this.messageDom.querySelector('.mes_reasoning_header_title');
+            // Update the DOM with the current reasoning state.
+            this.messageDom.dataset.state = this.state;
+            this.messageDom.classList.toggle('reasoning_hidden', this.#isHidden);
+        }
+
+        // Update main DOM state
+        this.#updateDomState();
+    }
+
+    #updateDomState() {
+        this.messageDom.dataset.state = this.state;
+        this.messageDom.classList.toggle('reasoning_hidden', this.#isHidden);
+    }
+
+    updateReasoning(reasoning = null) {
+        reasoning = reasoning ?? this.reasoning;
+        this.reasoning = getRegexedString(reasoning ?? '', regex_placement.REASONING);
+    }
+
+    /**
+     * Processes and updates reasoning info for the message.
+     * @param {number} messageId - The ID of the message.
+     * @param {boolean} mesChanged - True if the message text changed.
+     * @param {Date} currentTime - The current time.
+     */
+    async process(messageId, mesChanged, currentTime) {
+        if (!this.reasoning && !this.#isHidden) return;
+
+        this.updateReasoning();
+
+        // Ensure the chat extra exists.
+        if (!chat[messageId]['extra']) {
+            chat[messageId]['extra'] = {};
+        }
+        const extra = chat[messageId]['extra'];
+        const finalReasoning = power_user.trim_spaces ? this.reasoning.trim() : this.reasoning;
+        const reasoningChanged = extra['reasoning'] !== finalReasoning;
+        extra['reasoning'] = finalReasoning;
+
+        if ((this.#isHidden || reasoningChanged) && this.startTime === null) {
+            this.startTime = this.initialTime;
+        }
+        if ((this.#isHidden || !reasoningChanged) && mesChanged && this.startTime !== null && this.endTime === null) {
+            this.endTime = currentTime;
+            await eventSource.emit(event_types.STREAM_REASONING_DONE, finalReasoning, () => this.getDuration());
+        }
+        await this.updateTime(messageId);
+        if (this.messageReasoningContentDom instanceof HTMLElement) {
+            const formattedReasoning = messageFormatting(finalReasoning, '', false, false, messageId, {}, true);
+            this.messageReasoningContentDom.innerHTML = formattedReasoning;
+        }
+        if (this.messageDom instanceof HTMLElement) {
+            this.messageDom.classList.add('reasoning');
+        }
+    }
+
+    async finish(messageId) {
+        // Make sure the finish time is recorded if a reasoning was in process and it wasn't ended correctly during streaming
+        if (this.startTime !== null && this.endTime === null) {
+            this.endTime = new Date();
+            const finalReasoning = power_user.trim_spaces ? this.reasoning.trim() : this.reasoning;
+            await eventSource.emit(event_types.STREAM_REASONING_DONE, finalReasoning, () => this.getDuration());
+            await this.updateTime(messageId);
+        }
+    }
+
+    /**
+     * Updates the reasoning duration in the UI.
+     * @param {number} messageId - The ID of the message
+     * @param {object} [options={}] - Optional argument
+     * @param {boolean} [options.forceEnd=false] - If true, there will be no "Thinking..." when no duration exists
+     */
+    async updateTime(messageId, { forceEnd = false } = {}) {
+        const duration = this.getDuration();
+        chat[messageId]['extra']['reasoning_duration'] = duration;
+        updateReasoningUI(this.messageDom, this.reasoning, duration, { forceEnd });
     }
 }
 
