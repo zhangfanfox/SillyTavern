@@ -5,7 +5,7 @@ import { chat, closeMessageEditor, event_types, eventSource, main_api, messageFo
 import { getRegexedString, regex_placement } from './extensions/regex/engine.js';
 import { getCurrentLocale, t } from './i18n.js';
 import { MacrosParser } from './macros.js';
-import { chat_completion_sources, oai_settings } from './openai.js';
+import { chat_completion_sources, getChatCompletionModel, oai_settings } from './openai.js';
 import { Popup } from './popup.js';
 import { power_user } from './power-user.js';
 import { SlashCommand } from './slash-commands/SlashCommand.js';
@@ -80,13 +80,13 @@ export function isHiddenReasoningModel() {
     }
 
     /** @typedef {{ (currentModel: string, supportedModel: string): boolean }} MatchingFunc */
-
     /** @type {Record.<string, MatchingFunc>} */
     const FUNCS = {
+        equals: (currentModel, supportedModel) => currentModel === supportedModel,
         startsWith: (currentModel, supportedModel) => currentModel.startsWith(supportedModel),
     };
 
-    /** @type {({ name: string; func?: MatchingFunc; }|string)[]} */
+    /** @type {{ name: string; func: MatchingFunc; }[]} */
     const hiddenReasoningModels = [
         { name: 'o1', func: FUNCS.startsWith },
         { name: 'o3', func: FUNCS.startsWith },
@@ -94,28 +94,10 @@ export function isHiddenReasoningModel() {
         { name: 'gemini-2.0-pro-exp', func: FUNCS.startsWith },
     ];
 
-    function isModelSupported(model) {
-        for (const hiddenReasoningModel of hiddenReasoningModels) {
-            if (typeof hiddenReasoningModel === 'string') {
-                return hiddenReasoningModel === model;
-            }
-            if (hiddenReasoningModel.func) {
-                return hiddenReasoningModel.func(model, hiddenReasoningModel.name);
-            }
-        }
-        return false;
-    }
+    const model = getChatCompletionModel();
 
-    switch (oai_settings.chat_completion_source) {
-        case chat_completion_sources.OPENAI: return isModelSupported(oai_settings.openai_model);
-        case chat_completion_sources.MAKERSUITE: return isModelSupported(oai_settings.google_model);
-        case chat_completion_sources.CLAUDE: return isModelSupported(oai_settings.claude_model);
-        case chat_completion_sources.OPENROUTER: return isModelSupported(oai_settings.openrouter_model);
-        case chat_completion_sources.ZEROONEAI: return isModelSupported(oai_settings.zerooneai_model);
-        case chat_completion_sources.MISTRALAI: return isModelSupported(oai_settings.mistralai_model);
-        case chat_completion_sources.CUSTOM: return isModelSupported(oai_settings.custom_model);
-        default: return false;
-    }
+    const isHidden = hiddenReasoningModels.some(({ name, func }) => func(model, name));
+    return isHidden;
 }
 
 /**
