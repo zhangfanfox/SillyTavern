@@ -2507,7 +2507,7 @@ export function addOneMessage(mes, { type = 'normal', insertAfter = null, scroll
         swipeMessage.attr('swipeid', params.swipeId);
         swipeMessage.find('.mes_text').html(messageText).attr('title', title);
         swipeMessage.find('.timestamp').text(timestamp).attr('title', `${params.extra.api} - ${params.extra.model}`);
-        updateReasoningUI(swipeMessage, { reset: true });
+        updateReasoningUI(swipeMessage);
         appendMediaToMessage(mes, swipeMessage);
         if (power_user.timestamp_model_icon && params.extra?.api) {
             insertSVGIcon(swipeMessage, params.extra);
