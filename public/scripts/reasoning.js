@@ -401,8 +401,7 @@ export class ReasoningHandler {
  * Keeps track of the number of reasoning additions.
  */
 export class PromptReasoning {
-    static REASONING_PLACEHOLDER = '\u200B';
-    static REASONING_PLACEHOLDER_REGEX = new RegExp(`${PromptReasoning.REASONING_PLACEHOLDER}$`);
+    static REASONING_UI_PLACEHOLDER = '\u200B';
 
     constructor() {
         this.counter = 0;
@@ -433,8 +432,8 @@ export class PromptReasoning {
             return content;
         }
 
-        // No reasoning provided or a placeholder
-        if (!reasoning || reasoning === PromptReasoning.REASONING_PLACEHOLDER) {
+        // No reasoning provided
+        if (!reasoning) {
             return content;
         }
 
@@ -518,7 +517,7 @@ function registerReasoningSlashCommands() {
             const messageId = !isNaN(parseInt(value.toString())) ? parseInt(value.toString()) : chat.length - 1;
             const message = chat[messageId];
             const reasoning = String(message?.extra?.reasoning ?? '');
-            return reasoning.replace(PromptReasoning.REASONING_PLACEHOLDER_REGEX, '');
+            return reasoning;
         },
     }));
 
@@ -645,7 +644,7 @@ function setReasoningEventHandlers() {
         const textarea = document.createElement('textarea');
         const reasoningBlock = messageBlock.find('.mes_reasoning');
         textarea.classList.add('reasoning_edit_textarea');
-        textarea.value = reasoning.replace(PromptReasoning.REASONING_PLACEHOLDER_REGEX, '');
+        textarea.value = reasoning;
         $(textarea).insertBefore(reasoningBlock);
 
         if (!CSS.supports('field-sizing', 'content')) {
@@ -699,11 +698,17 @@ function setReasoningEventHandlers() {
         const textarea = messageBlock.find('.reasoning_edit_textarea');
         textarea.remove();
 
+        // Make sure we remove the fake placeholder from the reasoning string
+        const text = messageBlock.find('.mes_reasoning').text();
+        if (text === PromptReasoning.REASONING_UI_PLACEHOLDER) {
+            messageBlock.find('.mes_reasoning').text('');
+        }
+
         messageBlock.find('.mes_reasoning_edit_cancel:visible').trigger('click');
     });
 
     $(document).on('click', '.mes_edit_add_reasoning', async function () {
-        const { message, messageId, messageBlock } = getMessageFromJquery(this);
+        const { message, messageBlock } = getMessageFromJquery(this);
         if (!message?.extra) {
             return;
         }
@@ -713,8 +718,9 @@ function setReasoningEventHandlers() {
             return;
         }
 
-        message.extra.reasoning = PromptReasoning.REASONING_PLACEHOLDER;
-        updateMessageBlock(messageId, message, { rerenderMessage: false });
+        // To be able to edit, we need to "fake" content being there inside the reasoning string
+        messageBlock.find('.mes_reasoning').text(PromptReasoning.REASONING_UI_PLACEHOLDER);
+
         messageBlock.find('.mes_reasoning_edit').trigger('click');
         await saveChatConditional();
     });
@@ -742,7 +748,7 @@ function setReasoningEventHandlers() {
 
     $(document).on('pointerup', '.mes_reasoning_copy', async function () {
         const { message } = getMessageFromJquery(this);
-        const reasoning = String(message?.extra?.reasoning ?? '').replace(PromptReasoning.REASONING_PLACEHOLDER_REGEX, '');
+        const reasoning = String(message?.extra?.reasoning ?? '');
 
         if (!reasoning) {
             return;
