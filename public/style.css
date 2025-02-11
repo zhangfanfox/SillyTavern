@@ -4331,6 +4331,11 @@ input[type="range"]::-webkit-slider-thumb {
     field-sizing: content;
 }
 
+#chat[data-generating="true"] .last_mes .mes_buttons,
+#chat[data-generating="true"] .last_mes .mes_reasoning_actions {
+    display: none;
+}
+
 #anchor_order {
     margin-bottom: 15px;
 }

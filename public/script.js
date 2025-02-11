@@ -3160,14 +3160,16 @@ class StreamingProcessor {
         }
     }
 
-    showMessageButtons(messageId) {
+    markUIGenStarted() {
         showStopButton();
-        $(`#chat .mes[mesid="${messageId}"] .mes_buttons`).css({ 'display': 'none' });
+        const chatElement = document.getElementById('chat');
+        chatElement.dataset.generating = 'true';
     }
 
-    hideMessageButtons(messageId) {
+    markUIGenStopped() {
         hideStopButton();
-        $(`#chat .mes[mesid="${messageId}"] .mes_buttons`).css({ 'display': 'flex' });
+        const chatElement = document.getElementById('chat');
+        delete chatElement.dataset.generating;
     }
 
     async onStartStreaming(text) {
@@ -3180,7 +3182,7 @@ class StreamingProcessor {
             await saveReply(this.type, text, true, '', [], '');
             messageId = chat.length - 1;
             this.#checkDomElements(messageId);
-            this.showMessageButtons(messageId);
+            this.markUIGenStarted();
         }
         hideSwipeButtons();
         scrollChatToBottom();
@@ -3268,7 +3270,7 @@ class StreamingProcessor {
     }
 
     async onFinishStreaming(messageId, text) {
-        this.hideMessageButtons(this.messageId);
+        this.markUIGenStopped();
         await this.onProgressStreaming(messageId, text, true);
         addCopyToCodeBlocks($(`#chat .mes[mesid="${messageId}"]`));
 
@@ -3313,7 +3315,7 @@ class StreamingProcessor {
         this.abortController.abort();
         this.isStopped = true;
 
-        this.hideMessageButtons(this.messageId);
+        this.markUIGenStopped();
         generatedPromptCache = '';
         unblockGeneration();
 
