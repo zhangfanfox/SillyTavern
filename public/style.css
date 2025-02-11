@@ -434,7 +434,7 @@ input[type='checkbox']:focus-visible {
 }
 
 /** Show "Thinking..." during generation, even if the reasoning is hidden by default */
-#chat[data-generating="true"] .mes.reasoning[data-reasoning-state="hidden"] .mes_reasoning_details {
+body[data-generating="true"] .last_mes.reasoning[data-reasoning-state="hidden"] .mes_reasoning_details {
     display: block;
 }
 
@@ -4336,8 +4336,11 @@ input[type="range"]::-webkit-slider-thumb {
     field-sizing: content;
 }
 
-#chat[data-generating="true"] .last_mes .mes_buttons,
-#chat[data-generating="true"] .last_mes .mes_reasoning_actions {
+body[data-generating="true"] #send_but,
+body[data-generating="true"] #mes_continue,
+body[data-generating="true"] #mes_impersonate,
+body[data-generating="true"] #chat .last_mes .mes_buttons,
+body[data-generating="true"] #chat .last_mes .mes_reasoning_actions {
     display: none;
 }
 

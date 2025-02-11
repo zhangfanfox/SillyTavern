@@ -3161,15 +3161,11 @@ class StreamingProcessor {
     }
 
     markUIGenStarted() {
-        showStopButton();
-        const chatElement = document.getElementById('chat');
-        chatElement.dataset.generating = 'true';
+        deactivateSendButtons();
     }
 
     markUIGenStopped() {
-        hideStopButton();
-        const chatElement = document.getElementById('chat');
-        delete chatElement.dataset.generating;
+        activateSendButtons();
     }
 
     async onStartStreaming(text) {
@@ -6133,20 +6129,21 @@ function extractImageFromMessage(getMessage) {
     return { getMessage, image, title };
 }
 
+/**
+ * A function mainly used to switch 'generating' state - setting it to false and activating the buttons again
+ */
 export function activateSendButtons() {
     is_send_press = false;
-    $('#send_but').removeClass('displayNone');
-    $('#mes_continue').removeClass('displayNone');
-    $('#mes_impersonate').removeClass('displayNone');
-    $('.mes_buttons:last').show();
     hideStopButton();
+    delete document.body.dataset.generating;
 }
 
+/**
+ * A function mainly used to switch 'generating' state - setting it to true and deactivating the buttons
+ */
 export function deactivateSendButtons() {
-    $('#send_but').addClass('displayNone');
-    $('#mes_continue').addClass('displayNone');
-    $('#mes_impersonate').addClass('displayNone');
     showStopButton();
+    document.body.dataset.generating = 'true';
 }
 
 export function resetChatState() {
@@ -8786,7 +8783,6 @@ const swipe_right = () => {
                                 if (run_generate && !is_send_press && parseInt(chat[chat.length - 1]['swipe_id']) === chat[chat.length - 1]['swipes'].length) {
                                     console.debug('caught here 2');
                                     is_send_press = true;
-                                    $('.mes_buttons:last').hide();
                                     await Generate('swipe');
                                 } else {
                                     if (parseInt(chat[chat.length - 1]['swipe_id']) !== chat[chat.length - 1]['swipes'].length) {
