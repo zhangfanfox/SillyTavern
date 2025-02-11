@@ -13,7 +13,7 @@ import { ARGUMENT_TYPE, SlashCommandArgument, SlashCommandNamedArgument } from '
 import { commonEnumProviders } from './slash-commands/SlashCommandCommonEnumsProvider.js';
 import { SlashCommandParser } from './slash-commands/SlashCommandParser.js';
 import { textgen_types, textgenerationwebui_settings } from './textgen-settings.js';
-import { copyText, escapeRegex, isFalseBoolean } from './utils.js';
+import { copyText, escapeRegex, isFalseBoolean, setDatasetProperty } from './utils.js';
 
 /**
  * Gets a message from a jQuery element.
@@ -323,8 +323,8 @@ export class ReasoningHandler {
         this.messageDom.classList.toggle('reasoning', this.state !== ReasoningState.None);
 
         // Update states to the relevant DOM elements
-        this.messageDom.dataset.reasoningState = this.state !== ReasoningState.None ? this.state : null;
-        this.messageReasoningDetailsDom.dataset.state = this.state;
+        setDatasetProperty(this.messageDom, 'reasoningState', this.state !== ReasoningState.None ? this.state : null);
+        setDatasetProperty(this.messageReasoningDetailsDom, 'state', this.state);
 
         // Update the reasoning message
         const reasoning = power_user.trim_spaces ? this.reasoning.trim() : this.reasoning;
@@ -391,8 +391,8 @@ export class ReasoningHandler {
             data = null;
         }
 
-        this.messageReasoningDetailsDom.dataset.duration = data;
-        element.dataset.duration = data;
+        setDatasetProperty(this.messageReasoningDetailsDom, 'duration', data);
+        setDatasetProperty(element, 'duration', data);
     }
 }
 
@@ -698,10 +698,9 @@ function setReasoningEventHandlers() {
         const textarea = messageBlock.find('.reasoning_edit_textarea');
         textarea.remove();
 
-        // Make sure we remove the fake placeholder from the reasoning string
-        const text = messageBlock.find('.mes_reasoning').text();
-        if (text === PromptReasoning.REASONING_UI_PLACEHOLDER) {
-            messageBlock.find('.mes_reasoning').text('');
+        // If we cancel, we might have to remove the reasong class again if this is an unsaved empty reasoning
+        if (!messageBlock.attr('data--reasoning-state')) {
+            messageBlock.removeClass('reasoning');
         }
 
         messageBlock.find('.mes_reasoning_edit_cancel:visible').trigger('click');
@@ -718,9 +717,10 @@ function setReasoningEventHandlers() {
             return;
         }
 
-        // To be able to edit, we need to "fake" content being there inside the reasoning string
-        messageBlock.find('.mes_reasoning').text(PromptReasoning.REASONING_UI_PLACEHOLDER);
+        messageBlock.addClass('reasoning');
 
+        // Open the reasoning area so we can actually edit it
+        messageBlock.find('.mes_reasoning_details').attr('open', '');
         messageBlock.find('.mes_reasoning_edit').trigger('click');
         await saveChatConditional();
     });

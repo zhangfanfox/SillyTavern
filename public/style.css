@@ -410,17 +410,17 @@ input[type='checkbox']:focus-visible {
 }
 
 .mes_bias:empty,
-.mes_reasoning:empty,
-.mes_reasoning_details:has(.mes_reasoning:empty),
+.mes:not(.reasoning) .mes_reasoning_details,
 .mes_reasoning_details:not([open]) .mes_reasoning_actions,
 .mes_reasoning_details:has(.reasoning_edit_textarea) .mes_reasoning,
 .mes_reasoning_details:has(.reasoning_edit_textarea) .mes_reasoning_header,
-.mes_reasoning_details:not(:has(.reasoning_edit_textarea)) .mes_reasoning_actions .edit_button,
 .mes_reasoning_details:has(.reasoning_edit_textarea) .mes_reasoning_actions .mes_button:not(.edit_button),
+.mes_reasoning_details:not(:has(.reasoning_edit_textarea)) .mes_reasoning_actions .edit_button,
 .mes_block:has(.edit_textarea):has(.reasoning_edit_textarea) .mes_reasoning_actions,
-.mes.reasoning:not([data-reasoning-state="none"]) .mes_edit_add_reasoning,
-.mes[data-reasoning-state="none"] .mes_reasoning_arrow,
-.mes[data-reasoning-state="none"] .mes_reasoning_actions {
+.mes.reasoning .mes_edit_add_reasoning,
+.mes[data-reasoning-state="hidden"] .mes_reasoning_arrow,
+.mes[data-reasoning-state="hidden"] .mes_reasoning,
+.mes[data-reasoning-state="hidden"] .mes_reasoning_copy {
     display: none;
 }
 
