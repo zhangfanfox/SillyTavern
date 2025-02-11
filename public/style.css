@@ -418,9 +418,9 @@ input[type='checkbox']:focus-visible {
 .mes_reasoning_details:not(:has(.reasoning_edit_textarea)) .mes_reasoning_actions .edit_button,
 .mes_reasoning_details:has(.reasoning_edit_textarea) .mes_reasoning_actions .mes_button:not(.edit_button),
 .mes_block:has(.edit_textarea):has(.reasoning_edit_textarea) .mes_reasoning_actions,
-.mes.reasoning:not([data-reasoning-state="hidden"]) .mes_edit_add_reasoning,
-.mes[data-reasoning-state="hidden"] .mes_reasoning_arrow,
-.mes[data-reasoning-state="hidden"] .mes_reasoning_actions {
+.mes.reasoning:not([data-reasoning-state="none"]) .mes_edit_add_reasoning,
+.mes[data-reasoning-state="none"] .mes_reasoning_arrow,
+.mes[data-reasoning-state="none"] .mes_reasoning_actions {
     display: none;
 }
 
