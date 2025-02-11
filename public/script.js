@@ -9451,6 +9451,9 @@ export async function deleteCharacter(characterKey, { deleteChats = true } = {})
             continue;
         }
 
+        accountStorage.removeItem(`AlertWI_${character.avatar}`);
+        accountStorage.removeItem(`AlertRegex_${character.avatar}`);
+        accountStorage.removeItem(`mediaWarningShown:${character.avatar}`);
         delete tag_map[character.avatar];
         select_rm_info('char_delete', character.name);
 
@@ -11657,6 +11660,9 @@ jQuery(async function () {
     });
     eventSource.on(event_types.GROUP_CHAT_DELETED, async (name) => {
         await deleteItemizedPrompts(name);
+    });
+    eventSource.on(event_types.CHARACTER_DELETED, async() => {
+
     });
 
     initCustomSelectedSamplers();

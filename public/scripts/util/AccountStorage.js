@@ -105,6 +105,10 @@ class AccountStorage {
             console.warn(`AccountStorage not ready (trying to remove ${key})`);
         }
 
+        if (!Object.hasOwn(this.state, key)) {
+            return;
+        }
+
         delete this.state[key];
         saveSettingsDebounced();
     }
