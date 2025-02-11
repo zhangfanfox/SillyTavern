@@ -270,6 +270,7 @@ import { initBulkEdit } from './scripts/bulk-edit.js';
 import { deriveTemplatesFromChatTemplate } from './scripts/chat-templates.js';
 import { getContext } from './scripts/st-context.js';
 import { extractReasoningFromData, initReasoning, PromptReasoning, updateReasoningTimeUI } from './scripts/reasoning.js';
+import { accountStorage } from './scripts/util/AccountStorage.js';
 
 // API OBJECT FOR EXTERNAL WIRING
 globalThis.SillyTavern = {
@@ -419,7 +420,7 @@ DOMPurify.addHook('uponSanitizeElement', (node, _, config) => {
         const entityId = getCurrentEntityId();
         const warningShownKey = `mediaWarningShown:${entityId}`;
 
-        if (localStorage.getItem(warningShownKey) === null) {
+        if (accountStorage.getItem(warningShownKey) === null) {
             const warningToast = toastr.warning(
                 t`Use the 'Ext. Media' button to allow it. Click on this message to dismiss.`,
                 t`External media has been blocked`,
@@ -430,7 +431,7 @@ DOMPurify.addHook('uponSanitizeElement', (node, _, config) => {
                 },
             );
 
-            localStorage.setItem(warningShownKey, 'true');
+            accountStorage.setItem(warningShownKey, 'true');
         }
     }
 });
@@ -1490,7 +1491,7 @@ export async function printCharacters(fullRefresh = false) {
 
     $('#rm_print_characters_pagination').pagination({
         dataSource: entities,
-        pageSize: Number(localStorage.getItem(storageKey)) || per_page_default,
+        pageSize: Number(accountStorage.getItem(storageKey)) || per_page_default,
         sizeChangerOptions: [10, 25, 50, 100, 250, 500, 1000],
         pageRange: 1,
         pageNumber: saveCharactersPage || 1,
@@ -1534,7 +1535,7 @@ export async function printCharacters(fullRefresh = false) {
             eventSource.emit(event_types.CHARACTER_PAGE_LOADED);
         },
         afterSizeSelectorChange: function (e) {
-            localStorage.setItem(storageKey, e.target.value);
+            accountStorage.setItem(storageKey, e.target.value);
         },
         afterPaging: function (e) {
             saveCharactersPage = e;
@@ -6902,10 +6903,11 @@ export async function getSettings() {
             $('#your_name').val(name1);
         }
 
+        accountStorage.init(settings?.accountStorage);
         await setUserControls(data.enable_accounts);
 
         // Allow subscribers to mutate settings
-        eventSource.emit(event_types.SETTINGS_LOADED_BEFORE, settings);
+        await eventSource.emit(event_types.SETTINGS_LOADED_BEFORE, settings);
 
         //Load KoboldAI settings
         koboldai_setting_names = data.koboldai_setting_names;
@@ -7094,6 +7096,7 @@ export async function saveSettings(loopCounter = 0) {
         url: '/api/settings/save',
         data: JSON.stringify({
             firstRun: firstRun,
+            accountStorage: accountStorage.state,
             currentVersion: currentVersion,
             username: name1,
             active_character: active_character,
@@ -7549,7 +7552,7 @@ export function select_rm_info(type, charId, previousCharId = null) {
             }
 
             try {
-                const perPage = Number(localStorage.getItem('Characters_PerPage')) || per_page_default;
+                const perPage = Number(accountStorage.getItem('Characters_PerPage')) || per_page_default;
                 const page = Math.floor(charIndex / perPage) + 1;
                 const selector = `#rm_print_characters_block [title*="${avatarFileName}"]`;
                 $('#rm_print_characters_pagination').pagination('go', page);
@@ -7581,7 +7584,7 @@ export function select_rm_info(type, charId, previousCharId = null) {
                 return;
             }
 
-            const perPage = Number(localStorage.getItem('Characters_PerPage')) || per_page_default;
+            const perPage = Number(accountStorage.getItem('Characters_PerPage')) || per_page_default;
             const page = Math.floor(charIndex / perPage) + 1;
             $('#rm_print_characters_pagination').pagination('go', page);
             const selector = `#rm_print_characters_block [grid="${charId}"]`;
@@ -9650,8 +9653,8 @@ function addDebugFunctions() {
     });
 
     registerDebugFunction('toggleRegenerateWarning', 'Toggle Ctrl+Enter regeneration confirmation', 'Toggle the warning when regenerating a message with a Ctrl+Enter hotkey.', () => {
-        localStorage.setItem('RegenerateWithCtrlEnter', localStorage.getItem('RegenerateWithCtrlEnter') === 'true' ? 'false' : 'true');
-        toastr.info('Regenerate warning is now ' + (localStorage.getItem('RegenerateWithCtrlEnter') === 'true' ? 'disabled' : 'enabled'));
+        accountStorage.setItem('RegenerateWithCtrlEnter', accountStorage.getItem('RegenerateWithCtrlEnter') === 'true' ? 'false' : 'true');
+        toastr.info('Regenerate warning is now ' + (accountStorage.getItem('RegenerateWithCtrlEnter') === 'true' ? 'disabled' : 'enabled'));
     });
 
     registerDebugFunction('copySetup', 'Copy ST setup to clipboard [WIP]', 'Useful data when reporting bugs', async () => {
