@@ -418,9 +418,9 @@ input[type='checkbox']:focus-visible {
 .mes_reasoning_details:not(:has(.reasoning_edit_textarea)) .mes_reasoning_actions .edit_button,
 .mes_block:has(.edit_textarea):has(.reasoning_edit_textarea) .mes_reasoning_actions,
 .mes.reasoning:not([data-reasoning-state="hidden"]) .mes_edit_add_reasoning,
-.mes[data-reasoning-state="hidden"] .mes_reasoning_arrow,
-.mes[data-reasoning-state="hidden"] .mes_reasoning,
-.mes[data-reasoning-state="hidden"] .mes_reasoning_copy {
+.mes:has(.mes_reasoning:empty) .mes_reasoning_arrow,
+.mes:has(.mes_reasoning:empty) .mes_reasoning,
+.mes:has(.mes_reasoning:empty) .mes_reasoning_copy {
     display: none;
 }
 
@@ -431,6 +431,11 @@ input[type='checkbox']:focus-visible {
 /** Hide hidden reasoning blocks - revert this selector to show them again */
 .mes.reasoning[data-reasoning-state="hidden"] .mes_reasoning_details {
     display: none;
+}
+
+/** Show "Thinking..." during generation, even if the reasoning is hidden by default */
+#chat[data-generating="true"] .mes.reasoning[data-reasoning-state="hidden"] .mes_reasoning_details {
+    display: block;
 }
 
 .mes_reasoning_details .mes_reasoning_arrow {
