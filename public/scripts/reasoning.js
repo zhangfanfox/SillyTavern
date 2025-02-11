@@ -383,12 +383,12 @@ export class ReasoningHandler {
             element.textContent = t`Thought for `;
             element.appendChild(span);
             data = String(secondsStr);
-        } else if (this.state === ReasoningState.Thinking) {
-            element.textContent = t`Thinking...`;
-            data = null;
-        } else {
+        } else if ([ReasoningState.Done, ReasoningState.Hidden].includes(this.state)) {
             element.textContent = t`Thought for some time`;
             data = 'unknown';
+        } else {
+            element.textContent = t`Thinking...`;
+            data = null;
         }
 
         this.messageReasoningDetailsDom.dataset.duration = data;
