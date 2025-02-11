@@ -417,10 +417,19 @@ input[type='checkbox']:focus-visible {
 .mes_reasoning_details:has(.reasoning_edit_textarea) .mes_reasoning_actions .mes_button:not(.edit_button),
 .mes_reasoning_details:not(:has(.reasoning_edit_textarea)) .mes_reasoning_actions .edit_button,
 .mes_block:has(.edit_textarea):has(.reasoning_edit_textarea) .mes_reasoning_actions,
-.mes.reasoning .mes_edit_add_reasoning,
+.mes.reasoning:not([data-reasoning-state="hidden"]) .mes_edit_add_reasoning,
 .mes[data-reasoning-state="hidden"] .mes_reasoning_arrow,
 .mes[data-reasoning-state="hidden"] .mes_reasoning,
 .mes[data-reasoning-state="hidden"] .mes_reasoning_copy {
+    display: none;
+}
+
+.mes[data-reasoning-state="hidden"] .mes_edit_add_reasoning {
+    background-color: color-mix(in srgb, var(--SmartThemeQuoteColor) 33%, var(--SmartThemeBlurTintColor) 66%);
+}
+
+/** Hide hidden reasoning blocks - revert this selector to show them again */
+.mes.reasoning[data-reasoning-state="hidden"] .mes_reasoning_details {
     display: none;
 }
 

@@ -331,6 +331,11 @@ export class ReasoningHandler {
         const displayReasoning = messageFormatting(reasoning, '', false, false, messageId, {}, true);
         this.messageReasoningContentDom.innerHTML = displayReasoning;
 
+        // Update tooltip for hidden reasoning edit
+        /** @type {HTMLElement} */
+        const button = this.messageDom.querySelector('.mes_edit_add_reasoning');
+        button.title = this.state === ReasoningState.Hidden ? t`Hidden reasoning - Add reasoning block` : t`Add reasoning block`;
+
         // Update the reasoning duration in the UI
         this.#updateReasoningTimeUI();
     }
@@ -698,12 +703,9 @@ function setReasoningEventHandlers() {
         const textarea = messageBlock.find('.reasoning_edit_textarea');
         textarea.remove();
 
-        // If we cancel, we might have to remove the reasong class again if this is an unsaved empty reasoning
-        if (!messageBlock.attr('data--reasoning-state')) {
-            messageBlock.removeClass('reasoning');
-        }
-
         messageBlock.find('.mes_reasoning_edit_cancel:visible').trigger('click');
+
+        updateReasoningUI(messageBlock);
     });
 
     $(document).on('click', '.mes_edit_add_reasoning', async function () {
@@ -718,6 +720,12 @@ function setReasoningEventHandlers() {
         }
 
         messageBlock.addClass('reasoning');
+
+        // To make hidden reasoning blocks editable, we just set them to "Done" here already.
+        // They will be done on save anyway - and on cancel the reasoning block gets rerendered too.
+        if (messageBlock.attr('data-reasoning-state') === ReasoningState.Hidden) {
+            messageBlock.attr('data-reasoning-state', ReasoningState.Done);
+        }
 
         // Open the reasoning area so we can actually edit it
         messageBlock.find('.mes_reasoning_details').attr('open', '');
