@@ -34,10 +34,15 @@ const MIGRATABLE_KEYS = [
  * Provides access to account storage of arbitrary key-value pairs.
  */
 class AccountStorage {
-    constructor() {
-        this.state = {};
-        this.ready = false;
-    }
+    /**
+     * @type {Record<string, string>} Storage state
+     */
+    #state = {};
+
+    /**
+     * @type {boolean} If the storage was initialized
+     */
+    #ready = false;
 
     #migrateLocalStorage() {
         for (let i = 0; i < globalThis.localStorage.length; i++) {
@@ -45,7 +50,7 @@ class AccountStorage {
             const value = globalThis.localStorage.getItem(key);
 
             if (MIGRATABLE_KEYS.some(k => k.test(key))) {
-                this.state[key] = value;
+                this.#state[key] = value;
                 globalThis.localStorage.removeItem(key);
             }
         }
@@ -57,16 +62,16 @@ class AccountStorage {
      */
     init(state) {
         if (state && typeof state === 'object') {
-            this.state = Object.assign(this.state, state);
+            this.#state = Object.assign(this.#state, state);
         }
 
-        if (!Object.hasOwn(this.state, MIGRATED_MARKER)) {
+        if (!Object.hasOwn(this.#state, MIGRATED_MARKER)) {
             this.#migrateLocalStorage();
-            this.state[MIGRATED_MARKER] = 1;
+            this.#state[MIGRATED_MARKER] = '1';
             saveSettingsDebounced();
         }
 
-        this.ready = true;
+        this.#ready = true;
     }
 
     /**
@@ -75,11 +80,11 @@ class AccountStorage {
      * @returns {string|null} Value of the key
      */
     getItem(key) {
-        if (!this.ready) {
+        if (!this.#ready) {
             console.warn(`AccountStorage not ready (trying to read from ${key})`);
         }
 
-        return Object.hasOwn(this.state, key) ? String(this.state[key]) : null;
+        return Object.hasOwn(this.#state, key) ? String(this.#state[key]) : null;
     }
 
     /**
@@ -88,11 +93,11 @@ class AccountStorage {
      * @param {string} value Value to set
      */
     setItem(key, value) {
-        if (!this.ready) {
+        if (!this.#ready) {
             console.warn(`AccountStorage not ready (trying to write to ${key})`);
         }
 
-        this.state[key] = String(value);
+        this.#state[key] = String(value);
         saveSettingsDebounced();
     }
 
@@ -101,16 +106,24 @@ class AccountStorage {
      * @param {string} key Key to remove
      */
     removeItem(key) {
-        if (!this.ready) {
+        if (!this.#ready) {
             console.warn(`AccountStorage not ready (trying to remove ${key})`);
         }
 
-        if (!Object.hasOwn(this.state, key)) {
+        if (!Object.hasOwn(this.#state, key)) {
             return;
         }
 
-        delete this.state[key];
+        delete this.#state[key];
         saveSettingsDebounced();
+    }
+
+    /**
+     * Gets a snapshot of the storage state.
+     * @returns {Record<string, string>} A deep clone of the storage state
+     */
+    getState() {
+        return structuredClone(this.#state);
     }
 }
 

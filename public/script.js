@@ -7098,7 +7098,7 @@ export async function saveSettings(loopCounter = 0) {
         url: '/api/settings/save',
         data: JSON.stringify({
             firstRun: firstRun,
-            accountStorage: accountStorage.state,
+            accountStorage: accountStorage.getState(),
             currentVersion: currentVersion,
             username: name1,
             active_character: active_character,
