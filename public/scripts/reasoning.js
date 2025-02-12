@@ -406,7 +406,7 @@ export class ReasoningHandler {
  * Keeps track of the number of reasoning additions.
  */
 export class PromptReasoning {
-    static REASONING_UI_PLACEHOLDER = '\u200B';
+    static REASONING_PLACEHOLDER = '\u200B';
 
     constructor() {
         this.counter = 0;
@@ -437,8 +437,8 @@ export class PromptReasoning {
             return content;
         }
 
-        // No reasoning provided
-        if (!reasoning) {
+        // No reasoning provided or a legacy placeholder
+        if (!reasoning || reasoning === PromptReasoning.REASONING_PLACEHOLDER) {
             return content;
         }
 
