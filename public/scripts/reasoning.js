@@ -503,6 +503,15 @@ function loadReasoningSettings() {
         toggleReasoningAutoExpand();
         saveSettingsDebounced();
     });
+    toggleReasoningAutoExpand();
+
+    $('#reasoning_show_hidden').prop('checked', power_user.reasoning.show_hidden);
+    $('#reasoning_show_hidden').on('change', function () {
+        power_user.reasoning.show_hidden = !!$(this).prop('checked');
+        $('#chat').attr('data-show-hidden-reasoning', power_user.reasoning.show_hidden ? 'true' : null);
+        saveSettingsDebounced();
+    });
+    $('#chat').attr('data-show-hidden-reasoning', power_user.reasoning.show_hidden ? 'true' : null);
 }
 
 function registerReasoningSlashCommands() {
@@ -874,7 +883,6 @@ function registerReasoningAppEvents() {
 
 export function initReasoning() {
     loadReasoningSettings();
-    toggleReasoningAutoExpand();
     setReasoningEventHandlers();
     registerReasoningSlashCommands();
     registerReasoningMacros();

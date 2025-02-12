@@ -428,14 +428,9 @@ input[type='checkbox']:focus-visible {
     background-color: color-mix(in srgb, var(--SmartThemeQuoteColor) 33%, var(--SmartThemeBlurTintColor) 66%);
 }
 
-/** Hide hidden reasoning blocks - revert this selector to show them again */
-.mes.reasoning[data-reasoning-state="hidden"] .mes_reasoning_details {
+/** If hidden reasoning should not be shown, we hide all blocks that don't have content */
+#chat:not([data-show-hidden-reasoning="true"]) .mes:has(.mes_reasoning:empty) .mes_reasoning_details {
     display: none;
-}
-
-/** Show "Thinking..." during generation, even if the reasoning is hidden by default */
-body[data-generating="true"] .last_mes.reasoning[data-reasoning-state="hidden"] .mes_reasoning_details {
-    display: block;
 }
 
 .mes_reasoning_details .mes_reasoning_arrow {
