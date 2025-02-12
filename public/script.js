@@ -7076,7 +7076,8 @@ function selectKoboldGuiPreset() {
 
 export async function saveSettings(loopCounter = 0) {
     if (!settingsReady) {
-        console.warn('Settings not ready, aborting save');
+        console.warn('Settings not ready, scheduling another save');
+        saveSettingsDebounced();
         return;
     }
 
