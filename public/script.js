@@ -269,7 +269,7 @@ import { initSettingsSearch } from './scripts/setting-search.js';
 import { initBulkEdit } from './scripts/bulk-edit.js';
 import { deriveTemplatesFromChatTemplate } from './scripts/chat-templates.js';
 import { getContext } from './scripts/st-context.js';
-import { extractReasoningFromData, initReasoning, PromptReasoning, updateReasoningTimeUI } from './scripts/reasoning.js';
+import { extractReasoningFromData, initReasoning, PromptReasoning, removeReasoningFromString, updateReasoningTimeUI } from './scripts/reasoning.js';
 import { accountStorage } from './scripts/util/AccountStorage.js';
 
 // API OBJECT FOR EXTERNAL WIRING
@@ -2794,7 +2794,8 @@ export async function generateQuietPrompt(quiet_prompt, quietToLoud, skipWIAN, q
             TempResponseLength.save(main_api, responseLength);
             eventHook = TempResponseLength.setupEventHook(main_api);
         }
-        return await Generate('quiet', options);
+        const result = await Generate('quiet', options);
+        return removeReasoningFromString(result);
     } finally {
         if (responseLengthCustomized && TempResponseLength.isCustomized()) {
             TempResponseLength.restore(main_api);
