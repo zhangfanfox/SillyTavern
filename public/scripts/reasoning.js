@@ -153,7 +153,7 @@ export class ReasoningHandler {
         // Cached DOM elements for reasoning
         /** @type {HTMLElement} Main message DOM element `.mes` */
         this.messageDom = null;
-        /** @type {HTMLElement} Reasoning details DOM element `.mes_reasoning_details` */
+        /** @type {HTMLDetailsElement} Reasoning details DOM element `.mes_reasoning_details` */
         this.messageReasoningDetailsDom = null;
         /** @type {HTMLElement} Reasoning content DOM element `.mes_reasoning` */
         this.messageReasoningContentDom = null;
@@ -335,6 +335,11 @@ export class ReasoningHandler {
         /** @type {HTMLElement} */
         const button = this.messageDom.querySelector('.mes_edit_add_reasoning');
         button.title = this.state === ReasoningState.Hidden ? t`Hidden reasoning - Add reasoning block` : t`Add reasoning block`;
+
+        // Make sure that hidden reasoning headers are collapsed by default, to not show a useless edit button
+        if (this.state === ReasoningState.Hidden) {
+            this.messageReasoningDetailsDom.open = false;
+        }
 
         // Update the reasoning duration in the UI
         this.#updateReasoningTimeUI();
@@ -628,7 +633,14 @@ function setReasoningEventHandlers() {
         }
     });
 
-    $(document).on('click', '.mes_reasoning_header', function () {
+    $(document).on('click', '.mes_reasoning_header', function (e) {
+        const details = $(this).closest('.mes_reasoning_details');
+        // Along with the CSS rules to mark blocks not toggle-able when they are empty, prevent them from actually being toggled, or being edited
+        if (details.find('.mes_reasoning').is(':empty')) {
+            e.preventDefault();
+            return;
+        }
+
         // If we are in message edit mode and reasoning area is closed, a click opens and edits it
         const mes = $(this).closest('.mes');
         const mesEditArea = mes.find('#curEditTextarea');
