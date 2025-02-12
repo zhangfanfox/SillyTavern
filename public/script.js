@@ -11661,9 +11661,6 @@ jQuery(async function () {
     eventSource.on(event_types.GROUP_CHAT_DELETED, async (name) => {
         await deleteItemizedPrompts(name);
     });
-    eventSource.on(event_types.CHARACTER_DELETED, async() => {
-
-    });
 
     initCustomSelectedSamplers();
 });
