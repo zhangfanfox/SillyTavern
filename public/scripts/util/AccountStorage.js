@@ -49,11 +49,13 @@ class AccountStorage {
     #ready = false;
 
     #migrateLocalStorage() {
+        const localStorageKeys = [];
         for (let i = 0; i < globalThis.localStorage.length; i++) {
-            const key = globalThis.localStorage.key(i);
-            const value = globalThis.localStorage.getItem(key);
-
+            localStorageKeys.push(globalThis.localStorage.key(i));
+        }
+        for (const key of localStorageKeys) {
             if (MIGRATABLE_KEYS.some(k => k.test(key))) {
+                const value = globalThis.localStorage.getItem(key);
                 this.#state[key] = value;
                 globalThis.localStorage.removeItem(key);
             }
