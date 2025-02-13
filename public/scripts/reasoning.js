@@ -181,8 +181,11 @@ export class ReasoningHandler {
                 : $(messageIdOrElement)[0];
         const messageId = Number(messageElement.getAttribute('mesid'));
 
-        if (isNaN(messageId)) return;
+        if (isNaN(messageId) || !chat[messageId]) return;
 
+        if (!chat[messageId].extra) {
+            chat[messageId].extra = {};
+        }
         const extra = chat[messageId].extra;
 
         if (extra.reasoning) {
