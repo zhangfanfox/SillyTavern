@@ -130,6 +130,7 @@ if (process.versions && process.versions.node && process.versions.node.match(/20
 const DEFAULT_PORT = 8000;
 const DEFAULT_AUTORUN = false;
 const DEFAULT_LISTEN = false;
+const DEFAULT_LISTEN_ADDRESS = '';
 const DEFAULT_CORS_PROXY = false;
 const DEFAULT_WHITELIST = true;
 const DEFAULT_ACCOUNTS = false;
@@ -185,6 +186,10 @@ const cliArguments = yargs(hideBin(process.argv))
         type: 'boolean',
         default: null,
         describe: `SillyTavern is listening on all network interfaces (Wi-Fi, LAN, localhost). If false, will limit it only to internal localhost (127.0.0.1).\nIf not provided falls back to yaml config 'listen'.\n[config default: ${DEFAULT_LISTEN}]`,
+    }).option('listenAddress', {
+        type: 'string',
+        default: null,
+        describe: 'Set SillyTavern to listen to a specific address. If not set, it will fallback to listen to all.\n[config default: empty ]',
     }).option('corsProxy', {
         type: 'boolean',
         default: null,
@@ -254,6 +259,8 @@ const server_port = cliArguments.port ?? process.env.SILLY_TAVERN_PORT ?? getCon
 const autorun = (cliArguments.autorun ?? getConfigValue('autorun', DEFAULT_AUTORUN)) && !cliArguments.ssl;
 /** @type {boolean} */
 const listen = cliArguments.listen ?? getConfigValue('listen', DEFAULT_LISTEN);
+/** @type {string} */
+const listenAddress = cliArguments.listenAddress ?? getConfigValue('listenAddress', DEFAULT_LISTEN_ADDRESS);
 /** @type {boolean} */
 const enableCorsProxy = cliArguments.corsProxy ?? getConfigValue('enableCorsProxy', DEFAULT_CORS_PROXY);
 const enableWhitelist = cliArguments.whitelist ?? getConfigValue('whitelistMode', DEFAULT_WHITELIST);
@@ -706,15 +713,17 @@ app.use('/api/backends/scale-alt', scaleAltRouter);
 app.use('/api/speech', speechRouter);
 app.use('/api/azure', azureRouter);
 
+const ipv6_regex = /^(?:(?:[a-fA-F\d]{1,4}:){7}(?:[a-fA-F\d]{1,4}|:)|(?:[a-fA-F\d]{1,4}:){6}(?:(?:25[0-5]|2[0-4]\d|1\d\d|[1-9]\d|\d)(?:\\.(?:25[0-5]|2[0-4]\d|1\d\d|[1-9]\d|\d)){3}|:[a-fA-F\d]{1,4}|:)|(?:[a-fA-F\d]{1,4}:){5}(?::(?:25[0-5]|2[0-4]\d|1\d\d|[1-9]\d|\d)(?:\\.(?:25[0-5]|2[0-4]\d|1\d\d|[1-9]\d|\d)){3}|(?::[a-fA-F\d]{1,4}){1,2}|:)|(?:[a-fA-F\d]{1,4}:){4}(?:(?::[a-fA-F\d]{1,4}){0,1}:(?:25[0-5]|2[0-4]\d|1\d\d|[1-9]\d|\d)(?:\\.(?:25[0-5]|2[0-4]\d|1\d\d|[1-9]\d|\d)){3}|(?::[a-fA-F\d]{1,4}){1,3}|:)|(?:[a-fA-F\d]{1,4}:){3}(?:(?::[a-fA-F\d]{1,4}){0,2}:(?:25[0-5]|2[0-4]\d|1\d\d|[1-9]\d|\d)(?:\\.(?:25[0-5]|2[0-4]\d|1\d\d|[1-9]\d|\d)){3}|(?::[a-fA-F\d]{1,4}){1,4}|:)|(?:[a-fA-F\d]{1,4}:){2}(?:(?::[a-fA-F\d]{1,4}){0,3}:(?:25[0-5]|2[0-4]\d|1\d\d|[1-9]\d|\d)(?:\\.(?:25[0-5]|2[0-4]\d|1\d\d|[1-9]\d|\d)){3}|(?::[a-fA-F\d]{1,4}){1,5}|:)|(?:[a-fA-F\d]{1,4}:){1}(?:(?::[a-fA-F\d]{1,4}){0,4}:(?:25[0-5]|2[0-4]\d|1\d\d|[1-9]\d|\d)(?:\\.(?:25[0-5]|2[0-4]\d|1\d\d|[1-9]\d|\d)){3}|(?::[a-fA-F\d]{1,4}){1,6}|:)|(?::(?:(?::[a-fA-F\d]{1,4}){0,5}:(?:25[0-5]|2[0-4]\d|1\d\d|[1-9]\d|\d)(?:\\.(?:25[0-5]|2[0-4]\d|1\d\d|[1-9]\d|\d)){3}|(?::[a-fA-F\d]{1,4}){1,7}|:)))(?:%[0-9a-zA-Z]{1,})?$/m;
 const tavernUrlV6 = new URL(
     (cliArguments.ssl ? 'https://' : 'http://') +
-    (listen ? '[::]' : '[::1]') +
+    (listen ? (ipv6_regex.test(listenAddress) ? listenAddress : '[::]') : '[::1]') +
     (':' + server_port),
 );
 
+const ipv4_regex = /^(?:25[0-5]|2[0-4]\d|1\d\d|[1-9]\d|\d)(?:\.(?:25[0-5]|2[0-4]\d|1\d\d|[1-9]\d|\d)){3}$/m;
 const tavernUrl = new URL(
     (cliArguments.ssl ? 'https://' : 'http://') +
-    (listen ? '0.0.0.0' : '127.0.0.1') +
+    (listen ? (ipv4_regex.test(listenAddress) ? listenAddress : '0.0.0.0') : '127.0.0.1') +
     (':' + server_port),
 );
 
@@ -780,6 +789,10 @@ const preSetupTasks = async function () {
  */
 async function getAutorunHostname(useIPv6, useIPv4) {
     if (autorunHostname === 'auto') {
+        if (listen && (ipv4_regex.test(listenAddress) || ipv6_regex.test(listenAddress))) {
+            return listenAddress;
+        }
+
         let localhostResolve = await canResolve('localhost', useIPv6, useIPv4);
 
         if (useIPv6 && useIPv4) {
@@ -842,9 +855,15 @@ const postSetupTasks = async function (v6Failed, v4Failed, useIPv6, useIPv4) {
     console.log('\n' + getSeparator(plainGoToLog.length) + '\n');
 
     if (listen) {
-        console.log(
-            '[::] or 0.0.0.0 means SillyTavern is listening on all network interfaces (Wi-Fi, LAN, localhost). If you want to limit it only to internal localhost ([::1] or 127.0.0.1), change the setting in config.yaml to "listen: false". Check "access.log" file in the SillyTavern directory if you want to inspect incoming connections.\n',
-        );
+        if (ipv4_regex.test(listenAddress) || ipv6_regex.test(listenAddress)) {
+            console.log(
+                `SillyTavern is listening on the address ${listenAddress}. If you want to limit it only to internal localhost ([::1] or 127.0.0.1), change the setting in config.yaml to "listen: false". Check "access.log" file in the SillyTavern directory if you want to inspect incoming connections.\n`,
+            );
+        } else {
+            console.log(
+                '[::] or 0.0.0.0 means SillyTavern is listening on all network interfaces (Wi-Fi, LAN, localhost). If you want to limit it only to internal localhost ([::1] or 127.0.0.1), change the setting in config.yaml to "listen: false". Check "access.log" file in the SillyTavern directory if you want to inspect incoming connections.\n',
+            );
+        }
     }
 
     if (basicAuthMode) {
@@ -906,6 +925,19 @@ function logSecurityAlert(message) {
         return;
     }
     process.exit(1);
+}
+
+/**
+ * Prints a warning message
+ * @param {string} message The warning message to print
+ * @returns {void}
+ */
+function logSecurityWarning(message) {
+    if (basicAuthMode || enableWhitelist) return; // safe!
+    console.error(color.yellow(message));
+    if (getConfigValue('securityOverride', false)) {
+        console.warn(color.red('Security has been overridden. If it\'s not a trusted network, change the settings.'));
+    }
 }
 
 /**
@@ -1083,7 +1115,7 @@ async function verifySecuritySettings() {
     }
 
     if (!enableAccounts) {
-        logSecurityAlert('Your SillyTavern is currently insecurely open to the public. Enable whitelisting, basic authentication or user accounts.');
+        logSecurityAlert('Your current SillyTavern configuration is insecure (listening to non-localhost). Enable whitelisting, basic authentication or user accounts.');
     }
 
     const users = await getAllEnabledUsers();
