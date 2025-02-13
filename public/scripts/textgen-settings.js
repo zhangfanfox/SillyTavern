@@ -182,6 +182,7 @@ const settings = {
     grammar_string: '',
     json_schema: {},
     banned_tokens: '',
+    global_banned_tokens: '',
     sampler_priority: OOBA_DEFAULT_ORDER,
     samplers: LLAMACPP_DEFAULT_ORDER,
     samplers_priorities: APHRODITE_DEFAULT_ORDER,
@@ -274,6 +275,7 @@ export const setting_names = [
     'grammar_string',
     'json_schema',
     'banned_tokens',
+    'global_banned_tokens',
     'ignore_eos_token',
     'spaces_between_special_tokens',
     'speculative_ngram',
@@ -404,8 +406,9 @@ function getCustomTokenBans() {
     const tokenizer = getTokenizerForTokenIds();
     const banned_tokens = [];
     const banned_strings = [];
-    const sequences = settings.banned_tokens
-        .split('\n')
+    const sequences = []
+        .concat(settings.banned_tokens.split('\n'))
+        .concat(settings.global_banned_tokens.split('\n'))
         .concat(textgenerationwebui_banned_in_macros)
         .filter(x => x.length > 0)
         .filter(onlyUnique);
