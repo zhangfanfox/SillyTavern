@@ -1304,6 +1304,7 @@ async function onModelChange() {
         sources.huggingface,
         sources.nanogpt,
         sources.bfl,
+        sources.falai,
     ];
 
     if (cloudSources.includes(extension_settings.sd.source)) {
