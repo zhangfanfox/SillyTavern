@@ -1251,6 +1251,7 @@ falai.post('/models', jsonParser, async (_request, response) => {
             .filter(x => !x.title.toLowerCase().includes('inpainting') &&
                 !x.title.toLowerCase().includes('control') &&
                 !x.title.toLowerCase().includes('upscale'))
+            .sort((a, b) => a.title.localeCompare(b.title))
             .map(x => ({ value: x.modelUrl.split('fal-ai/')[1], text: x.title }));
         return response.send(models);
     } catch (error) {
@@ -1328,6 +1329,11 @@ falai.post('/generate', jsonParser, async (request, response) => {
                     },
                 });
                 const resultData = await resultFetch.json();
+
+                if (resultData.detail !== null && resultData.detail !== undefined) {
+                    throw new Error('FAL.AI failed to generate image.', { cause: `${resultData.detail[0].loc[1]}: ${resultData.detail[0].msg}` });
+                }
+
                 const imageFetch = await fetch(resultData?.images[0].url, {
                     headers: {
                         'Authorization': `Key ${key}`,
@@ -1343,7 +1349,7 @@ falai.post('/generate', jsonParser, async (request, response) => {
         }
     } catch (error) {
         console.error(error);
-        return response.sendStatus(500);
+        return response.status(500).send(error.cause || error.message);
     }
 });
 

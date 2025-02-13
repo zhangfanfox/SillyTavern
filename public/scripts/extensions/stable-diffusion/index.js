@@ -3555,6 +3555,7 @@ async function generateFalaiImage(prompt, negativePrompt, signal) {
         return { format: 'jpg', data: data.image };
     } else {
         const text = await result.text();
+        console.log(text);
         throw new Error(text);
     }
 }
