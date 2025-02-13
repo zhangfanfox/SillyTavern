@@ -236,6 +236,10 @@ export class ReasoningHandler {
      * @returns {boolean} - Returns true if the reasoning was changed, otherwise false
      */
     updateReasoning(messageId, reasoning = null, { persist = false } = {}) {
+        if (messageId == -1 || !chat[messageId]) {
+            return false;
+        }
+
         reasoning = reasoning ?? this.reasoning;
         reasoning = power_user.trim_spaces ? reasoning.trim() : reasoning;
 
