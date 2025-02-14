@@ -942,19 +942,6 @@ function logSecurityAlert(message) {
 }
 
 /**
- * Prints a warning message
- * @param {string} message The warning message to print
- * @returns {void}
- */
-function logSecurityWarning(message) {
-    if (basicAuthMode || enableWhitelist) return; // safe!
-    console.error(color.yellow(message));
-    if (getConfigValue('securityOverride', false)) {
-        console.warn(color.red('Security has been overridden. If it\'s not a trusted network, change the settings.'));
-    }
-}
-
-/**
  * Handles the case where the server failed to start on one or both protocols.
  * @param {boolean} v6Failed If the server failed to start on IPv6
  * @param {boolean} v4Failed If the server failed to start on IPv4
