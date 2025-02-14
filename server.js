@@ -30,6 +30,7 @@ import bodyParser from 'body-parser';
 
 // net related library imports
 import fetch from 'node-fetch';
+import ipRegex from 'ip-regex';
 
 // Unrestrict console logs display limit
 util.inspect.defaultOptions.maxArrayLength = null;
@@ -713,17 +714,15 @@ app.use('/api/backends/scale-alt', scaleAltRouter);
 app.use('/api/speech', speechRouter);
 app.use('/api/azure', azureRouter);
 
-const ipv6_regex = /^(?:(?:[a-fA-F\d]{1,4}:){7}(?:[a-fA-F\d]{1,4}|:)|(?:[a-fA-F\d]{1,4}:){6}(?:(?:25[0-5]|2[0-4]\d|1\d\d|[1-9]\d|\d)(?:\\.(?:25[0-5]|2[0-4]\d|1\d\d|[1-9]\d|\d)){3}|:[a-fA-F\d]{1,4}|:)|(?:[a-fA-F\d]{1,4}:){5}(?::(?:25[0-5]|2[0-4]\d|1\d\d|[1-9]\d|\d)(?:\\.(?:25[0-5]|2[0-4]\d|1\d\d|[1-9]\d|\d)){3}|(?::[a-fA-F\d]{1,4}){1,2}|:)|(?:[a-fA-F\d]{1,4}:){4}(?:(?::[a-fA-F\d]{1,4}){0,1}:(?:25[0-5]|2[0-4]\d|1\d\d|[1-9]\d|\d)(?:\\.(?:25[0-5]|2[0-4]\d|1\d\d|[1-9]\d|\d)){3}|(?::[a-fA-F\d]{1,4}){1,3}|:)|(?:[a-fA-F\d]{1,4}:){3}(?:(?::[a-fA-F\d]{1,4}){0,2}:(?:25[0-5]|2[0-4]\d|1\d\d|[1-9]\d|\d)(?:\\.(?:25[0-5]|2[0-4]\d|1\d\d|[1-9]\d|\d)){3}|(?::[a-fA-F\d]{1,4}){1,4}|:)|(?:[a-fA-F\d]{1,4}:){2}(?:(?::[a-fA-F\d]{1,4}){0,3}:(?:25[0-5]|2[0-4]\d|1\d\d|[1-9]\d|\d)(?:\\.(?:25[0-5]|2[0-4]\d|1\d\d|[1-9]\d|\d)){3}|(?::[a-fA-F\d]{1,4}){1,5}|:)|(?:[a-fA-F\d]{1,4}:){1}(?:(?::[a-fA-F\d]{1,4}){0,4}:(?:25[0-5]|2[0-4]\d|1\d\d|[1-9]\d|\d)(?:\\.(?:25[0-5]|2[0-4]\d|1\d\d|[1-9]\d|\d)){3}|(?::[a-fA-F\d]{1,4}){1,6}|:)|(?::(?:(?::[a-fA-F\d]{1,4}){0,5}:(?:25[0-5]|2[0-4]\d|1\d\d|[1-9]\d|\d)(?:\\.(?:25[0-5]|2[0-4]\d|1\d\d|[1-9]\d|\d)){3}|(?::[a-fA-F\d]{1,4}){1,7}|:)))(?:%[0-9a-zA-Z]{1,})?$/m;
 const tavernUrlV6 = new URL(
     (cliArguments.ssl ? 'https://' : 'http://') +
-    (listen ? (ipv6_regex.test(listenAddress) ? `[${listenAddress}]` : '[::]') : '[::1]') +
+    (listen ? (ipRegex.v6({ exact: true }).test(listenAddress) ? `[${listenAddress}]` : '[::]') : '[::1]') +
     (':' + server_port),
 );
 
-const ipv4_regex = /^(?:25[0-5]|2[0-4]\d|1\d\d|[1-9]\d|\d)(?:\.(?:25[0-5]|2[0-4]\d|1\d\d|[1-9]\d|\d)){3}$/m;
 const tavernUrl = new URL(
     (cliArguments.ssl ? 'https://' : 'http://') +
-    (listen ? (ipv4_regex.test(listenAddress) ? listenAddress : '0.0.0.0') : '127.0.0.1') +
+    (listen ? (ipRegex.v4({ exact: true }).test(listenAddress) ? listenAddress : '0.0.0.0') : '127.0.0.1') +
     (':' + server_port),
 );
 
@@ -790,9 +789,9 @@ const preSetupTasks = async function () {
 async function getAutorunHostname(useIPv6, useIPv4) {
     if (autorunHostname === 'auto') {
         if (listen) {
-            if (ipv4_regex.test(listenAddress)) {
+            if (ipRegex.v4({ exact: true }).test(listenAddress)) {
                 return listenAddress;
-            } else if (ipv6_regex.test(listenAddress)) {
+            } else if (ipRegex.v6({ exact: true }).test(listenAddress)) {
                 return `[${listenAddress}]`;
             }
         }
@@ -859,11 +858,11 @@ const postSetupTasks = async function (v6Failed, v4Failed, useIPv6, useIPv4) {
     console.log('\n' + getSeparator(plainGoToLog.length) + '\n');
 
     if (listen) {
-        if (ipv4_regex.test(listenAddress)) {
+        if (ipRegex.v4({ exact: true }).test(listenAddress)) {
             console.log(
                 `SillyTavern is listening on the address ${listenAddress}. If you want to limit it only to internal localhost ([::1] or 127.0.0.1), change the setting in config.yaml to "listen: false". Check "access.log" file in the SillyTavern directory if you want to inspect incoming connections.\n`,
             );
-        } else if (ipv6_regex.test(listenAddress)) {
+        } else if (ipRegex.v6({ exact: true }).test(listenAddress)) {
             console.log(
                 `SillyTavern is listening on the address [${listenAddress}]. If you want to limit it only to internal localhost ([::1] or 127.0.0.1), change the setting in config.yaml to "listen: false". Check "access.log" file in the SillyTavern directory if you want to inspect incoming connections.\n`,
             );

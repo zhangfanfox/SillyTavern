@@ -7,7 +7,7 @@ cardsCacheCapacity: 100
 # Listen for incoming connections
 listen: false
 # Listen on a specific address, supports IPv4 and IPv6
-listenAddress: 127.0.0.1
+listenAddress: 0.0.0.0
 # Enables IPv6 and/or IPv4 protocols. Need to have at least one enabled!
 # - Use option "auto" to automatically detect support
 # - Use true or false (no qoutes) to enable or disable each protocol
