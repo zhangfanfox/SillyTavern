@@ -399,7 +399,7 @@ function getTokenizerForTokenIds() {
  * @returns {TokenBanResult} String with comma-separated banned token IDs
  */
 function getCustomTokenBans() {
-    if (!settings.send_banned_tokens || (!settings.banned_tokens && !textgenerationwebui_banned_in_macros.length)) {
+    if (!settings.send_banned_tokens || (!settings.banned_tokens && !settings.global_banned_tokens && !textgenerationwebui_banned_in_macros.length)) {
         return {
             banned_tokens: '',
             banned_strings: [],
@@ -460,7 +460,7 @@ function getCustomTokenBans() {
 
 async function enableBannedStringsKillSwitch() {
     $('#send_banned_tokens_textgenerationwebui').prop('checked', true);
-    $('#send_banned_tokens_label').find('.menu_button').addClass('toggleEnabled').prop('title', t`Banned tokens/strings are being sent into the request.`);
+    $('#send_banned_tokens_label').find('.menu_button').addClass('toggleEnabled').prop('title', t`Banned tokens/strings are being sent in the request.`);
     settings.send_banned_tokens = true;
     saveSettingsDebounced();
     return '';
@@ -468,7 +468,7 @@ async function enableBannedStringsKillSwitch() {
 
 async function disableBannedStringsKillSwitch() {
     $('#send_banned_tokens_textgenerationwebui').prop('checked', false);
-    $('#send_banned_tokens_label').find('.menu_button').removeClass('toggleEnabled').prop('title', t`Banned tokens/strings are NOT being sent into the request.`);
+    $('#send_banned_tokens_label').find('.menu_button').removeClass('toggleEnabled').prop('title', t`Banned tokens/strings are NOT being sent in the request.`);
     settings.send_banned_tokens = false;
     saveSettingsDebounced();
     return '';
