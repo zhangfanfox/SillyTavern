@@ -795,14 +795,6 @@ const preSetupTasks = async function () {
  */
 async function getAutorunHostname(useIPv6, useIPv4) {
     if (autorunHostname === 'auto') {
-        if (listen) {
-            if (ipRegex.v6({ exact: true }).test(listenAddressIPv6)) {
-                return listenAddressIPv6;
-            } else if (ipRegex.v4({ exact: true }).test(listenAddressIPv4)) {
-                return listenAddressIPv4;
-            }
-        }
-
         let localhostResolve = await canResolve('localhost', useIPv6, useIPv4);
 
         if (useIPv6 && useIPv4) {
