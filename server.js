@@ -852,22 +852,15 @@ const postSetupTasks = async function (v6Failed, v4Failed, useIPv6, useIPv4) {
     const plainGoToLog = removeColorFormatting(goToLog);
 
     console.log(logListen);
+    if (listen) {
+        console.log();
+        console.log('To limit connections to internal localhost only ([::1] or 127.0.0.1), change the setting in config.yaml to "listen: false".');
+        console.log('Check the "access.log" file in the SillyTavern directory to inspect incoming connections.');
+    }
     console.log('\n' + getSeparator(plainGoToLog.length) + '\n');
     console.log(goToLog);
     console.log('\n' + getSeparator(plainGoToLog.length) + '\n');
 
-    if (listen) {
-        const logAddress = ipRegex.v6({ exact: true }).test(listenAddressIPv6)
-            ? listenAddressIPv6
-            : ipRegex.v4({ exact: true }).test(listenAddressIPv4)
-                ? listenAddressIPv4
-                : null;
-        console.log(
-            logAddress
-                ? `SillyTavern is listening on the address ${logAddress}. If you want to limit it only to internal localhost ([::1] or 127.0.0.1), change the setting in config.yaml to "listen: false". Check "access.log" file in the SillyTavern directory if you want to inspect incoming connections.\n`
-                : '[::] or 0.0.0.0 means SillyTavern is listening on all network interfaces (Wi-Fi, LAN, localhost). If you want to limit it only to internal localhost ([::1] or 127.0.0.1), change the setting in config.yaml to "listen: false". Check "access.log" file in the SillyTavern directory if you want to inspect incoming connections.\n',
-        );
-    }
 
     if (basicAuthMode) {
         if (perUserBasicAuth && !enableAccounts) {
