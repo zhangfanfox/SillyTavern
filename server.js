@@ -266,9 +266,9 @@ const autorun = (cliArguments.autorun ?? getConfigValue('autorun', DEFAULT_AUTOR
 /** @type {boolean} */
 const listen = cliArguments.listen ?? getConfigValue('listen', DEFAULT_LISTEN);
 /** @type {string} */
-const listenAddressIPv6 = cliArguments.listenAddressIPv6 ?? getConfigValue('listenAddressIPv6', DEFAULT_LISTEN_ADDRESS_IPV6);
+const listenAddressIPv6 = cliArguments.listenAddressIPv6 ?? getConfigValue('listenAddress.ipv6', DEFAULT_LISTEN_ADDRESS_IPV6);
 /** @type {string} */
-const listenAddressIPv4 = cliArguments.listenAddressIPv4 ?? getConfigValue('listenAddressIPv4', DEFAULT_LISTEN_ADDRESS_IPV4);
+const listenAddressIPv4 = cliArguments.listenAddressIPv4 ?? getConfigValue('listenAddress.ipv4', DEFAULT_LISTEN_ADDRESS_IPV4);
 /** @type {boolean} */
 const enableCorsProxy = cliArguments.corsProxy ?? getConfigValue('enableCorsProxy', DEFAULT_CORS_PROXY);
 const enableWhitelist = cliArguments.whitelist ?? getConfigValue('whitelistMode', DEFAULT_WHITELIST);
