@@ -10,6 +10,7 @@ import {
     setOnlineStatus,
     substituteParams,
 } from '../script.js';
+import { t } from './i18n.js';
 import { BIAS_CACHE, createNewLogitBiasEntry, displayLogitBias, getLogitBiasListResult } from './logit-bias.js';
 
 import { power_user, registerDebugFunction } from './power-user.js';
@@ -183,6 +184,7 @@ const settings = {
     json_schema: {},
     banned_tokens: '',
     global_banned_tokens: '',
+    send_banned_tokens: true,
     sampler_priority: OOBA_DEFAULT_ORDER,
     samplers: LLAMACPP_DEFAULT_ORDER,
     samplers_priorities: APHRODITE_DEFAULT_ORDER,
@@ -276,6 +278,7 @@ export const setting_names = [
     'json_schema',
     'banned_tokens',
     'global_banned_tokens',
+    'send_banned_tokens',
     'ignore_eos_token',
     'spaces_between_special_tokens',
     'speculative_ngram',
@@ -455,6 +458,22 @@ function getCustomTokenBans() {
     };
 }
 
+async function enableBannedStringsKillSwitch() {
+    $('#send_banned_tokens_textgenerationwebui').prop('checked', true);
+    $('#send_banned_tokens_label').find('.menu_button').addClass('toggleEnabled').prop('title', t`Banned tokens/strings are being sent into the request.`);
+    settings.send_banned_tokens = true;
+    saveSettingsDebounced();
+    return '';
+}
+
+async function disableBannedStringsKillSwitch() {
+    $('#send_banned_tokens_textgenerationwebui').prop('checked', false);
+    $('#send_banned_tokens_label').find('.menu_button').removeClass('toggleEnabled').prop('title', t`Banned tokens/strings are NOT being sent into the request.`);
+    settings.send_banned_tokens = false;
+    saveSettingsDebounced();
+    return '';
+}
+
 /**
  * Calculates logit bias object from the logit bias list.
  * @returns {object} Logit bias object
@@ -597,6 +616,16 @@ function sortAphroditeItemsByOrder(orderArray) {
 }
 
 jQuery(function () {
+
+    $('#bannedStringsKillSwitch_textgenerationwebui').on('change', function () {
+        const checked = $(this).prop('checked');
+        if (checked) {
+            enableBannedStringsKillSwitch();
+        } else {
+            disableBannedStringsKillSwitch();
+        }
+    });
+
     $('#koboldcpp_order').sortable({
         delay: getSortableDelay(),
         stop: function () {
@@ -935,6 +964,10 @@ function setSettingByName(setting, value, trigger) {
     if (isCheckbox) {
         const val = Boolean(value);
         $(`#${setting}_textgenerationwebui`).prop('checked', val);
+
+        if ('send_banned_tokens' === setting) {
+            $('#send_banned_tokens_textgenerationwebui').trigger('change');
+        }
     }
     else if (isText) {
         $(`#${setting}_textgenerationwebui`).val(value);
