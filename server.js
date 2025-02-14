@@ -857,19 +857,16 @@ const postSetupTasks = async function (v6Failed, v4Failed, useIPv6, useIPv4) {
     console.log('\n' + getSeparator(plainGoToLog.length) + '\n');
 
     if (listen) {
-        if (ipRegex.v6({ exact: true }).test(listenAddressIPv6)) {
-            console.log(
-                `SillyTavern is listening on the address ${listenAddressIPv6}. If you want to limit it only to internal localhost ([::1] or 127.0.0.1), change the setting in config.yaml to "listen: false". Check "access.log" file in the SillyTavern directory if you want to inspect incoming connections.\n`,
-            );
-        } else if (ipRegex.v4({ exact: true }).test(listenAddressIPv4)) {
-            console.log(
-                `SillyTavern is listening on the address ${listenAddressIPv4}. If you want to limit it only to internal localhost ([::1] or 127.0.0.1), change the setting in config.yaml to "listen: false". Check "access.log" file in the SillyTavern directory if you want to inspect incoming connections.\n`,
-            );
-        } else {
-            console.log(
-                '[::] or 0.0.0.0 means SillyTavern is listening on all network interfaces (Wi-Fi, LAN, localhost). If you want to limit it only to internal localhost ([::1] or 127.0.0.1), change the setting in config.yaml to "listen: false". Check "access.log" file in the SillyTavern directory if you want to inspect incoming connections.\n',
-            );
-        }
+        const logAddress = ipRegex.v6({ exact: true }).test(listenAddressIPv6)
+            ? listenAddressIPv6
+            : ipRegex.v4({ exact: true }).test(listenAddressIPv4)
+                ? listenAddressIPv4
+                : null;
+        console.log(
+            logAddress
+                ? `SillyTavern is listening on the address ${logAddress}. If you want to limit it only to internal localhost ([::1] or 127.0.0.1), change the setting in config.yaml to "listen: false". Check "access.log" file in the SillyTavern directory if you want to inspect incoming connections.\n`
+                : '[::] or 0.0.0.0 means SillyTavern is listening on all network interfaces (Wi-Fi, LAN, localhost). If you want to limit it only to internal localhost ([::1] or 127.0.0.1), change the setting in config.yaml to "listen: false". Check "access.log" file in the SillyTavern directory if you want to inspect incoming connections.\n',
+        );
     }
 
     if (basicAuthMode) {
