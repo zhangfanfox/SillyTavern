@@ -399,7 +399,7 @@ function getTokenizerForTokenIds() {
  * @returns {TokenBanResult} String with comma-separated banned token IDs
  */
 function getCustomTokenBans() {
-    if (!settings.banned_tokens && !textgenerationwebui_banned_in_macros.length) {
+    if (!settings.send_banned_tokens || (!settings.banned_tokens && !textgenerationwebui_banned_in_macros.length)) {
         return {
             banned_tokens: '',
             banned_strings: [],
@@ -616,9 +616,8 @@ function sortAphroditeItemsByOrder(orderArray) {
 }
 
 jQuery(function () {
-
-    $('#bannedStringsKillSwitch_textgenerationwebui').on('change', function () {
-        const checked = $(this).prop('checked');
+    $('#send_banned_tokens_textgenerationwebui').on('change', function () {
+        const checked = !!$(this).prop('checked');
         if (checked) {
             enableBannedStringsKillSwitch();
         } else {
@@ -966,7 +965,7 @@ function setSettingByName(setting, value, trigger) {
         $(`#${setting}_textgenerationwebui`).prop('checked', val);
 
         if ('send_banned_tokens' === setting) {
-            $('#send_banned_tokens_textgenerationwebui').trigger('change');
+            $(`#${setting}_textgenerationwebui`).trigger('change');
         }
     }
     else if (isText) {
