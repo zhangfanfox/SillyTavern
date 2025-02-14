@@ -90,6 +90,7 @@
     "version": "1.12.11",
     "scripts": {
         "start": "node server.js",
+        "debug": "node server.js --inspect",
         "start:deno": "deno run --allow-run --allow-net --allow-read --allow-write --allow-sys --allow-env server.js",
         "start:bun": "bun server.js",
         "start:no-csrf": "node server.js --disableCsrf",
