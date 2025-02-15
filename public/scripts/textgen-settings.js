@@ -470,6 +470,7 @@ function toggleBannedStringsKillSwitch(isEnabled, title) {
     saveSettingsDebounced();
     return '';
 }
+
 /**
  * Calculates logit bias object from the logit bias list.
  * @returns {object} Logit bias object
