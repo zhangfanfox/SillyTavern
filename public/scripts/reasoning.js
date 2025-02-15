@@ -215,6 +215,10 @@ export class ReasoningHandler {
         }
 
         this.updateDom(messageId);
+
+        if (power_user.reasoning.auto_expand) {
+            this.messageReasoningDetailsDom.open = true;
+        }
     }
 
     /**
