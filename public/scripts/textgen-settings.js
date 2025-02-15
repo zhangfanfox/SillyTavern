@@ -458,22 +458,18 @@ function getCustomTokenBans() {
     };
 }
 
-async function enableBannedStringsKillSwitch() {
-    $('#send_banned_tokens_textgenerationwebui').prop('checked', true);
-    $('#send_banned_tokens_label').find('.menu_button').addClass('toggleEnabled').prop('title', t`Banned tokens/strings are being sent in the request.`);
-    settings.send_banned_tokens = true;
+/**
+ * Sets the banned strings kill switch toggle.
+ * @param {boolean} isEnabled Kill switch state
+ * @param {string} title Label title
+ */
+function toggleBannedStringsKillSwitch(isEnabled, title) {
+    $('#send_banned_tokens_textgenerationwebui').prop('checked', isEnabled);
+    $('#send_banned_tokens_label').find('.menu_button').toggleClass('toggleEnabled', isEnabled).prop('title', title);
+    settings.send_banned_tokens = isEnabled;
     saveSettingsDebounced();
     return '';
 }
-
-async function disableBannedStringsKillSwitch() {
-    $('#send_banned_tokens_textgenerationwebui').prop('checked', false);
-    $('#send_banned_tokens_label').find('.menu_button').removeClass('toggleEnabled').prop('title', t`Banned tokens/strings are NOT being sent in the request.`);
-    settings.send_banned_tokens = false;
-    saveSettingsDebounced();
-    return '';
-}
-
 /**
  * Calculates logit bias object from the logit bias list.
  * @returns {object} Logit bias object
@@ -618,11 +614,10 @@ function sortAphroditeItemsByOrder(orderArray) {
 jQuery(function () {
     $('#send_banned_tokens_textgenerationwebui').on('change', function () {
         const checked = !!$(this).prop('checked');
-        if (checked) {
-            enableBannedStringsKillSwitch();
-        } else {
-            disableBannedStringsKillSwitch();
-        }
+        toggleBannedStringsKillSwitch(checked,
+            checked
+                ? t`Banned tokens/strings are being sent in the request.`
+                : t`Banned tokens/strings are NOT being sent in the request.`);
     });
 
     $('#koboldcpp_order').sortable({
