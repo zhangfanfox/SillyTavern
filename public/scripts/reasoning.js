@@ -13,7 +13,7 @@ import { ARGUMENT_TYPE, SlashCommandArgument, SlashCommandNamedArgument } from '
 import { commonEnumProviders } from './slash-commands/SlashCommandCommonEnumsProvider.js';
 import { SlashCommandParser } from './slash-commands/SlashCommandParser.js';
 import { textgen_types, textgenerationwebui_settings } from './textgen-settings.js';
-import { copyText, escapeRegex, isFalseBoolean, setDatasetProperty } from './utils.js';
+import { copyText, escapeRegex, isFalseBoolean, setDatasetProperty, trimSpaces } from './utils.js';
 
 /**
  * Gets a message from a jQuery element.
@@ -129,7 +129,12 @@ export const ReasoningState = {
  * This class is used inside the {@link StreamingProcessor} to manage reasoning states and UI updates.
  */
 export class ReasoningHandler {
+    /** @type {boolean} True if the model supports reasoning, but hides the reasoning output */
     #isHiddenReasoningModel;
+    /** @type {boolean} True if the handler is currently handling a manual parse of reasoning blocks */
+    #isParsingReasoning = false;
+    /** @type {number?} When reasoning is being parsed manually, and the reasoning has ended, this will be the index at which the actual messages starts */
+    #parsingReasoningMesStartIndex = null;
 
     /**
      * @param {Date?} [timeStarted=null] - When the generation started
@@ -147,7 +152,6 @@ export class ReasoningHandler {
         /** @type {Date} Initial starting time of the generation */
         this.initialTime = timeStarted ?? new Date();
 
-        /** @type {boolean} True if the model supports reasoning, but hides the reasoning output */
         this.#isHiddenReasoningModel = isHiddenReasoningModel();
 
         // Cached DOM elements for reasoning
@@ -237,18 +241,19 @@ export class ReasoningHandler {
      * Updates the reasoning text/string for a message.
      *
      * @param {number} messageId - The ID of the message to update
-     * @param {string?} [reasoning=null] - The reasoning text to update - If null, uses the current reasoning
+     * @param {string?} [reasoning=null] - The reasoning text to update - If null or empty, uses the current reasoning
      * @param {Object} [options={}] - Optional arguments
      * @param {boolean} [options.persist=false] - Whether to persist the reasoning to the message object
+     * @param {boolean} [options.allowReset=false] - Whether to allow empty reasoning provided to reset the reasoning, instead of just taking the existing one
      * @returns {boolean} - Returns true if the reasoning was changed, otherwise false
      */
-    updateReasoning(messageId, reasoning = null, { persist = false } = {}) {
+    updateReasoning(messageId, reasoning = null, { persist = false, allowReset = false } = {}) {
         if (messageId == -1 || !chat[messageId]) {
             return false;
         }
 
-        reasoning = reasoning ?? this.reasoning;
-        reasoning = power_user.trim_spaces ? reasoning.trim() : reasoning;
+        reasoning = allowReset ? reasoning ?? this.reasoning : reasoning || this.reasoning;
+        reasoning = trimSpaces(reasoning);
 
         // Ensure the chat extra exists
         if (!chat[messageId].extra) {
@@ -279,7 +284,10 @@ export class ReasoningHandler {
      * @returns {Promise<void>}
      */
     async process(messageId, mesChanged) {
-        if (!this.reasoning && !this.#isHiddenReasoningModel) return;
+        mesChanged = this.#autoParseReasoningFromMessage(messageId, mesChanged);
+
+        if (!this.reasoning && !this.#isHiddenReasoningModel)
+            return;
 
         // Ensure reasoning string is updated and regexes are applied correctly
         const reasoningChanged = this.updateReasoning(messageId, null, { persist: true });
@@ -292,6 +300,53 @@ export class ReasoningHandler {
             this.endTime = new Date();
             await this.finish(messageId);
         }
+    }
+
+    #autoParseReasoningFromMessage(messageId, mesChanged) {
+        if (!power_user.reasoning.auto_parse)
+            return;
+        if (!power_user.reasoning.prefix || !power_user.reasoning.suffix)
+            return mesChanged;
+
+        /** @type {{ mes: string, [key: string]: any}} */
+        const message = chat[messageId];
+        if (!message) return mesChanged;
+
+        // If we are done with reasoning parse, we just split the message correctly so the reasoning doesn't show up inside of it.
+        if (this.#parsingReasoningMesStartIndex) {
+            message.mes = trimSpaces(message.mes.slice(this.#parsingReasoningMesStartIndex));
+            return mesChanged;
+        }
+
+        if (this.state === ReasoningState.None) {
+            // If streamed message starts with the opening, cut it out and put all inside reasoning
+            if (message.mes.startsWith(power_user.reasoning.prefix) && message.mes.length > power_user.reasoning.prefix.length) {
+                this.#isParsingReasoning = true;
+
+                // Manually set starting state here, as we might already have received the ending suffix
+                this.state = ReasoningState.Thinking;
+                this.startTime = this.initialTime;
+            }
+        }
+
+        if (!this.#isParsingReasoning)
+            return mesChanged;
+
+        // If we are in manual parsing mode, all currently streaming mes tokens will go the the reasoning block
+        const originalMes = message.mes;
+        this.reasoning = originalMes.slice(power_user.reasoning.prefix.length);
+        message.mes = '';
+
+        // If the reasoning contains the ending suffix, we cut that off and continue as message streaming
+        if (this.reasoning.includes(power_user.reasoning.suffix)) {
+            this.reasoning = this.reasoning.slice(0, this.reasoning.indexOf(power_user.reasoning.suffix));
+            this.#parsingReasoningMesStartIndex = originalMes.indexOf(power_user.reasoning.suffix) + power_user.reasoning.suffix.length;
+            message.mes = trimSpaces(originalMes.slice(this.#parsingReasoningMesStartIndex));
+            this.#isParsingReasoning = false;
+        }
+
+        // Only return the original mesChanged value if we haven't cut off the complete message
+        return message.mes.length ? mesChanged : false;
     }
 
     /**
@@ -338,7 +393,7 @@ export class ReasoningHandler {
         setDatasetProperty(this.messageReasoningDetailsDom, 'state', this.state);
 
         // Update the reasoning message
-        const reasoning = power_user.trim_spaces ? this.reasoning.trim() : this.reasoning;
+        const reasoning = trimSpaces(this.reasoning);
         const displayReasoning = messageFormatting(reasoning, '', false, false, messageId, {}, true);
         this.messageReasoningContentDom.innerHTML = displayReasoning;
 
@@ -838,9 +893,9 @@ function parseReasoningFromString(str) {
             return '';
         });
 
-        if (didReplace && power_user.trim_spaces) {
-            reasoning = reasoning.trim();
-            content = content.trim();
+        if (didReplace) {
+            reasoning = trimSpaces(reasoning);
+            content = trimSpaces(content);
         }
 
         return { reasoning, content };
