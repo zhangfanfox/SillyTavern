@@ -468,7 +468,6 @@ function toggleBannedStringsKillSwitch(isEnabled, title) {
     $('#send_banned_tokens_label').find('.menu_button').toggleClass('toggleEnabled', isEnabled).prop('title', title);
     settings.send_banned_tokens = isEnabled;
     saveSettingsDebounced();
-    return '';
 }
 
 /**
