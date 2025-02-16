@@ -3,7 +3,7 @@ import {
 } from '../lib.js';
 import { chat, closeMessageEditor, event_types, eventSource, main_api, messageFormatting, saveChatConditional, saveSettingsDebounced, substituteParams, updateMessageBlock } from '../script.js';
 import { getRegexedString, regex_placement } from './extensions/regex/engine.js';
-import { getCurrentLocale, t } from './i18n.js';
+import { getCurrentLocale, t, translate } from './i18n.js';
 import { MacrosParser } from './macros.js';
 import { chat_completion_sources, getChatCompletionModel, oai_settings } from './openai.js';
 import { Popup } from './popup.js';
@@ -14,6 +14,18 @@ import { commonEnumProviders } from './slash-commands/SlashCommandCommonEnumsPro
 import { SlashCommandParser } from './slash-commands/SlashCommandParser.js';
 import { textgen_types, textgenerationwebui_settings } from './textgen-settings.js';
 import { copyText, escapeRegex, isFalseBoolean, setDatasetProperty, trimSpaces } from './utils.js';
+
+/**
+ * Enum representing the type of the reasoning for a message (where it came from)
+ * @enum {string}
+ * @readonly
+ */
+export const ReasoningType = {
+    Model: 'model',
+    Parsed: 'parsed',
+    Manual: 'manual',
+    Edited: 'edited',
+};
 
 /**
  * Gets a message from a jQuery element.
@@ -142,6 +154,8 @@ export class ReasoningHandler {
     constructor(timeStarted = null) {
         /** @type {ReasoningState} The current state of the reasoning process */
         this.state = ReasoningState.None;
+        /** @type {ReasoningType?} The type of the reasoning (where it came from) */
+        this.type = null;
         /** @type {string} The reasoning output */
         this.reasoning = '';
         /** @type {Date} When the reasoning started */
@@ -198,6 +212,7 @@ export class ReasoningHandler {
             this.state = ReasoningState.Hidden;
         }
 
+        this.type = extra?.reasoning_type;
         this.reasoning = extra?.reasoning ?? '';
 
         if (this.state !== ReasoningState.None) {
@@ -212,6 +227,7 @@ export class ReasoningHandler {
         // Make sure reset correctly clears all relevant states
         if (reset) {
             this.state = this.#isHiddenReasoningModel ? ReasoningState.Thinking : ReasoningState.None;
+            this.type = null;
             this.reasoning = '';
             this.initialTime = new Date();
             this.startTime = null;
@@ -264,10 +280,13 @@ export class ReasoningHandler {
         const reasoningChanged = extra.reasoning !== reasoning;
         this.reasoning = getRegexedString(reasoning ?? '', regex_placement.REASONING);
 
+        this.type = (this.#isParsingReasoning || this.#parsingReasoningMesStartIndex) ? ReasoningType.Parsed : ReasoningType.Model;
+
         if (persist) {
             // Build and save the reasoning data to message extras
             extra.reasoning = this.reasoning;
             extra.reasoning_duration = this.getDuration();
+            extra.reasoning_type = (this.#isParsingReasoning || this.#parsingReasoningMesStartIndex) ? ReasoningType.Parsed : ReasoningType.Model;
         }
 
         return reasoningChanged;
@@ -391,6 +410,7 @@ export class ReasoningHandler {
         // Update states to the relevant DOM elements
         setDatasetProperty(this.messageDom, 'reasoningState', this.state !== ReasoningState.None ? this.state : null);
         setDatasetProperty(this.messageReasoningDetailsDom, 'state', this.state);
+        setDatasetProperty(this.messageReasoningDetailsDom, 'type', this.type);
 
         // Update the reasoning message
         const reasoning = trimSpaces(this.reasoning);
@@ -448,17 +468,14 @@ export class ReasoningHandler {
         const element = this.messageReasoningHeaderDom;
         const duration = this.getDuration();
         let data = null;
+        let title = '';
         if (duration) {
+            const seconds = moment.duration(duration).asSeconds();
+
             const durationStr = moment.duration(duration).locale(getCurrentLocale()).humanize({ s: 50, ss: 3 });
-            const secondsStr = moment.duration(duration).asSeconds();
-
-            const span = document.createElement('span');
-            span.title = t`${secondsStr} seconds`;
-            span.textContent = durationStr;
-
-            element.textContent = t`Thought for `;
-            element.appendChild(span);
-            data = String(secondsStr);
+            element.textContent = t`Thought for ${durationStr}`;
+            data = String(seconds);
+            title = `${seconds} seconds`;
         } else if ([ReasoningState.Done, ReasoningState.Hidden].includes(this.state)) {
             element.textContent = t`Thought for some time`;
             data = 'unknown';
@@ -466,6 +483,12 @@ export class ReasoningHandler {
             element.textContent = t`Thinking...`;
             data = null;
         }
+
+        if (this.type !== ReasoningType.Model) {
+            title += ` [${translate(this.type)}]`;
+            title = title.trim();
+        }
+        element.title = title;
 
         setDatasetProperty(this.messageReasoningDetailsDom, 'duration', data);
         setDatasetProperty(element, 'duration', data);
@@ -628,11 +651,13 @@ function registerReasoningSlashCommands() {
         callback: async (args, value) => {
             const messageId = !isNaN(Number(args.at)) ? Number(args.at) : chat.length - 1;
             const message = chat[messageId];
-            if (!message?.extra) {
-                return '';
+            // Make sure the message has an extra object
+            if (!message.extra || typeof message.extra !== 'object') {
+                message.extra = {};
             }
 
             message.extra.reasoning = String(value ?? '');
+            message.extra.reasoning_type = ReasoningType.Manual;
             await saveChatConditional();
 
             closeMessageEditor('reasoning');
@@ -775,6 +800,7 @@ function setReasoningEventHandlers() {
         const textarea = messageBlock.find('.reasoning_edit_textarea');
         const reasoning = getRegexedString(String(textarea.val()), regex_placement.REASONING, { isEdit: true });
         message.extra.reasoning = reasoning;
+        message.extra.reasoning_type = message.extra.reasoning_type ? ReasoningType.Edited : ReasoningType.Manual;
         await saveChatConditional();
         updateMessageBlock(messageId, message);
         textarea.remove();
@@ -835,6 +861,8 @@ function setReasoningEventHandlers() {
             return;
         }
         message.extra.reasoning = '';
+        delete message.extra.reasoning_type;
+        delete message.extra.reasoning_duration;
         await saveChatConditional();
         updateMessageBlock(messageId, message);
         const textarea = messageBlock.find('.reasoning_edit_textarea');
@@ -946,6 +974,7 @@ function registerReasoningAppEvents() {
         // If reasoning was found, add it to the message
         if (parsedReasoning.reasoning) {
             message.extra.reasoning = getRegexedString(parsedReasoning.reasoning, regex_placement.REASONING);
+            message.extra.reasoning_type = ReasoningType.Parsed;
         }
 
         // Update the message text if it was changed
