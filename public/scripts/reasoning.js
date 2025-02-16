@@ -924,6 +924,11 @@ function registerReasoningAppEvents() {
             return null;
         }
 
+        if (message.extra?.reasoning) {
+            console.debug('[Reasoning] Message already has reasoning', idx);
+            return null;
+        }
+
         const parsedReasoning = parseReasoningFromString(message.mes);
 
         // No reasoning block found
