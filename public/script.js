@@ -493,6 +493,7 @@ export const event_types = {
     // TODO: Naming convention is inconsistent with other events
     CHARACTER_DELETED: 'characterDeleted',
     CHARACTER_DUPLICATED: 'character_duplicated',
+    CHARACTER_RENAMED: 'character_renamed',
     /** @deprecated The event is aliased to STREAM_TOKEN_RECEIVED. */
     SMOOTH_STREAM_TOKEN_RECEIVED: 'stream_token_received',
     STREAM_TOKEN_RECEIVED: 'stream_token_received',
@@ -6241,8 +6242,28 @@ export async function renameCharacter(name = null, { silent = false, renameChats
             const data = await response.json();
             const newAvatar = data.avatar;
 
-            // Replace tags list
+            const oldName = getCharaFilename(null, { manualAvatarKey: oldAvatar });
+            const newName = getCharaFilename(null, { manualAvatarKey: newAvatar });
+
+            // Replace other auxillery fields where was referenced by avatar key
+            // Tag List
             renameTagKey(oldAvatar, newAvatar);
+
+            // Addtional lore books
+            const charLore = world_info.charLore?.find(x => x.name == oldName);
+            if (charLore) {
+                charLore.name = newName;
+                saveSettingsDebounced();
+            }
+
+            // Char-bound Author's Notes
+            const charNote = extension_settings.note.chara?.find(x => x.name == oldName);
+            if (charNote) {
+                charNote.name = newName;
+                saveSettingsDebounced();
+            }
+
+            eventSource.emit(event_types.CHARACTER_RENAMED, oldAvatar, newAvatar);
 
             // Reload characters list
             await getCharacters();
