@@ -10,7 +10,8 @@ import { Popup } from './popup.js';
 import { power_user } from './power-user.js';
 import { SlashCommand } from './slash-commands/SlashCommand.js';
 import { ARGUMENT_TYPE, SlashCommandArgument, SlashCommandNamedArgument } from './slash-commands/SlashCommandArgument.js';
-import { commonEnumProviders } from './slash-commands/SlashCommandCommonEnumsProvider.js';
+import { commonEnumProviders, enumIcons } from './slash-commands/SlashCommandCommonEnumsProvider.js';
+import { enumTypes, SlashCommandEnumValue } from './slash-commands/SlashCommandEnumValue.js';
 import { SlashCommandParser } from './slash-commands/SlashCommandParser.js';
 import { textgen_types, textgenerationwebui_settings } from './textgen-settings.js';
 import { copyText, escapeRegex, isFalseBoolean, setDatasetProperty } from './utils.js';
@@ -598,7 +599,26 @@ function registerReasoningSlashCommands() {
                 typeList: [ARGUMENT_TYPE.BOOLEAN],
                 defaultValue: 'true',
                 isRequired: false,
-                enumProvider: commonEnumProviders.boolean('trueFalse'),
+                enumList: commonEnumProviders.boolean('trueFalse')(),
+            }),
+            SlashCommandNamedArgument.fromProps({
+                name: 'return',
+                description: 'Whether to return the parsed reasoning or the content without reasoning',
+                typeList: [ARGUMENT_TYPE.STRING],
+                defaultValue: 'reasoning',
+                isRequired: false,
+                enumList: [
+                    new SlashCommandEnumValue('reasoning', null, enumTypes.enum, enumIcons.reasoning),
+                    new SlashCommandEnumValue('content', null, enumTypes.enum, enumIcons.message),
+                ],
+            }),
+            SlashCommandNamedArgument.fromProps({
+                name: 'strict',
+                description: 'Whether to require the reasoning block to be at the beginning of the string (excluding whitespaces).',
+                typeList: [ARGUMENT_TYPE.BOOLEAN],
+                defaultValue: 'true',
+                isRequired: false,
+                enumList: commonEnumProviders.boolean('trueFalse')(),
             }),
         ],
         unnamedArgumentList: [
@@ -608,19 +628,27 @@ function registerReasoningSlashCommands() {
             }),
         ],
         callback: (args, value) => {
-            if (!value) {
+            if (!value || typeof value !== 'string') {
                 return '';
             }
 
             if (!power_user.reasoning.prefix || !power_user.reasoning.suffix) {
-                toastr.warning(t`Both prefix and suffix must be set in the Reasoning Formatting settings.`);
-                return String(value);
+                toastr.warning(t`Both prefix and suffix must be set in the Reasoning Formatting settings.`, t`Reasoning Parse`);
+                return value;
+            }
+            if (typeof args.return !== 'string' || !['reasoning', 'content'].includes(args.return)) {
+                toastr.warning(t`Invalid return type '${args.return}', defaulting to 'reasoning'.`, t`Reasoning Parse`);
             }
 
-            const parsedReasoning = parseReasoningFromString(String(value));
+            const returnMessage = args.return === 'content';
 
+            const parsedReasoning = parseReasoningFromString(value, { strict: !isFalseBoolean(String(args.strict ?? '')) });
             if (!parsedReasoning) {
-                return '';
+                return returnMessage ? value : '';
+            }
+
+            if (returnMessage) {
+                return parsedReasoning.content;
             }
 
             const applyRegex = !isFalseBoolean(String(args.regex ?? ''));
@@ -819,16 +847,18 @@ export function removeReasoningFromString(str) {
  * @property {string} reasoning Reasoning block
  * @property {string} content Message content
  * @param {string} str Content of the message
+ * @param {Object} options Optional arguments
+ * @param {boolean} [options.strict=true] Whether the reasoning block **has** to be at the beginning of the provided string (excluding whitespaces), or can be anywhere in it
  * @returns {ParsedReasoning|null} Parsed reasoning block and message content
  */
-function parseReasoningFromString(str) {
+function parseReasoningFromString(str, { strict = true } = {}) {
     // Both prefix and suffix must be defined
     if (!power_user.reasoning.prefix || !power_user.reasoning.suffix) {
         return null;
     }
 
     try {
-        const regex = new RegExp(`${escapeRegex(power_user.reasoning.prefix)}(.*?)${escapeRegex(power_user.reasoning.suffix)}`, 's');
+        const regex = new RegExp(`${(strict ? '^\\s*?' : '')}${escapeRegex(power_user.reasoning.prefix)}(.*?)${escapeRegex(power_user.reasoning.suffix)}`, 's');
 
         let didReplace = false;
         let reasoning = '';
