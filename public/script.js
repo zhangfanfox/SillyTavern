@@ -6279,7 +6279,7 @@ export async function renameCharacter(name = null, { silent = false, renameChats
                 saveSettingsDebounced();
             }
 
-            eventSource.emit(event_types.CHARACTER_RENAMED, oldAvatar, newAvatar);
+            await eventSource.emit(event_types.CHARACTER_RENAMED, oldAvatar, newAvatar);
 
             // Reload characters list
             await getCharacters();
