@@ -7607,7 +7607,7 @@ export function select_selected_character(chid) {
     // Hide the chat scenario button if we're peeking the group member defs
     $('#set_chat_scenario').toggle(!selected_group);
 
-    // Don't update the navbar name if we're peekinFg the group member defs
+    // Don't update the navbar name if we're peeking the group member defs
     if (!selected_group) {
         $('#rm_button_selected_ch').children('h2').text(display_name);
     }
