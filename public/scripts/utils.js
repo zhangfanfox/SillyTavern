@@ -8,7 +8,7 @@ import {
 import { getContext } from './extensions.js';
 import { characters, getRequestHeaders, this_chid } from '../script.js';
 import { isMobile } from './RossAscends-mods.js';
-import { collapseNewlines } from './power-user.js';
+import { collapseNewlines, power_user } from './power-user.js';
 import { debounce_timeout } from './constants.js';
 import { Popup, POPUP_RESULT, POPUP_TYPE } from './popup.js';
 import { SlashCommandClosure } from './slash-commands/SlashCommandClosure.js';
@@ -674,6 +674,19 @@ export function sortByCssOrder(a, b) {
     const _a = Number($(a).css('order'));
     const _b = Number($(b).css('order'));
     return _a - _b;
+}
+
+/**
+ * Trims leading and trailing whitespace from the input string based on a configuration setting.
+ * @param {string} input - The string to be trimmed
+ * @returns {string} The trimmed string if trimming is enabled; otherwise, returns the original string
+ */
+
+export function trimSpaces(input) {
+    if (!input || typeof input !== 'string') {
+        return input;
+    }
+    return power_user.trim_spaces ? input.trim() : input;
 }
 
 /**

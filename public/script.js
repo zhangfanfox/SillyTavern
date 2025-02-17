@@ -366,6 +366,10 @@ DOMPurify.addHook('uponSanitizeElement', (node, _, config) => {
         return;
     }
 
+    if (!(node instanceof Element)) {
+        return;
+    }
+
     let mediaBlocked = false;
 
     switch (node.tagName) {
@@ -3234,6 +3238,7 @@ class StreamingProcessor {
 
             // Update reasoning
             await this.reasoningHandler.process(messageId, mesChanged);
+            processedText = chat[messageId]['mes'];
 
             // Token count update.
             const tokenCountText = this.reasoningHandler.reasoning + processedText;
@@ -3384,7 +3389,7 @@ class StreamingProcessor {
                     this.messageLogprobs.push(...(Array.isArray(logprobs) ? logprobs : [logprobs]));
                 }
                 // Get the updated reasoning string into the handler
-                this.reasoningHandler.updateReasoning(this.messageId, state?.reasoning ?? '');
+                this.reasoningHandler.updateReasoning(this.messageId, state?.reasoning);
                 await eventSource.emit(event_types.STREAM_TOKEN_RECEIVED, text);
                 await sw.tick(async () => await this.onProgressStreaming(this.messageId, this.continueMessage + text));
             }
@@ -10984,7 +10989,7 @@ jQuery(async function () {
     });
 
     $(document).on('click', '.mes_edit_copy', async function () {
-        const confirmation = await callGenericPopup('Create a copy of this message?', POPUP_TYPE.CONFIRM);
+        const confirmation = await callGenericPopup(t`Create a copy of this message?`, POPUP_TYPE.CONFIRM);
         if (!confirmation) {
             return;
         }
