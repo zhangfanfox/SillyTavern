@@ -1028,12 +1028,22 @@ export function setAnimationDuration(ms = null) {
     document.documentElement.style.setProperty('--animation-duration', `${animation_duration}ms`);
 }
 
+/**
+ * Sets the currently active character
+ * @param {object|number|string} [entityOrKey] - An entity with id property (character, group, tag), or directly an id or tag key. If not provided, the active character is reset to `null`.
+ */
 export function setActiveCharacter(entityOrKey) {
-    active_character = getTagKeyForEntity(entityOrKey);
+    active_character = entityOrKey ? getTagKeyForEntity(entityOrKey) : null;
+    if (active_character) active_group = null;
 }
 
+/**
+ * Sets the currently active group.
+ * @param {object|number|string} [entityOrKey] - An entity with id property (character, group, tag), or directly an id or tag key. If not provided, the active group is reset to `null`.
+ */
 export function setActiveGroup(entityOrKey) {
-    active_group = getTagKeyForEntity(entityOrKey);
+    active_group = entityOrKey ? getTagKeyForEntity(entityOrKey) : null;
+    if (active_group) active_character = null;
 }
 
 /**
@@ -7597,7 +7607,7 @@ export function select_selected_character(chid) {
     // Hide the chat scenario button if we're peeking the group member defs
     $('#set_chat_scenario').toggle(!selected_group);
 
-    // Don't update the navbar name if we're peeking the group member defs
+    // Don't update the navbar name if we're peekinFg the group member defs
     if (!selected_group) {
         $('#rm_button_selected_ch').children('h2').text(display_name);
     }

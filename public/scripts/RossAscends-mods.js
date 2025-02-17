@@ -287,10 +287,21 @@ async function RA_autoloadchat() {
                 const selectedCharElement = $(`#rm_print_characters_block .character_select[chid="${active_character_id}"]`);
                 applyTagsOnCharacterSelect.call(selectedCharElement);
             }
+            if (!active_character_id) {
+                setActiveCharacter(null);
+                saveSettingsDebounced();
+                console.warn(`Currently active character with ID ${active_character} not found. Resetting to no active character.`);
+            }
         }
 
         if (active_group !== null && active_group !== undefined) {
-            await openGroupById(String(active_group));
+            if (active_character) {
+                console.warn('Active character and active group are both set. Only active character will be loaded. Resetting active group.');
+                setActiveGroup(null);
+                saveSettingsDebounced();
+            } else {
+                const result = await openGroupById(String(active_group));
+            }
         }
 
         // if the character list hadn't been loaded yet, try again.
