@@ -652,6 +652,9 @@ function registerReasoningSlashCommands() {
         callback: async (args, value) => {
             const messageId = !isNaN(Number(args.at)) ? Number(args.at) : chat.length - 1;
             const message = chat[messageId];
+            if (!message) {
+                return '';
+            }
             // Make sure the message has an extra object
             if (!message.extra || typeof message.extra !== 'object') {
                 message.extra = {};
