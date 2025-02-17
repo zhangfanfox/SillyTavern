@@ -6263,6 +6263,12 @@ export async function renameCharacter(name = null, { silent = false, renameChats
                 saveSettingsDebounced();
             }
 
+            // Update active character, if the current one was the currently active one
+            if (active_character === oldAvatar) {
+                active_character = newAvatar;
+                saveSettingsDebounced();
+            }
+
             eventSource.emit(event_types.CHARACTER_RENAMED, oldAvatar, newAvatar);
 
             // Reload characters list
