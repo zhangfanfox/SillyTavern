@@ -301,6 +301,11 @@ async function RA_autoloadchat() {
                 saveSettingsDebounced();
             } else {
                 const result = await openGroupById(String(active_group));
+                if (!result) {
+                    setActiveGroup(null);
+                    saveSettingsDebounced();
+                    console.warn(`Currently active group with ID ${active_group} not found. Resetting to no active group.`);
+                }
             }
         }
 
