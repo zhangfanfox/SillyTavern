@@ -24,10 +24,11 @@ export default function getWebpackServeMiddleware() {
 
     /**
      * Wait until Webpack is done compiling.
-     * @param {boolean} [forceDist=false] Whether to force the use the /dist folder.
+     * @param {object} param Parameters.
+     * @param {boolean} [param.forceDist] Whether to force the use the /dist folder.
      * @returns {Promise<void>}
      */
-    devMiddleware.runWebpackCompiler = (forceDist = false) => {
+    devMiddleware.runWebpackCompiler = ({ forceDist = false } = {}) => {
         const publicLibConfig = getPublicLibConfig(forceDist);
         const compiler = webpack(publicLibConfig);
 
