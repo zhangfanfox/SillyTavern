@@ -128,7 +128,7 @@ router.get('/get', jsonParser, function (request, response) {
 
                     const fileName = path.parse(pathToSprite).name.toLowerCase();
                     // Extract the label from the filename via regex, which can be suffixed with a sub-name, either connected with a dash or a dot.
-                    // Examples: joy.png, joy-1.png, joy.expressive.png, 美しい-17.png
+                    // Examples: joy.png, joy-1.png, joy.expressive.png
                     const label = fileName.match(/^(.+?)(?:[-\\.].*?)?$/)?.[1] ?? fileName;
 
                     return {
