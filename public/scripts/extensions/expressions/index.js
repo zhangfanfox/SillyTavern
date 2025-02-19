@@ -929,8 +929,8 @@ export async function getExpressionLabel(text, expressionsApi = extension_settin
         return extension_settings.expressions.fallback_expression;
     }
 
-    if (extension_settings.expressions.translate && typeof window['translate'] === 'function') {
-        text = await window['translate'](text, 'en');
+    if (extension_settings.expressions.translate && typeof globalThis.translate === 'function') {
+        text = await globalThis.translate(text, 'en');
     }
 
     text = sampleClassifyText(text);
