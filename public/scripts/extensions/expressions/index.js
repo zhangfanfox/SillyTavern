@@ -1880,7 +1880,9 @@ async function onClickExpressionUploadPackButton() {
         formData.append('name', name);
         formData.append('avatar', file);
 
+        const uploadToast = toastr.info('Please wait...', 'Upload is processing', { timeOut: 0, extendedTimeOut: 0 });
         const { count } = await handleFileUpload('/api/sprites/upload-zip', formData);
+        toastr.clear(uploadToast);
         toastr.success(`Uploaded ${count} image(s) for ${name}`);
 
         // Reset the input
