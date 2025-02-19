@@ -727,6 +727,21 @@ function spriteFolderNameFromCharacter(char) {
 }
 
 /**
+ * Generates a unique sprite name by appending an index to the given expression. *
+ * @param {string} expression - The base expression to be used as the prefix for the sprite name.
+ * @param {ExpressionImage[]} existingFiles - An array of existing file objects, each containing a fileName property.
+ * @returns {string} - A unique sprite name with the format "expression-index".
+ */
+function generateUniqueSpriteName(expression, existingFiles) {
+    let index = existingFiles.length;
+    let newSpriteName;
+    do {
+        newSpriteName = `${expression}-${index++}`;
+    } while (existingFiles.some(file => withoutExtension(file.fileName) === newSpriteName));
+    return newSpriteName;
+}
+
+/**
  * Slash command callback for /uploadsprite
  *
  * label= is required
@@ -1725,9 +1740,10 @@ async function onClickExpressionUpload(event) {
 
                 const message = await renderExtensionTemplateAsync(MODULE_NAME, 'templates/upload-expression', { expression, clickedFileName });
 
-                spriteName = null;
+                spriteName = generateUniqueSpriteName(expression, existingFiles);
+
                 const input = await Popup.show.input(t`Upload Expression Sprite`, message,
-                    `${expression}-${existingFiles.length}`, { customButtons: customButtons });
+                    spriteName, { customButtons: customButtons });
 
                 if (input) {
                     if (!validateExpressionSpriteName(expression, input)) {
@@ -1735,6 +1751,8 @@ async function onClickExpressionUpload(event) {
                         return;
                     }
                     spriteName = input;
+                } else {
+                    spriteName = null;
                 }
             }
         } else {
