@@ -68,11 +68,14 @@ import { tag_map, tags } from './tags.js';
 import { textgenerationwebui_settings } from './textgen-settings.js';
 import { tokenizers, getTextTokens, getTokenCount, getTokenCountAsync, getTokenizerModel } from './tokenizers.js';
 import { ToolManager } from './tool-calling.js';
+import { accountStorage } from './util/AccountStorage.js';
 import { timestampToMoment, uuidv4 } from './utils.js';
 import { getGlobalVariable, getLocalVariable, setGlobalVariable, setLocalVariable } from './variables.js';
+import { convertCharacterBook, loadWorldInfo, saveWorldInfo, updateWorldInfoList } from './world-info.js';
 
 export function getContext() {
     return {
+        accountStorage,
         chat,
         characters,
         groups,
@@ -186,6 +189,10 @@ export function getContext() {
                 set: setGlobalVariable,
             },
         },
+        loadWorldInfo,
+        saveWorldInfo,
+        updateWorldInfoList,
+        convertCharacterBook,
     };
 }
 

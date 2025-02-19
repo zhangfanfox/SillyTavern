@@ -45,6 +45,7 @@ import { DragAndDropHandler } from './dragdrop.js';
 import { renderTemplateAsync } from './templates.js';
 import { t } from './i18n.js';
 import { humanizedDateTime } from './RossAscends-mods.js';
+import { accountStorage } from './util/AccountStorage.js';
 
 /**
  * @typedef {Object} FileAttachment
@@ -621,21 +622,56 @@ async function enlargeMessageImage() {
 }
 
 async function deleteMessageImage() {
-    const value = await callGenericPopup('<h3>Delete image from message?<br>This action can\'t be undone.</h3>', POPUP_TYPE.CONFIRM);
+    const value = await callGenericPopup('<h3>Delete image from message?<br>This action can\'t be undone.</h3>', POPUP_TYPE.TEXT, '', {
+        okButton: t`Delete one`,
+        customButtons: [
+            {
+                text: t`Delete all`,
+                appendAtEnd: true,
+                result: POPUP_RESULT.CUSTOM1,
+            },
+            {
+                text: t`Cancel`,
+                appendAtEnd: true,
+                result: POPUP_RESULT.CANCELLED,
+            },
+        ],
+    });
 
-    if (value !== POPUP_RESULT.AFFIRMATIVE) {
+    if (!value) {
         return;
     }
 
     const mesBlock = $(this).closest('.mes');
     const mesId = mesBlock.attr('mesid');
     const message = chat[mesId];
-    delete message.extra.image;
-    delete message.extra.inline_image;
-    delete message.extra.title;
-    delete message.extra.append_title;
-    mesBlock.find('.mes_img_container').removeClass('img_extra');
-    mesBlock.find('.mes_img').attr('src', '');
+
+    let isLastImage = true;
+
+    if (Array.isArray(message.extra.image_swipes)) {
+        const indexOf = message.extra.image_swipes.indexOf(message.extra.image);
+        if (indexOf > -1) {
+            message.extra.image_swipes.splice(indexOf, 1);
+            isLastImage = message.extra.image_swipes.length === 0;
+            if (!isLastImage) {
+                const newIndex = Math.min(indexOf, message.extra.image_swipes.length - 1);
+                message.extra.image = message.extra.image_swipes[newIndex];
+            }
+        }
+    }
+
+    if (isLastImage || value === POPUP_RESULT.CUSTOM1) {
+        delete message.extra.image;
+        delete message.extra.inline_image;
+        delete message.extra.title;
+        delete message.extra.append_title;
+        delete message.extra.image_swipes;
+        mesBlock.find('.mes_img_container').removeClass('img_extra');
+        mesBlock.find('.mes_img').attr('src', '');
+    } else {
+        appendMediaToMessage(message, mesBlock);
+    }
+
     await saveChatConditional();
 }
 
@@ -1043,8 +1079,8 @@ async function openAttachmentManager() {
         renderAttachments();
     });
 
-    let sortField = localStorage.getItem('DataBank_sortField') || 'created';
-    let sortOrder = localStorage.getItem('DataBank_sortOrder') || 'desc';
+    let sortField = accountStorage.getItem('DataBank_sortField') || 'created';
+    let sortOrder = accountStorage.getItem('DataBank_sortOrder') || 'desc';
     let filterString = '';
 
     const template = $(await renderExtensionTemplateAsync('attachments', 'manager', {}));
@@ -1060,8 +1096,8 @@ async function openAttachmentManager() {
 
         sortField = this.selectedOptions[0].dataset.sortField;
         sortOrder = this.selectedOptions[0].dataset.sortOrder;
-        localStorage.setItem('DataBank_sortField', sortField);
-        localStorage.setItem('DataBank_sortOrder', sortOrder);
+        accountStorage.setItem('DataBank_sortField', sortField);
+        accountStorage.setItem('DataBank_sortOrder', sortOrder);
         renderAttachments();
     });
     function handleBulkAction(action) {

@@ -54,6 +54,7 @@ import { commonEnumProviders, enumIcons } from './slash-commands/SlashCommandCom
 import { POPUP_TYPE, callGenericPopup } from './popup.js';
 import { loadSystemPrompts } from './sysprompt.js';
 import { fuzzySearchCategories } from './filters.js';
+import { accountStorage } from './util/AccountStorage.js';
 
 export {
     loadPowerUserSettings,
@@ -256,6 +257,8 @@ let power_user = {
     reasoning: {
         auto_parse: false,
         add_to_prompts: false,
+        auto_expand: false,
+        show_hidden: false,
         prefix: '<think>\n',
         suffix: '\n</think>',
         separator: '\n\n',
@@ -2019,7 +2022,7 @@ export function renderStoryString(params) {
  */
 function validateStoryString(storyString, params) {
     /** @type {{hashCache: {[hash: string]: {fieldsWarned: {[key: string]: boolean}}}}} */
-    const cache = JSON.parse(localStorage.getItem(storage_keys.storyStringValidationCache)) ?? { hashCache: {} };
+    const cache = JSON.parse(accountStorage.getItem(storage_keys.storyStringValidationCache)) ?? { hashCache: {} };
 
     const hash = getStringHash(storyString);
 
@@ -2056,7 +2059,7 @@ function validateStoryString(storyString, params) {
         toastr.warning(`The story string does not contain the following fields, but they would contain content: ${fieldsList}`, 'Story String Validation');
     }
 
-    localStorage.setItem(storage_keys.storyStringValidationCache, JSON.stringify(cache));
+    accountStorage.setItem(storage_keys.storyStringValidationCache, JSON.stringify(cache));
 }
 
 
@@ -2451,7 +2454,7 @@ async function resetMovablePanels(type) {
     }
 
     saveSettingsDebounced();
-    eventSource.emit(event_types.MOVABLE_PANELS_RESET);
+    await eventSource.emit(event_types.MOVABLE_PANELS_RESET);
 
     eventSource.once(event_types.SETTINGS_UPDATED, () => {
         $('.resizing').removeClass('resizing');

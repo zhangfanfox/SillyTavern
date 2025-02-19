@@ -73,6 +73,7 @@ import { SlashCommandEnumValue } from './slash-commands/SlashCommandEnumValue.js
 import { Popup, POPUP_RESULT } from './popup.js';
 import { t } from './i18n.js';
 import { ToolManager } from './tool-calling.js';
+import { accountStorage } from './util/AccountStorage.js';
 
 export {
     openai_messages_count,
@@ -82,7 +83,6 @@ export {
     setOpenAIMessageExamples,
     setupChatCompletionPromptManager,
     sendOpenAIRequest,
-    getChatCompletionModel,
     TokenHandler,
     IdentifierNotFoundError,
     Message,
@@ -259,7 +259,7 @@ const default_settings = {
     mistralai_model: 'mistral-large-latest',
     cohere_model: 'command-r-plus',
     perplexity_model: 'sonar-pro',
-    groq_model: 'llama-3.1-70b-versatile',
+    groq_model: 'llama-3.3-70b-versatile',
     nanogpt_model: 'gpt-4o-mini',
     zerooneai_model: 'yi-large',
     blockentropy_model: 'be-70b-base-llama3.1',
@@ -299,6 +299,7 @@ const default_settings = {
     continue_postfix: continue_postfix_types.SPACE,
     custom_prompt_post_processing: custom_prompt_post_processing_types.NONE,
     show_thoughts: true,
+    reasoning_effort: 'medium',
     seed: -1,
     n: 1,
 };
@@ -378,6 +379,7 @@ const oai_settings = {
     continue_postfix: continue_postfix_types.SPACE,
     custom_prompt_post_processing: custom_prompt_post_processing_types.NONE,
     show_thoughts: true,
+    reasoning_effort: 'medium',
     seed: -1,
     n: 1,
 };
@@ -412,7 +414,7 @@ async function validateReverseProxy() {
         throw err;
     }
     const rememberKey = `Proxy_SkipConfirm_${getStringHash(oai_settings.reverse_proxy)}`;
-    const skipConfirm = localStorage.getItem(rememberKey) === 'true';
+    const skipConfirm = accountStorage.getItem(rememberKey) === 'true';
 
     const confirmation = skipConfirm || await Popup.show.confirm(t`Connecting To Proxy`, await renderTemplateAsync('proxyConnectionWarning', { proxyURL: DOMPurify.sanitize(oai_settings.reverse_proxy) }));
 
@@ -423,7 +425,7 @@ async function validateReverseProxy() {
         throw new Error('Proxy connection denied.');
     }
 
-    localStorage.setItem(rememberKey, String(true));
+    accountStorage.setItem(rememberKey, String(true));
 }
 
 /**
@@ -1443,9 +1445,7 @@ async function sendWindowAIRequest(messages, signal, stream) {
     }
 
     const onStreamResult = (res, err) => {
-        if (err) {
-            return;
-        }
+        if (err) return;
 
         const thisContent = res?.message?.content;
 
@@ -1497,7 +1497,7 @@ async function sendWindowAIRequest(messages, signal, stream) {
     }
 }
 
-function getChatCompletionModel() {
+export function getChatCompletionModel() {
     switch (oai_settings.chat_completion_source) {
         case chat_completion_sources.CLAUDE:
             return oai_settings.claude_model;
@@ -1869,7 +1869,7 @@ async function sendOpenAIRequest(type, messages, signal) {
     const isQuiet = type === 'quiet';
     const isImpersonate = type === 'impersonate';
     const isContinue = type === 'continue';
-    const stream = oai_settings.stream_openai && !isQuiet && !isScale && !(isGoogle && oai_settings.google_model.includes('bison')) && !(isOAI && (oai_settings.openai_model.startsWith('o1') || oai_settings.openai_model.startsWith('o3')));
+    const stream = oai_settings.stream_openai && !isQuiet && !isScale && !(isOAI && ['o1-2024-12-17', 'o1'].includes(oai_settings.openai_model));
     const useLogprobs = !!power_user.request_token_probabilities;
     const canMultiSwipe = oai_settings.n > 1 && !isContinue && !isImpersonate && !isQuiet && (isOAI || isCustom);
 
@@ -1914,7 +1914,12 @@ async function sendOpenAIRequest(type, messages, signal) {
         'char_name': name2,
         'group_names': getGroupNames(),
         'include_reasoning': Boolean(oai_settings.show_thoughts),
+        'reasoning_effort': String(oai_settings.reasoning_effort),
     };
+
+    if (!canMultiSwipe && ToolManager.canPerformToolCalls(type)) {
+        await ToolManager.registerFunctionToolsOpenAI(generate_data);
+    }
 
     // Empty array will produce a validation error
     if (!Array.isArray(generate_data.stop) || !generate_data.stop.length) {
@@ -2039,15 +2044,13 @@ async function sendOpenAIRequest(type, messages, signal) {
             delete generate_data.top_logprobs;
             delete generate_data.logprobs;
             delete generate_data.logit_bias;
+            delete generate_data.tools;
+            delete generate_data.tool_choice;
         }
     }
 
     if ((isOAI || isOpenRouter || isMistral || isCustom || isCohere || isNano) && oai_settings.seed >= 0) {
         generate_data['seed'] = oai_settings.seed;
-    }
-
-    if (!canMultiSwipe && ToolManager.canPerformToolCalls(type)) {
-        await ToolManager.registerFunctionToolsOpenAI(generate_data);
     }
 
     if (isOAI && (oai_settings.openai_model.startsWith('o1') || oai_settings.openai_model.startsWith('o3'))) {
@@ -2058,7 +2061,6 @@ async function sendOpenAIRequest(type, messages, signal) {
         });
         generate_data.max_completion_tokens = generate_data.max_tokens;
         delete generate_data.max_tokens;
-        delete generate_data.stream;
         delete generate_data.logprobs;
         delete generate_data.top_logprobs;
         delete generate_data.n;
@@ -2069,8 +2071,7 @@ async function sendOpenAIRequest(type, messages, signal) {
         delete generate_data.tools;
         delete generate_data.tool_choice;
         delete generate_data.stop;
-        // It does support logit_bias, but the tokenizer used and its effect is yet unknown.
-        // delete generate_data.logit_bias;
+        delete generate_data.logit_bias;
     }
 
     await eventSource.emit(event_types.CHAT_COMPLETION_SETTINGS_READY, generate_data);
@@ -3124,6 +3125,7 @@ function loadOpenAISettings(data, settings) {
     oai_settings.inline_image_quality = settings.inline_image_quality ?? default_settings.inline_image_quality;
     oai_settings.bypass_status_check = settings.bypass_status_check ?? default_settings.bypass_status_check;
     oai_settings.show_thoughts = settings.show_thoughts ?? default_settings.show_thoughts;
+    oai_settings.reasoning_effort = settings.reasoning_effort ?? default_settings.reasoning_effort;
     oai_settings.seed = settings.seed ?? default_settings.seed;
     oai_settings.n = settings.n ?? default_settings.n;
 
@@ -3252,6 +3254,9 @@ function loadOpenAISettings(data, settings) {
     $('#seed_openai').val(oai_settings.seed);
     $('#n_openai').val(oai_settings.n);
     $('#openai_show_thoughts').prop('checked', oai_settings.show_thoughts);
+
+    $('#openai_reasoning_effort').val(oai_settings.reasoning_effort);
+    $(`#openai_reasoning_effort option[value="${oai_settings.reasoning_effort}"]`).prop('selected', true);
 
     if (settings.reverse_proxy !== undefined) oai_settings.reverse_proxy = settings.reverse_proxy;
     $('#openai_reverse_proxy').val(oai_settings.reverse_proxy);
@@ -3513,6 +3518,7 @@ async function saveOpenAIPreset(name, settings, triggerUi = true) {
         continue_postfix: settings.continue_postfix,
         function_calling: settings.function_calling,
         show_thoughts: settings.show_thoughts,
+        reasoning_effort: settings.reasoning_effort,
         seed: settings.seed,
         n: settings.n,
     };
@@ -3971,6 +3977,7 @@ function onSettingsPresetChange() {
         continue_postfix: ['#continue_postfix', 'continue_postfix', false],
         function_calling: ['#openai_function_calling', 'function_calling', true],
         show_thoughts: ['#openai_show_thoughts', 'show_thoughts', true],
+        reasoning_effort: ['#openai_reasoning_effort', 'reasoning_effort', false],
         seed: ['#seed_openai', 'seed', false],
         n: ['#n_openai', 'n', false],
     };
@@ -4232,9 +4239,9 @@ async function onModelChange() {
             $('#openai_max_context').attr('max', max_2mil);
         } else if (value.includes('gemini-exp-1114') || value.includes('gemini-exp-1121') || value.includes('gemini-2.0-flash-thinking-exp-1219')) {
             $('#openai_max_context').attr('max', max_32k);
-        } else if (value.includes('gemini-1.5-pro') || value.includes('gemini-exp-1206')) {
+        } else if (value.includes('gemini-1.5-pro') || value.includes('gemini-exp-1206') || value.includes('gemini-2.0-pro')) {
             $('#openai_max_context').attr('max', max_2mil);
-        } else if (value.includes('gemini-1.5-flash') || value.includes('gemini-2.0-flash-exp') || value.includes('gemini-2.0-flash-thinking-exp')) {
+        } else if (value.includes('gemini-1.5-flash') || value.includes('gemini-2.0-flash')) {
             $('#openai_max_context').attr('max', max_1mil);
         } else if (value.includes('gemini-1.0-pro') || value === 'gemini-pro') {
             $('#openai_max_context').attr('max', max_32k);
@@ -4403,24 +4410,30 @@ async function onModelChange() {
     if (oai_settings.chat_completion_source == chat_completion_sources.GROQ) {
         if (oai_settings.max_context_unlocked) {
             $('#openai_max_context').attr('max', unlocked_max);
-        }
-        else if (oai_settings.groq_model.includes('llama-3.2') && oai_settings.groq_model.includes('-preview')) {
+        } else if (oai_settings.groq_model.includes('gemma2-9b-it')) {
             $('#openai_max_context').attr('max', max_8k);
-        }
-        else if (oai_settings.groq_model.includes('llama-3.3') || oai_settings.groq_model.includes('llama-3.2') || oai_settings.groq_model.includes('llama-3.1')) {
+        } else if (oai_settings.groq_model.includes('llama-3.3-70b-versatile')) {
             $('#openai_max_context').attr('max', max_128k);
-        }
-        else if (oai_settings.groq_model.includes('llama3-groq')) {
+        } else if (oai_settings.groq_model.includes('llama-3.1-8b-instant')) {
+            $('#openai_max_context').attr('max', max_128k);
+        } else if (oai_settings.groq_model.includes('llama3-70b-8192')) {
             $('#openai_max_context').attr('max', max_8k);
-        }
-        else if (['llama3-8b-8192', 'llama3-70b-8192', 'gemma-7b-it', 'gemma2-9b-it'].includes(oai_settings.groq_model)) {
+        } else if (oai_settings.groq_model.includes('llama3-8b-8192')) {
             $('#openai_max_context').attr('max', max_8k);
-        }
-        else if (['mixtral-8x7b-32768'].includes(oai_settings.groq_model)) {
+        } else if (oai_settings.groq_model.includes('mixtral-8x7b-32768')) {
             $('#openai_max_context').attr('max', max_32k);
-        }
-        else {
-            $('#openai_max_context').attr('max', max_4k);
+        } else if (oai_settings.groq_model.includes('deepseek-r1-distill-llama-70b')) {
+            $('#openai_max_context').attr('max', max_128k);
+        } else if (oai_settings.groq_model.includes('llama-3.3-70b-specdec')) {
+            $('#openai_max_context').attr('max', max_8k);
+        } else if (oai_settings.groq_model.includes('llama-3.2-1b-preview')) {
+            $('#openai_max_context').attr('max', max_128k);
+        } else if (oai_settings.groq_model.includes('llama-3.2-3b-preview')) {
+            $('#openai_max_context').attr('max', max_128k);
+        } else if (oai_settings.groq_model.includes('llama-3.2-11b-vision-preview')) {
+            $('#openai_max_context').attr('max', max_128k);
+        } else if (oai_settings.groq_model.includes('llama-3.2-90b-vision-preview')) {
+            $('#openai_max_context').attr('max', max_128k);
         }
         oai_settings.openai_max_context = Math.min(Number($('#openai_max_context').attr('max')), oai_settings.openai_max_context);
         $('#openai_max_context').val(oai_settings.openai_max_context).trigger('input');
@@ -4921,6 +4934,12 @@ export function isImageInliningSupported() {
     // gultra just isn't being offered as multimodal, thanks google.
     const visionSupportedModels = [
         'gpt-4-vision',
+        'gemini-2.0-pro-exp',
+        'gemini-2.0-pro-exp-02-05',
+        'gemini-2.0-flash-lite-preview',
+        'gemini-2.0-flash-lite-preview-02-05',
+        'gemini-2.0-flash',
+        'gemini-2.0-flash-001',
         'gemini-2.0-flash-thinking-exp-1219',
         'gemini-2.0-flash-thinking-exp-01-21',
         'gemini-2.0-flash-thinking-exp',
@@ -4948,6 +4967,8 @@ export function isImageInliningSupported() {
         'gpt-4-turbo',
         'gpt-4o',
         'gpt-4o-mini',
+        'o1',
+        'o1-2024-12-17',
         'chatgpt-4o-latest',
         'yi-vision',
         'pixtral-latest',
@@ -5503,6 +5524,11 @@ export function initOpenAI() {
 
     $('#openai_show_thoughts').on('input', function () {
         oai_settings.show_thoughts = !!$(this).prop('checked');
+        saveSettingsDebounced();
+    });
+
+    $('#openai_reasoning_effort').on('input', function () {
+        oai_settings.reasoning_effort = String($(this).val());
         saveSettingsDebounced();
     });
 

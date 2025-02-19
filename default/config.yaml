@@ -6,7 +6,13 @@ cardsCacheCapacity: 100
 # -- SERVER CONFIGURATION --
 # Listen for incoming connections
 listen: false
+# Listen on a specific address, supports IPv4 and IPv6
+listenAddress:
+  ipv4: 0.0.0.0
+  ipv6: '[::]'
 # Enables IPv6 and/or IPv4 protocols. Need to have at least one enabled!
+# - Use option "auto" to automatically detect support
+# - Use true or false (no qoutes) to enable or disable each protocol
 protocol:
     ipv4: true
     ipv6: false
@@ -65,6 +71,8 @@ autheliaAuth: false
 # the username and passwords for basic auth are the same as those
 # for the individual accounts
 perUserBasicAuth: false
+# Minimum log level to display in the terminal (DEBUG = 0, INFO = 1, WARN = 2, ERROR = 3)
+minLogLevel: 0
 
 # User session timeout *in seconds* (defaults to 24 hours).
 ## Set to a positive number to expire session after a certain time of inactivity
@@ -179,6 +187,10 @@ ollama:
   # * 0: Unload the model immediately after the request
   # * N (any positive number): Keep the model loaded for N seconds after the request.
   keepAlive: -1
+  # Controls the "num_batch" (batch size) parameter of the generation request
+  # * -1: Use the default value of the model
+  # * N (positive number): Use the specified value. Must be a power of 2, e.g. 128, 256, 512, etc.
+  batchSize: -1
 # -- ANTHROPIC CLAUDE API CONFIGURATION --
 claude:
   # Enables caching of the system prompt (if supported).
@@ -198,3 +210,5 @@ claude:
   cachingAtDepth: -1
 # -- SERVER PLUGIN CONFIGURATION --
 enableServerPlugins: false
+# Attempt to automatically update server plugins on startup
+enableServerPluginsAutoUpdate: true

@@ -75,6 +75,7 @@ import { commonEnumProviders, enumIcons } from './slash-commands/SlashCommandCom
 import { SlashCommandBreakController } from './slash-commands/SlashCommandBreakController.js';
 import { SlashCommandExecutionError } from './slash-commands/SlashCommandExecutionError.js';
 import { slashCommandReturnHelper } from './slash-commands/SlashCommandReturnHelper.js';
+import { accountStorage } from './util/AccountStorage.js';
 export {
     executeSlashCommands, executeSlashCommandsWithOptions, getSlashCommandsHelp, registerSlashCommand,
 };
@@ -235,7 +236,6 @@ export function initDefaultSlashCommands() {
                 description: 'Character name - or unique character identifier (avatar key)',
                 typeList: [ARGUMENT_TYPE.STRING],
                 enumProvider: commonEnumProviders.characters('character'),
-                forceEnum: false,
             }),
         ],
         helpString: `
@@ -274,7 +274,6 @@ export function initDefaultSlashCommands() {
                 typeList: [ARGUMENT_TYPE.STRING],
                 isRequired: true,
                 enumProvider: commonEnumProviders.characters('character'),
-                forceEnum: false,
             }),
             SlashCommandNamedArgument.fromProps({
                 name: 'avatar',
@@ -518,7 +517,6 @@ export function initDefaultSlashCommands() {
                 typeList: [ARGUMENT_TYPE.STRING],
                 isRequired: true,
                 enumProvider: commonEnumProviders.characters('all'),
-                forceEnum: true,
             }),
         ],
         helpString: 'Opens up a chat with the character or group by its name',
@@ -734,6 +732,57 @@ export function initDefaultSlashCommands() {
         helpString: 'Unhides a message from the prompt.',
     }));
     SlashCommandParser.addCommandObject(SlashCommand.fromProps({
+        name: 'member-get',
+        aliases: ['getmember', 'memberget'],
+        callback: (async ({ field = 'name' }, arg) => {
+            if (!selected_group) {
+                toastr.warning('Cannot run /member-get command outside of a group chat.');
+                return '';
+            }
+            if (field === '') {
+                toastr.warning('\'/member-get field=\' argument required!');
+                return '';
+            }
+            field = field.toString();
+            arg = arg.toString();
+            if (!['name', 'index', 'id', 'avatar'].includes(field)) {
+                toastr.warning('\'/member-get field=\' argument required!');
+                return '';
+            }
+            const isId = !isNaN(parseInt(arg));
+            const groupMember = findGroupMemberId(arg, true);
+            if (!groupMember) {
+                toastr.warn(`No group member found using ${isId ? 'id' : 'string'} ${arg}`);
+                return '';
+            }
+            return groupMember[field];
+        }),
+        namedArgumentList: [
+            SlashCommandNamedArgument.fromProps({
+                name: 'field',
+                description: 'Whether to retrieve the name, index, id, or avatar.',
+                typeList: [ARGUMENT_TYPE.STRING],
+                isRequired: true,
+                defaultValue: 'name',
+                enumList: [
+                    new SlashCommandEnumValue('name', 'Character name'),
+                    new SlashCommandEnumValue('index', 'Group member index'),
+                    new SlashCommandEnumValue('avatar', 'Character avatar'),
+                    new SlashCommandEnumValue('id', 'Character index'),
+                ],
+            }),
+        ],
+        unnamedArgumentList: [
+            SlashCommandArgument.fromProps({
+                description: 'member index (starts with 0), name, or avatar',
+                typeList: [ARGUMENT_TYPE.NUMBER, ARGUMENT_TYPE.STRING],
+                isRequired: true,
+                enumProvider: commonEnumProviders.groupMembers(),
+            }),
+        ],
+        helpString: 'Retrieves a group member\'s name, index, id, or avatar.',
+    }));
+    SlashCommandParser.addCommandObject(SlashCommand.fromProps({
         name: 'member-disable',
         callback: disableGroupMemberCallback,
         aliases: ['disable', 'disablemember', 'memberdisable'],
@@ -843,7 +892,8 @@ export function initDefaultSlashCommands() {
         helpString: 'Moves a group member down in the group chat list.',
     }));
     SlashCommandParser.addCommandObject(SlashCommand.fromProps({
-        name: 'peek',
+        name: 'member-peek',
+        aliases: ['peek', 'memberpeek', 'peekmember'],
         callback: peekCallback,
         unnamedArgumentList: [
             SlashCommandArgument.fromProps({
@@ -1009,7 +1059,6 @@ export function initDefaultSlashCommands() {
                 typeList: [ARGUMENT_TYPE.STRING],
                 defaultValue: 'System',
                 enumProvider: () => [...commonEnumProviders.characters('character')(), new SlashCommandEnumValue('System', null, enumTypes.enum, enumIcons.assistant)],
-                forceEnum: false,
             }),
             new SlashCommandNamedArgument(
                 'length', 'API response length in tokens', [ARGUMENT_TYPE.NUMBER], false,
@@ -3047,7 +3096,7 @@ function performGroupMemberAction(chid, action) {
 
 async function disableGroupMemberCallback(_, arg) {
     if (!selected_group) {
-        toastr.warning('Cannot run /disable command outside of a group chat.');
+        toastr.warning('Cannot run /member-disable command outside of a group chat.');
         return '';
     }
 
@@ -3064,7 +3113,7 @@ async function disableGroupMemberCallback(_, arg) {
 
 async function enableGroupMemberCallback(_, arg) {
     if (!selected_group) {
-        toastr.warning('Cannot run /enable command outside of a group chat.');
+        toastr.warning('Cannot run /member-enable command outside of a group chat.');
         return '';
     }
 
@@ -3081,7 +3130,7 @@ async function enableGroupMemberCallback(_, arg) {
 
 async function moveGroupMemberUpCallback(_, arg) {
     if (!selected_group) {
-        toastr.warning('Cannot run /memberup command outside of a group chat.');
+        toastr.warning('Cannot run /member-up command outside of a group chat.');
         return '';
     }
 
@@ -3098,7 +3147,7 @@ async function moveGroupMemberUpCallback(_, arg) {
 
 async function moveGroupMemberDownCallback(_, arg) {
     if (!selected_group) {
-        toastr.warning('Cannot run /memberdown command outside of a group chat.');
+        toastr.warning('Cannot run /member-down command outside of a group chat.');
         return '';
     }
 
@@ -3115,12 +3164,12 @@ async function moveGroupMemberDownCallback(_, arg) {
 
 async function peekCallback(_, arg) {
     if (!selected_group) {
-        toastr.warning('Cannot run /peek command outside of a group chat.');
+        toastr.warning('Cannot run /member-peek command outside of a group chat.');
         return '';
     }
 
     if (is_group_generating) {
-        toastr.warning('Cannot run /peek command while the group reply is generating.');
+        toastr.warning('Cannot run /member-peek command while the group reply is generating.');
         return '';
     }
 
@@ -3137,7 +3186,7 @@ async function peekCallback(_, arg) {
 
 async function removeGroupMemberCallback(_, arg) {
     if (!selected_group) {
-        toastr.warning('Cannot run /memberremove command outside of a group chat.');
+        toastr.warning('Cannot run /member-remove command outside of a group chat.');
         return '';
     }
 
@@ -3558,9 +3607,9 @@ export async function sendMessageAs(args, text) {
 
     if (!name) {
         const namelessWarningKey = 'sendAsNamelessWarningShown';
-        if (localStorage.getItem(namelessWarningKey) !== 'true') {
+        if (accountStorage.getItem(namelessWarningKey) !== 'true') {
             toastr.warning('To avoid confusion, please use /sendas name="Character Name"', 'Name defaulted to {{char}}', { timeOut: 10000 });
-            localStorage.setItem(namelessWarningKey, 'true');
+            accountStorage.setItem(namelessWarningKey, 'true');
         }
         name = name2;
     }

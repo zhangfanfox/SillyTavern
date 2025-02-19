@@ -269,7 +269,8 @@ import { initSettingsSearch } from './scripts/setting-search.js';
 import { initBulkEdit } from './scripts/bulk-edit.js';
 import { deriveTemplatesFromChatTemplate } from './scripts/chat-templates.js';
 import { getContext } from './scripts/st-context.js';
-import { initReasoning, PromptReasoning } from './scripts/reasoning.js';
+import { extractReasoningFromData, initReasoning, PromptReasoning, ReasoningHandler, removeReasoningFromString, updateReasoningUI } from './scripts/reasoning.js';
+import { accountStorage } from './scripts/util/AccountStorage.js';
 
 // API OBJECT FOR EXTERNAL WIRING
 globalThis.SillyTavern = {
@@ -365,6 +366,10 @@ DOMPurify.addHook('uponSanitizeElement', (node, _, config) => {
         return;
     }
 
+    if (!(node instanceof Element)) {
+        return;
+    }
+
     let mediaBlocked = false;
 
     switch (node.tagName) {
@@ -419,7 +424,7 @@ DOMPurify.addHook('uponSanitizeElement', (node, _, config) => {
         const entityId = getCurrentEntityId();
         const warningShownKey = `mediaWarningShown:${entityId}`;
 
-        if (localStorage.getItem(warningShownKey) === null) {
+        if (accountStorage.getItem(warningShownKey) === null) {
             const warningToast = toastr.warning(
                 t`Use the 'Ext. Media' button to allow it. Click on this message to dismiss.`,
                 t`External media has been blocked`,
@@ -430,7 +435,7 @@ DOMPurify.addHook('uponSanitizeElement', (node, _, config) => {
                 },
             );
 
-            localStorage.setItem(warningShownKey, 'true');
+            accountStorage.setItem(warningShownKey, 'true');
         }
     }
 });
@@ -492,9 +497,11 @@ export const event_types = {
     // TODO: Naming convention is inconsistent with other events
     CHARACTER_DELETED: 'characterDeleted',
     CHARACTER_DUPLICATED: 'character_duplicated',
+    CHARACTER_RENAMED: 'character_renamed',
     /** @deprecated The event is aliased to STREAM_TOKEN_RECEIVED. */
     SMOOTH_STREAM_TOKEN_RECEIVED: 'stream_token_received',
     STREAM_TOKEN_RECEIVED: 'stream_token_received',
+    STREAM_REASONING_DONE: 'stream_reasoning_done',
     FILE_ATTACHMENT_DELETED: 'file_attachment_deleted',
     WORLDINFO_FORCE_ACTIVATE: 'worldinfo_force_activate',
     OPEN_CHARACTER_LIBRARY: 'open_character_library',
@@ -1025,12 +1032,22 @@ export function setAnimationDuration(ms = null) {
     document.documentElement.style.setProperty('--animation-duration', `${animation_duration}ms`);
 }
 
+/**
+ * Sets the currently active character
+ * @param {object|number|string} [entityOrKey] - An entity with id property (character, group, tag), or directly an id or tag key. If not provided, the active character is reset to `null`.
+ */
 export function setActiveCharacter(entityOrKey) {
-    active_character = getTagKeyForEntity(entityOrKey);
+    active_character = entityOrKey ? getTagKeyForEntity(entityOrKey) : null;
+    if (active_character) active_group = null;
 }
 
+/**
+ * Sets the currently active group.
+ * @param {object|number|string} [entityOrKey] - An entity with id property (character, group, tag), or directly an id or tag key. If not provided, the active group is reset to `null`.
+ */
 export function setActiveGroup(entityOrKey) {
-    active_group = getTagKeyForEntity(entityOrKey);
+    active_group = entityOrKey ? getTagKeyForEntity(entityOrKey) : null;
+    if (active_group) active_character = null;
 }
 
 /**
@@ -1489,7 +1506,7 @@ export async function printCharacters(fullRefresh = false) {
 
     $('#rm_print_characters_pagination').pagination({
         dataSource: entities,
-        pageSize: Number(localStorage.getItem(storageKey)) || per_page_default,
+        pageSize: Number(accountStorage.getItem(storageKey)) || per_page_default,
         sizeChangerOptions: [10, 25, 50, 100, 250, 500, 1000],
         pageRange: 1,
         pageNumber: saveCharactersPage || 1,
@@ -1533,7 +1550,7 @@ export async function printCharacters(fullRefresh = false) {
             eventSource.emit(event_types.CHARACTER_PAGE_LOADED);
         },
         afterSizeSelectorChange: function (e) {
-            localStorage.setItem(storageKey, e.target.value);
+            accountStorage.setItem(storageKey, e.target.value);
         },
         afterPaging: function (e) {
             saveCharactersPage = e;
@@ -2189,26 +2206,29 @@ function insertSVGIcon(mes, extra) {
         modelName = extra.api;
     }
 
-    const image = new Image();
-    // Add classes for styling and identification
-    image.classList.add('icon-svg', 'timestamp-icon');
-    image.src = `/img/${modelName}.svg`;
-    image.title = `${extra?.api ? extra.api + ' - ' : ''}${extra?.model ?? ''}`;
-
-    image.onload = async function () {
-        // Check if an SVG already exists adjacent to the timestamp
-        let existingSVG = mes.find('.timestamp').next('.timestamp-icon');
-
-        if (existingSVG.length) {
-            // Replace existing SVG
-            existingSVG.replaceWith(image);
-        } else {
-            // Append the new SVG if none exists
-            mes.find('.timestamp').after(image);
-        }
-
-        await SVGInject(image);
+    const insertOrReplaceSVG = (image, className, targetSelector, insertBefore) => {
+        image.onload = async function () {
+            let existingSVG = insertBefore ? mes.find(targetSelector).prev(`.${className}`) : mes.find(targetSelector).next(`.${className}`);
+            if (existingSVG.length) {
+                existingSVG.replaceWith(image);
+            } else {
+                if (insertBefore) mes.find(targetSelector).before(image);
+                else mes.find(targetSelector).after(image);
+            }
+            await SVGInject(image);
+        };
     };
+
+    const createModelImage = (className, targetSelector, insertBefore) => {
+        const image = new Image();
+        image.classList.add('icon-svg', className);
+        image.src = `/img/${modelName}.svg`;
+        image.title = `${extra?.api ? extra.api + ' - ' : ''}${extra?.model ?? ''}`;
+        insertOrReplaceSVG(image, className, targetSelector, insertBefore);
+    };
+
+    createModelImage('timestamp-icon', '.timestamp');
+    createModelImage('thinking-icon', '.mes_reasoning_header_title', true);
 }
 
 
@@ -2219,7 +2239,6 @@ function getMessageFromTemplate({
     isUser,
     avatarImg,
     bias,
-    reasoning,
     isSystem,
     title,
     timerValue,
@@ -2244,13 +2263,14 @@ function getMessageFromTemplate({
     mes.find('.avatar img').attr('src', avatarImg);
     mes.find('.ch_name .name_text').text(characterName);
     mes.find('.mes_bias').html(bias);
-    mes.find('.mes_reasoning').html(reasoning);
     mes.find('.timestamp').text(timestamp).attr('title', `${extra?.api ? extra.api + ' - ' : ''}${extra?.model ?? ''}`);
     mes.find('.mesIDDisplay').text(`#${mesId}`);
     tokenCount && mes.find('.tokenCounterDisplay').text(`${tokenCount}t`);
     title && mes.attr('title', title);
     timerValue && mes.find('.mes_timer').attr('title', timerTitle).text(timerValue);
     bookmarkLink && updateBookmarkDisplay(mes);
+
+    updateReasoningUI(mes);
 
     if (power_user.timestamp_model_icon && extra?.api) {
         insertSVGIcon(mes, extra);
@@ -2263,12 +2283,18 @@ function getMessageFromTemplate({
  * Re-renders a message block with updated content.
  * @param {number} messageId Message ID
  * @param {object} message Message object
+ * @param {object} [options={}] Optional arguments
+ * @param {boolean} [options.rerenderMessage=true] Whether to re-render the message content (inside <c>.mes_text</c>)
  */
-export function updateMessageBlock(messageId, message) {
+export function updateMessageBlock(messageId, message, { rerenderMessage = true } = {}) {
     const messageElement = $(`#chat [mesid="${messageId}"]`);
-    const text = message?.extra?.display_text ?? message.mes;
-    messageElement.find('.mes_text').html(messageFormatting(text, message.name, message.is_system, message.is_user, messageId, {}, false));
-    messageElement.find('.mes_reasoning').html(messageFormatting(message.extra?.reasoning ?? '', '', false, false, messageId, {}, true));
+    if (rerenderMessage) {
+        const text = message?.extra?.display_text ?? message.mes;
+        messageElement.find('.mes_text').html(messageFormatting(text, message.name, message.is_system, message.is_user, messageId, {}, false));
+    }
+
+    updateReasoningUI(messageElement);
+
     addCopyToCodeBlocks(messageElement);
     appendMediaToMessage(message, messageElement);
 }
@@ -2428,7 +2454,6 @@ export function addOneMessage(mes, { type = 'normal', insertAfter = null, scroll
         false,
     );
     const bias = messageFormatting(mes.extra?.bias ?? '', '', false, false, -1, {}, false);
-    const reasoning = messageFormatting(mes.extra?.reasoning ?? '', '', false, false, chat.indexOf(mes), {}, true);
     let bookmarkLink = mes?.extra?.bookmark_link ?? '';
 
     let params = {
@@ -2438,7 +2463,6 @@ export function addOneMessage(mes, { type = 'normal', insertAfter = null, scroll
         isUser: mes.is_user,
         avatarImg: avatarImg,
         bias: bias,
-        reasoning: reasoning,
         isSystem: isSystem,
         title: title,
         bookmarkLink: bookmarkLink,
@@ -2446,7 +2470,7 @@ export function addOneMessage(mes, { type = 'normal', insertAfter = null, scroll
         timestamp: timestamp,
         extra: mes.extra,
         tokenCount: mes.extra?.token_count ?? 0,
-        ...formatGenerationTimer(mes.gen_started, mes.gen_finished, mes.extra?.token_count),
+        ...formatGenerationTimer(mes.gen_started, mes.gen_finished, mes.extra?.token_count, mes.extra?.reasoning_duration),
     };
 
     const renderedMessage = getMessageFromTemplate(params);
@@ -2498,8 +2522,8 @@ export function addOneMessage(mes, { type = 'normal', insertAfter = null, scroll
         const swipeMessage = chatElement.find(`[mesid="${chat.length - 1}"]`);
         swipeMessage.attr('swipeid', params.swipeId);
         swipeMessage.find('.mes_text').html(messageText).attr('title', title);
-        swipeMessage.find('.mes_reasoning').html(reasoning);
         swipeMessage.find('.timestamp').text(timestamp).attr('title', `${params.extra.api} - ${params.extra.model}`);
+        updateReasoningUI(swipeMessage);
         appendMediaToMessage(mes, swipeMessage);
         if (power_user.timestamp_model_icon && params.extra?.api) {
             insertSVGIcon(swipeMessage, params.extra);
@@ -2566,13 +2590,14 @@ export function formatCharacterAvatar(characterAvatar) {
  * @param {Date} gen_started Date when generation was started
  * @param {Date} gen_finished Date when generation was finished
  * @param {number} tokenCount Number of tokens generated (0 if not available)
+ * @param {number?} [reasoningDuration=null] Reasoning duration (null if no reasoning was done)
  * @returns {Object} Object containing the formatted timer value and title
  * @example
  * const { timerValue, timerTitle } = formatGenerationTimer(gen_started, gen_finished, tokenCount);
  * console.log(timerValue); // 1.2s
  * console.log(timerTitle); // Generation queued: 12:34:56 7 Jan 2021\nReply received: 12:34:57 7 Jan 2021\nTime to generate: 1.2 seconds\nToken rate: 5 t/s
  */
-function formatGenerationTimer(gen_started, gen_finished, tokenCount) {
+function formatGenerationTimer(gen_started, gen_finished, tokenCount, reasoningDuration = null) {
     if (!gen_started || !gen_finished) {
         return {};
     }
@@ -2586,8 +2611,9 @@ function formatGenerationTimer(gen_started, gen_finished, tokenCount) {
         `Generation queued: ${start.format(dateFormat)}`,
         `Reply received: ${finish.format(dateFormat)}`,
         `Time to generate: ${seconds} seconds`,
+        reasoningDuration > 0 ? `Time to think: ${reasoningDuration / 1000} seconds` : '',
         tokenCount > 0 ? `Token rate: ${Number(tokenCount / seconds).toFixed(1)} t/s` : '',
-    ].join('\n');
+    ].filter(x => x).join('\n').trim();
 
     if (isNaN(seconds) || seconds < 0) {
         return { timerValue: '', timerTitle };
@@ -2775,7 +2801,8 @@ export async function generateQuietPrompt(quiet_prompt, quietToLoud, skipWIAN, q
             TempResponseLength.save(main_api, responseLength);
             eventHook = TempResponseLength.setupEventHook(main_api);
         }
-        return await Generate('quiet', options);
+        const result = await Generate('quiet', options);
+        return removeReasoningFromString(result);
     } finally {
         if (responseLengthCustomized && TempResponseLength.isCustomized()) {
             TempResponseLength.restore(main_api);
@@ -3075,8 +3102,8 @@ export function isStreamingEnabled() {
         (main_api == 'openai' &&
             oai_settings.stream_openai &&
             !noStreamSources.includes(oai_settings.chat_completion_source) &&
-            !(oai_settings.chat_completion_source == chat_completion_sources.OPENAI && (oai_settings.openai_model.startsWith('o1') || oai_settings.openai_model.startsWith('o3'))) &&
-            !(oai_settings.chat_completion_source == chat_completion_sources.MAKERSUITE && oai_settings.google_model.includes('bison')))
+            !(oai_settings.chat_completion_source == chat_completion_sources.OPENAI && ['o1-2024-12-17', 'o1'].includes(oai_settings.openai_model))
+        )
         || (main_api == 'kobold' && kai_settings.streaming_kobold && kai_flags.can_use_streaming)
         || (main_api == 'novel' && nai_settings.streaming_novel)
         || (main_api == 'textgenerationwebui' && textgen_settings.streaming));
@@ -3105,11 +3132,14 @@ class StreamingProcessor {
     constructor(type, forceName2, timeStarted, continueMessage) {
         this.result = '';
         this.messageId = -1;
+        /** @type {HTMLElement} */
         this.messageDom = null;
+        /** @type {HTMLElement} */
         this.messageTextDom = null;
+        /** @type {HTMLElement} */
         this.messageTimerDom = null;
+        /** @type {HTMLElement} */
         this.messageTokenCounterDom = null;
-        this.messageReasoningDom = null;
         /** @type {HTMLTextAreaElement} */
         this.sendTextarea = document.querySelector('#send_textarea');
         this.type = type;
@@ -3125,7 +3155,8 @@ class StreamingProcessor {
         /** @type {import('./scripts/logprobs.js').TokenLogprobs[]} */
         this.messageLogprobs = [];
         this.toolCalls = [];
-        this.reasoning = '';
+        // Initialize reasoning in its own handler
+        this.reasoningHandler = new ReasoningHandler(timeStarted);
     }
 
     #checkDomElements(messageId) {
@@ -3134,8 +3165,8 @@ class StreamingProcessor {
             this.messageTextDom = this.messageDom?.querySelector('.mes_text');
             this.messageTimerDom = this.messageDom?.querySelector('.mes_timer');
             this.messageTokenCounterDom = this.messageDom?.querySelector('.tokenCounterDisplay');
-            this.messageReasoningDom = this.messageDom?.querySelector('.mes_reasoning');
         }
+        this.reasoningHandler.updateDom(messageId);
     }
 
     #updateMessageBlockVisibility() {
@@ -3145,22 +3176,12 @@ class StreamingProcessor {
         }
     }
 
-    showMessageButtons(messageId) {
-        if (messageId == -1) {
-            return;
-        }
-
-        showStopButton();
-        $(`#chat .mes[mesid="${messageId}"] .mes_buttons`).css({ 'display': 'none' });
+    markUIGenStarted() {
+        deactivateSendButtons();
     }
 
-    hideMessageButtons(messageId) {
-        if (messageId == -1) {
-            return;
-        }
-
-        hideStopButton();
-        $(`#chat .mes[mesid="${messageId}"] .mes_buttons`).css({ 'display': 'flex' });
+    markUIGenStopped() {
+        activateSendButtons();
     }
 
     async onStartStreaming(text) {
@@ -3169,20 +3190,18 @@ class StreamingProcessor {
         if (this.type == 'impersonate') {
             this.sendTextarea.value = '';
             this.sendTextarea.dispatchEvent(new Event('input', { bubbles: true }));
-        }
-        else {
+        } else {
             await saveReply(this.type, text, true, '', [], '');
             messageId = chat.length - 1;
             this.#checkDomElements(messageId);
-            this.showMessageButtons(messageId);
+            this.markUIGenStarted();
         }
-
         hideSwipeButtons();
         scrollChatToBottom();
         return messageId;
     }
 
-    onProgressStreaming(messageId, text, isFinal) {
+    async onProgressStreaming(messageId, text, isFinal) {
         const isImpersonate = this.type == 'impersonate';
         const isContinue = this.type == 'continue';
 
@@ -3194,11 +3213,9 @@ class StreamingProcessor {
 
         let processedText = cleanUpMessage(text, isImpersonate, isContinue, !isFinal, this.stoppingStrings);
 
-        // Predict unbalanced asterisks / quotes during streaming
         const charsToBalance = ['*', '"', '```'];
         for (const char of charsToBalance) {
             if (!isFinal && isOdd(countOccurrences(processedText, char))) {
-                // Add character at the end to balance it
                 const separator = char.length > 1 ? '\n' : '';
                 processedText = processedText.trimEnd() + separator + char;
             }
@@ -3207,31 +3224,25 @@ class StreamingProcessor {
         if (isImpersonate) {
             this.sendTextarea.value = processedText;
             this.sendTextarea.dispatchEvent(new Event('input', { bubbles: true }));
-        }
-        else {
+        } else {
+            const mesChanged = chat[messageId]['mes'] !== processedText;
             this.#checkDomElements(messageId);
             this.#updateMessageBlockVisibility();
             const currentTime = new Date();
             chat[messageId]['mes'] = processedText;
             chat[messageId]['gen_started'] = this.timeStarted;
             chat[messageId]['gen_finished'] = currentTime;
-
             if (!chat[messageId]['extra']) {
                 chat[messageId]['extra'] = {};
             }
 
-            if (this.reasoning) {
-                chat[messageId]['extra']['reasoning'] = power_user.trim_spaces ? this.reasoning.trim() : this.reasoning;
-                if (this.messageReasoningDom instanceof HTMLElement) {
-                    const formattedReasoning = messageFormatting(this.reasoning, '', false, false, messageId, {}, true);
-                    this.messageReasoningDom.innerHTML = formattedReasoning;
-                }
-            }
+            // Update reasoning
+            await this.reasoningHandler.process(messageId, mesChanged);
+            processedText = chat[messageId]['mes'];
 
-            // Don't waste time calculating token count for streaming
-            const tokenCountText = (this.reasoning || '') + processedText;
+            // Token count update.
+            const tokenCountText = this.reasoningHandler.reasoning + processedText;
             const currentTokenCount = isFinal && power_user.message_token_count_enabled ? getTokenCount(tokenCountText, 0) : 0;
-
             if (currentTokenCount) {
                 chat[messageId]['extra']['token_count'] = currentTokenCount;
                 if (this.messageTokenCounterDom instanceof HTMLElement) {
@@ -3257,7 +3268,7 @@ class StreamingProcessor {
                 this.messageTextDom.innerHTML = formattedText;
             }
 
-            const timePassed = formatGenerationTimer(this.timeStarted, currentTime, currentTokenCount);
+            const timePassed = formatGenerationTimer(this.timeStarted, currentTime, currentTokenCount, this.reasoningHandler.getDuration());
             if (this.messageTimerDom instanceof HTMLElement) {
                 this.messageTimerDom.textContent = timePassed.timerValue;
                 this.messageTimerDom.title = timePassed.timerTitle;
@@ -3272,9 +3283,11 @@ class StreamingProcessor {
     }
 
     async onFinishStreaming(messageId, text) {
-        this.hideMessageButtons(this.messageId);
-        this.onProgressStreaming(messageId, text, true);
+        this.markUIGenStopped();
+        await this.onProgressStreaming(messageId, text, true);
         addCopyToCodeBlocks($(`#chat .mes[mesid="${messageId}"]`));
+
+        await this.reasoningHandler.finish(messageId);
 
         if (Array.isArray(this.swipes) && this.swipes.length > 0) {
             const message = chat[messageId];
@@ -3315,7 +3328,7 @@ class StreamingProcessor {
         this.abortController.abort();
         this.isStopped = true;
 
-        this.hideMessageButtons(this.messageId);
+        this.markUIGenStopped();
         generatedPromptCache = '';
         unblockGeneration();
 
@@ -3366,7 +3379,7 @@ class StreamingProcessor {
             for await (const { text, swipes, logprobs, toolCalls, state } of this.generator()) {
                 timestamps.push(Date.now());
                 if (this.isStopped || this.abortController.signal.aborted) {
-                    return;
+                    return this.result;
                 }
 
                 this.toolCalls = toolCalls;
@@ -3375,9 +3388,10 @@ class StreamingProcessor {
                 if (logprobs) {
                     this.messageLogprobs.push(...(Array.isArray(logprobs) ? logprobs : [logprobs]));
                 }
-                this.reasoning = getRegexedString(state?.reasoning ?? '', regex_placement.REASONING);
+                // Get the updated reasoning string into the handler
+                this.reasoningHandler.updateReasoning(this.messageId, state?.reasoning);
                 await eventSource.emit(event_types.STREAM_TOKEN_RECEIVED, text);
-                await sw.tick(() => this.onProgressStreaming(this.messageId, this.continueMessage + text));
+                await sw.tick(async () => await this.onProgressStreaming(this.messageId, this.continueMessage + text));
             }
             const seconds = (timestamps[timestamps.length - 1] - timestamps[0]) / 1000;
             console.warn(`Stream stats: ${timestamps.length} tokens, ${seconds.toFixed(2)} seconds, rate: ${Number(timestamps.length / seconds).toFixed(2)} TPS`);
@@ -3453,7 +3467,7 @@ export async function generateRaw(prompt, api, instructOverride, quietToLoud, sy
                 break;
             }
             case 'textgenerationwebui':
-                generateData = getTextGenGenerationData(prompt, amount_gen, false, false, null, 'quiet');
+                generateData = await getTextGenGenerationData(prompt, amount_gen, false, false, null, 'quiet');
                 TempResponseLength.restore(api);
                 break;
             case 'openai': {
@@ -4440,7 +4454,7 @@ export async function Generate(type, { automatic_trigger, force_name2, quiet_pro
     // For prompt bit itemization
     let mesSendString = '';
 
-    function getCombinedPrompt(isNegative) {
+    async function getCombinedPrompt(isNegative) {
         // Only return if the guidance scale doesn't exist or the value is 1
         // Also don't return if constructing the neutral prompt
         if (isNegative && !useCfgPrompt) {
@@ -4467,7 +4481,13 @@ export async function Generate(type, { automatic_trigger, force_name2, quiet_pro
                     // TODO: Make all extension prompts use an array/splice method
                     const lengthDiff = mesSend.length - cfgPrompt.depth;
                     const cfgDepth = lengthDiff >= 0 ? lengthDiff : 0;
-                    finalMesSend[cfgDepth].extensionPrompts.push(`${cfgPrompt.value}\n`);
+                    const cfgMessage = finalMesSend[cfgDepth];
+                    if (cfgMessage) {
+                        if (!Array.isArray(finalMesSend[cfgDepth].extensionPrompts)) {
+                            finalMesSend[cfgDepth].extensionPrompts = [];
+                        }
+                        finalMesSend[cfgDepth].extensionPrompts.push(`${cfgPrompt.value}\n`);
+                    }
                 }
             }
         }
@@ -4543,13 +4563,13 @@ export async function Generate(type, { automatic_trigger, force_name2, quiet_pro
         };
 
         // Before returning the combined prompt, give available context related information to all subscribers.
-        eventSource.emitAndWait(event_types.GENERATE_BEFORE_COMBINE_PROMPTS, data);
+        await eventSource.emit(event_types.GENERATE_BEFORE_COMBINE_PROMPTS, data);
 
         // If one or multiple subscribers return a value, forfeit the responsibillity of flattening the context.
         return !data.combinedPrompt ? combine() : data.combinedPrompt;
     }
 
-    let finalPrompt = getCombinedPrompt(false);
+    let finalPrompt = await getCombinedPrompt(false);
 
     const eventData = { prompt: finalPrompt, dryRun: dryRun };
     await eventSource.emit(event_types.GENERATE_AFTER_COMBINE_PROMPTS, eventData);
@@ -4583,8 +4603,8 @@ export async function Generate(type, { automatic_trigger, force_name2, quiet_pro
             }
             break;
         case 'textgenerationwebui': {
-            const cfgValues = useCfgPrompt ? { guidanceScale: cfgGuidanceScale, negativePrompt: getCombinedPrompt(true) } : null;
-            generate_data = getTextGenGenerationData(finalPrompt, maxLength, isImpersonate, isContinue, cfgValues, type);
+            const cfgValues = useCfgPrompt ? { guidanceScale: cfgGuidanceScale, negativePrompt: await getCombinedPrompt(true) } : null;
+            generate_data = await getTextGenGenerationData(finalPrompt, maxLength, isImpersonate, isContinue, cfgValues, type);
             break;
         }
         case 'novel': {
@@ -5510,13 +5530,24 @@ async function promptItemize(itemizedPrompts, requestedMesId) {
         toastr.info(t`Copied!`);
     });
 
-    popup.dlg.querySelector('#showRawPrompt').addEventListener('click', function () {
+    popup.dlg.querySelector('#showRawPrompt').addEventListener('click', async function () {
         //console.log(itemizedPrompts[PromptArrayItemForRawPromptDisplay].rawPrompt);
         console.log(PromptArrayItemForRawPromptDisplay);
         console.log(itemizedPrompts);
         console.log(itemizedPrompts[PromptArrayItemForRawPromptDisplay].rawPrompt);
 
         const rawPrompt = flatten(itemizedPrompts[PromptArrayItemForRawPromptDisplay].rawPrompt);
+
+        // Mobile needs special handholding. The side-view on the popup wouldn't work,
+        // so we just show an additional popup for this.
+        if (isMobile()) {
+            const content = document.createElement('div');
+            content.classList.add('tokenItemizingMaintext');
+            content.innerText = rawPrompt;
+            const popup = new Popup(content, POPUP_TYPE.TEXT, null, { allowVerticalScrolling: true, leftAlign: true });
+            await popup.show();
+            return;
+        }
 
         //let DisplayStringifiedPrompt = JSON.stringify(itemizedPrompts[PromptArrayItemForRawPromptDisplay].rawPrompt).replace(/\n+/g, '<br>');
         const rawPromptWrapper = document.getElementById('rawPromptWrapper');
@@ -5698,37 +5729,6 @@ function extractMessageFromData(data) {
         default:
             return '';
     }
-}
-
-/**
- * Extracts the reasoning from the response data.
- * @param {object} data Response data
- * @returns {string} Extracted reasoning
- */
-function extractReasoningFromData(data) {
-    switch (main_api) {
-        case 'textgenerationwebui':
-            switch (textgen_settings.type) {
-                case textgen_types.OPENROUTER:
-                    return data?.choices?.[0]?.reasoning ?? '';
-            }
-            break;
-
-        case 'openai':
-            if (!oai_settings.show_thoughts) break;
-
-            switch (oai_settings.chat_completion_source) {
-                case chat_completion_sources.DEEPSEEK:
-                    return data?.choices?.[0]?.message?.reasoning_content ?? '';
-                case chat_completion_sources.OPENROUTER:
-                    return data?.choices?.[0]?.message?.reasoning ?? '';
-                case chat_completion_sources.MAKERSUITE:
-                    return data?.responseContent?.parts?.filter(part => part.thought)?.map(part => part.text)?.join('\n\n') ?? '';
-            }
-            break;
-    }
-
-    return '';
 }
 
 /**
@@ -5921,6 +5921,15 @@ export async function saveReply(type, getMessage, fromStreaming, title, swipes, 
         chat[chat.length - 1]['extra'] = {};
     }
 
+    // Coerce null/undefined to empty string
+    if (chat.length && !chat[chat.length - 1]['extra']['reasoning']) {
+        chat[chat.length - 1]['extra']['reasoning'] = '';
+    }
+
+    if (!reasoning) {
+        reasoning = '';
+    }
+
     let oldMessage = '';
     const generationFinished = new Date();
     const img = extractImageFromMessage(getMessage);
@@ -5937,6 +5946,7 @@ export async function saveReply(type, getMessage, fromStreaming, title, swipes, 
             chat[chat.length - 1]['extra']['api'] = getGeneratingApi();
             chat[chat.length - 1]['extra']['model'] = getGeneratingModel();
             chat[chat.length - 1]['extra']['reasoning'] = reasoning;
+            chat[chat.length - 1]['extra']['reasoning_duration'] = null;
             if (power_user.message_token_count_enabled) {
                 const tokenCountText = (reasoning || '') + chat[chat.length - 1]['mes'];
                 chat[chat.length - 1]['extra']['token_count'] = await getTokenCountAsync(tokenCountText, 0);
@@ -5958,7 +5968,8 @@ export async function saveReply(type, getMessage, fromStreaming, title, swipes, 
         chat[chat.length - 1]['send_date'] = getMessageTimeStamp();
         chat[chat.length - 1]['extra']['api'] = getGeneratingApi();
         chat[chat.length - 1]['extra']['model'] = getGeneratingModel();
-        chat[chat.length - 1]['extra']['reasoning'] += reasoning;
+        chat[chat.length - 1]['extra']['reasoning'] = reasoning;
+        chat[chat.length - 1]['extra']['reasoning_duration'] = null;
         if (power_user.message_token_count_enabled) {
             const tokenCountText = (reasoning || '') + chat[chat.length - 1]['mes'];
             chat[chat.length - 1]['extra']['token_count'] = await getTokenCountAsync(tokenCountText, 0);
@@ -5978,6 +5989,7 @@ export async function saveReply(type, getMessage, fromStreaming, title, swipes, 
         chat[chat.length - 1]['extra']['api'] = getGeneratingApi();
         chat[chat.length - 1]['extra']['model'] = getGeneratingModel();
         chat[chat.length - 1]['extra']['reasoning'] += reasoning;
+        // We don't know if the reasoning duration extended, so we don't update it here on purpose.
         if (power_user.message_token_count_enabled) {
             const tokenCountText = (reasoning || '') + chat[chat.length - 1]['mes'];
             chat[chat.length - 1]['extra']['token_count'] = await getTokenCountAsync(tokenCountText, 0);
@@ -5997,6 +6009,7 @@ export async function saveReply(type, getMessage, fromStreaming, title, swipes, 
         chat[chat.length - 1]['extra']['api'] = getGeneratingApi();
         chat[chat.length - 1]['extra']['model'] = getGeneratingModel();
         chat[chat.length - 1]['extra']['reasoning'] = reasoning;
+        chat[chat.length - 1]['extra']['reasoning_duration'] = null;
         if (power_user.trim_spaces) {
             getMessage = getMessage.trim();
         }
@@ -6137,20 +6150,21 @@ function extractImageFromMessage(getMessage) {
     return { getMessage, image, title };
 }
 
+/**
+ * A function mainly used to switch 'generating' state - setting it to false and activating the buttons again
+ */
 export function activateSendButtons() {
     is_send_press = false;
-    $('#send_but').removeClass('displayNone');
-    $('#mes_continue').removeClass('displayNone');
-    $('#mes_impersonate').removeClass('displayNone');
-    $('.mes_buttons:last').show();
     hideStopButton();
+    delete document.body.dataset.generating;
 }
 
+/**
+ * A function mainly used to switch 'generating' state - setting it to true and deactivating the buttons
+ */
 export function deactivateSendButtons() {
-    $('#send_but').addClass('displayNone');
-    $('#mes_continue').addClass('displayNone');
-    $('#mes_impersonate').addClass('displayNone');
     showStopButton();
+    document.body.dataset.generating = 'true';
 }
 
 export function resetChatState() {
@@ -6243,8 +6257,34 @@ export async function renameCharacter(name = null, { silent = false, renameChats
             const data = await response.json();
             const newAvatar = data.avatar;
 
-            // Replace tags list
+            const oldName = getCharaFilename(null, { manualAvatarKey: oldAvatar });
+            const newName = getCharaFilename(null, { manualAvatarKey: newAvatar });
+
+            // Replace other auxillery fields where was referenced by avatar key
+            // Tag List
             renameTagKey(oldAvatar, newAvatar);
+
+            // Addtional lore books
+            const charLore = world_info.charLore?.find(x => x.name == oldName);
+            if (charLore) {
+                charLore.name = newName;
+                saveSettingsDebounced();
+            }
+
+            // Char-bound Author's Notes
+            const charNote = extension_settings.note.chara?.find(x => x.name == oldName);
+            if (charNote) {
+                charNote.name = newName;
+                saveSettingsDebounced();
+            }
+
+            // Update active character, if the current one was the currently active one
+            if (active_character === oldAvatar) {
+                active_character = newAvatar;
+                saveSettingsDebounced();
+            }
+
+            await eventSource.emit(event_types.CHARACTER_RENAMED, oldAvatar, newAvatar);
 
             // Reload characters list
             await getCharacters();
@@ -6846,10 +6886,11 @@ export async function getSettings() {
             $('#your_name').val(name1);
         }
 
+        accountStorage.init(settings?.accountStorage);
         await setUserControls(data.enable_accounts);
 
         // Allow subscribers to mutate settings
-        eventSource.emit(event_types.SETTINGS_LOADED_BEFORE, settings);
+        await eventSource.emit(event_types.SETTINGS_LOADED_BEFORE, settings);
 
         //Load KoboldAI settings
         koboldai_setting_names = data.koboldai_setting_names;
@@ -6946,7 +6987,7 @@ export async function getSettings() {
         loadProxyPresets(settings);
 
         // Allow subscribers to mutate settings
-        eventSource.emit(event_types.SETTINGS_LOADED_AFTER, settings);
+        await eventSource.emit(event_types.SETTINGS_LOADED_AFTER, settings);
 
         // Set context size after loading power user (may override the max value)
         $('#max_context').val(max_context);
@@ -7006,7 +7047,7 @@ export async function getSettings() {
     }
     await validateDisabledSamplers();
     settingsReady = true;
-    eventSource.emit(event_types.SETTINGS_LOADED);
+    await eventSource.emit(event_types.SETTINGS_LOADED);
 }
 
 function selectKoboldGuiPreset() {
@@ -7017,7 +7058,8 @@ function selectKoboldGuiPreset() {
 
 export async function saveSettings(loopCounter = 0) {
     if (!settingsReady) {
-        console.warn('Settings not ready, aborting save');
+        console.warn('Settings not ready, scheduling another save');
+        saveSettingsDebounced();
         return;
     }
 
@@ -7038,6 +7080,7 @@ export async function saveSettings(loopCounter = 0) {
         url: '/api/settings/save',
         data: JSON.stringify({
             firstRun: firstRun,
+            accountStorage: accountStorage.getState(),
             currentVersion: currentVersion,
             username: name1,
             active_character: active_character,
@@ -7103,8 +7146,10 @@ export function setGenerationParamsFromPreset(preset) {
 // Common code for message editor done and auto-save
 function updateMessage(div) {
     const mesBlock = div.closest('.mes_block');
-    let text = mesBlock.find('.edit_textarea').val();
-    const mes = chat[this_edit_mes_id];
+    let text = mesBlock.find('.edit_textarea').val()
+        ?? mesBlock.find('.mes_text').text();
+    const mesElement = div.closest('.mes');
+    const mes = chat[mesElement.attr('mesid')];
 
     let regexPlacement;
     if (mes.is_user) {
@@ -7222,6 +7267,11 @@ async function messageEditDone(div) {
     mesBlock.find('.mes_bias').append(messageFormatting(bias, '', false, false, -1, {}, false));
     appendMediaToMessage(mes, div.closest('.mes'));
     addCopyToCodeBlocks(div.closest('.mes'));
+
+    const reasoningEditDone = mesBlock.find('.mes_reasoning_edit_done:visible');
+    if (reasoningEditDone.length > 0) {
+        reasoningEditDone.trigger('click');
+    }
 
     await eventSource.emit(event_types.MESSAGE_UPDATED, this_edit_mes_id);
     this_edit_mes_id = undefined;
@@ -7486,7 +7536,7 @@ export function select_rm_info(type, charId, previousCharId = null) {
             }
 
             try {
-                const perPage = Number(localStorage.getItem('Characters_PerPage')) || per_page_default;
+                const perPage = Number(accountStorage.getItem('Characters_PerPage')) || per_page_default;
                 const page = Math.floor(charIndex / perPage) + 1;
                 const selector = `#rm_print_characters_block [title*="${avatarFileName}"]`;
                 $('#rm_print_characters_pagination').pagination('go', page);
@@ -7518,7 +7568,7 @@ export function select_rm_info(type, charId, previousCharId = null) {
                 return;
             }
 
-            const perPage = Number(localStorage.getItem('Characters_PerPage')) || per_page_default;
+            const perPage = Number(accountStorage.getItem('Characters_PerPage')) || per_page_default;
             const page = Math.floor(charIndex / perPage) + 1;
             $('#rm_print_characters_pagination').pagination('go', page);
             const selector = `#rm_print_characters_block [grid="${charId}"]`;
@@ -8723,11 +8773,6 @@ const swipe_right = () => {
             easing: animation_easing,
             queue: false,
             complete: async function () {
-                /*if (!selected_group) {
-                    var typingIndicator = $("#typing_indicator_template .typing_indicator").clone();
-                    typingIndicator.find(".typing_indicator_name").text(characters[this_chid].name);
-                } */
-                /* $("#chat").append(typingIndicator); */
                 const is_animation_scroll = ($('#chat').scrollTop() >= ($('#chat').prop('scrollHeight') - $('#chat').outerHeight()) - 10);
                 //console.log(parseInt(chat[chat.length-1]['swipe_id']));
                 //console.log(chat[chat.length-1]['swipes'].length);
@@ -8738,7 +8783,7 @@ const swipe_right = () => {
                     // resets the timer
                     swipeMessage.find('.mes_timer').html('');
                     swipeMessage.find('.tokenCounterDisplay').text('');
-                    swipeMessage.find('.mes_reasoning').html('');
+                    updateReasoningUI(swipeMessage, { reset: true });
                 } else {
                     //console.log('showing previously generated swipe candidate, or "..."');
                     //console.log('onclick right swipe calling addOneMessage');
@@ -8788,7 +8833,6 @@ const swipe_right = () => {
                                 if (run_generate && !is_send_press && parseInt(chat[chat.length - 1]['swipe_id']) === chat[chat.length - 1]['swipes'].length) {
                                     console.debug('caught here 2');
                                     is_send_press = true;
-                                    $('.mes_buttons:last').hide();
                                     await Generate('swipe');
                                 } else {
                                     if (parseInt(chat[chat.length - 1]['swipe_id']) !== chat[chat.length - 1]['swipes'].length) {
@@ -9390,6 +9434,9 @@ export async function deleteCharacter(characterKey, { deleteChats = true } = {})
             continue;
         }
 
+        accountStorage.removeItem(`AlertWI_${character.avatar}`);
+        accountStorage.removeItem(`AlertRegex_${character.avatar}`);
+        accountStorage.removeItem(`mediaWarningShown:${character.avatar}`);
         delete tag_map[character.avatar];
         select_rm_info('char_delete', character.name);
 
@@ -9592,8 +9639,8 @@ function addDebugFunctions() {
     });
 
     registerDebugFunction('toggleRegenerateWarning', 'Toggle Ctrl+Enter regeneration confirmation', 'Toggle the warning when regenerating a message with a Ctrl+Enter hotkey.', () => {
-        localStorage.setItem('RegenerateWithCtrlEnter', localStorage.getItem('RegenerateWithCtrlEnter') === 'true' ? 'false' : 'true');
-        toastr.info('Regenerate warning is now ' + (localStorage.getItem('RegenerateWithCtrlEnter') === 'true' ? 'disabled' : 'enabled'));
+        accountStorage.setItem('RegenerateWithCtrlEnter', accountStorage.getItem('RegenerateWithCtrlEnter') === 'true' ? 'false' : 'true');
+        toastr.info('Regenerate warning is now ' + (accountStorage.getItem('RegenerateWithCtrlEnter') === 'true' ? 'disabled' : 'enabled'));
     });
 
     registerDebugFunction('copySetup', 'Copy ST setup to clipboard [WIP]', 'Useful data when reporting bugs', async () => {
@@ -10735,6 +10782,12 @@ jQuery(async function () {
             var edit_mes_id = $(this).closest('.mes').attr('mesid');
             this_edit_mes_id = edit_mes_id;
 
+            // Also edit reasoning, if it exists
+            const reasoningEdit = $(this).closest('.mes_block').find('.mes_reasoning_edit:visible');
+            if (reasoningEdit.length > 0) {
+                reasoningEdit.trigger('click');
+            }
+
             var text = chat[edit_mes_id]['mes'];
             if (chat[edit_mes_id]['is_user']) {
                 this_edit_mes_chname = name1;
@@ -10868,6 +10921,11 @@ jQuery(async function () {
         appendMediaToMessage(chat[this_edit_mes_id], $(this).closest('.mes'));
         addCopyToCodeBlocks($(this).closest('.mes'));
 
+        const reasoningEditDone = $(this).closest('.mes_block').find('.mes_reasoning_edit_cancel:visible');
+        if (reasoningEditDone.length > 0) {
+            reasoningEditDone.trigger('click');
+        }
+
         await eventSource.emit(event_types.MESSAGE_UPDATED, this_edit_mes_id);
         this_edit_mes_id = undefined;
     });
@@ -10931,7 +10989,7 @@ jQuery(async function () {
     });
 
     $(document).on('click', '.mes_edit_copy', async function () {
-        const confirmation = await callGenericPopup('Create a copy of this message?', POPUP_TYPE.CONFIRM);
+        const confirmation = await callGenericPopup(t`Create a copy of this message?`, POPUP_TYPE.CONFIRM);
         if (!confirmation) {
             return;
         }
@@ -11410,7 +11468,7 @@ jQuery(async function () {
                 );
                 break;*/
             default:
-                eventSource.emit('charManagementDropdown', target);
+                await eventSource.emit('charManagementDropdown', target);
         }
         $('#char-management-dropdown').prop('selectedIndex', 0);
     });
@@ -11572,7 +11630,7 @@ jQuery(async function () {
 
     $(document).on('click', '.open_characters_library', async function () {
         await getCharacters();
-        eventSource.emit(event_types.OPEN_CHARACTER_LIBRARY);
+        await eventSource.emit(event_types.OPEN_CHARACTER_LIBRARY);
     });
 
     // Added here to prevent execution before script.js is loaded and get rid of quirky timeouts

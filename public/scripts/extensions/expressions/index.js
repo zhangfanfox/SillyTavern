@@ -2190,7 +2190,6 @@ function migrateSettings() {
                 description: 'Character name - or unique character identifier (avatar key). If not provided, the current character for this chat will be used (does not work in group chats)',
                 typeList: [ARGUMENT_TYPE.STRING],
                 enumProvider: commonEnumProviders.characters('character'),
-                forceEnum: true,
             }),
         ],
         helpString: 'Returns the last set expression for the named character.',
