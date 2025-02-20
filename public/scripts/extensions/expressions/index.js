@@ -4,7 +4,7 @@ import { characters, eventSource, event_types, generateRaw, getRequestHeaders, m
 import { dragElement, isMobile } from '../../RossAscends-mods.js';
 import { getContext, getApiUrl, modules, extension_settings, ModuleWorkerWrapper, doExtrasFetch, renderExtensionTemplateAsync } from '../../extensions.js';
 import { loadMovingUIState, performFuzzySearch, power_user } from '../../power-user.js';
-import { onlyUnique, debounce, getCharaFilename, trimToEndSentence, trimToStartSentence, waitUntilCondition, findChar } from '../../utils.js';
+import { onlyUnique, debounce, getCharaFilename, trimToEndSentence, trimToStartSentence, waitUntilCondition, findChar, delay } from '../../utils.js';
 import { hideMutedSprites, selected_group } from '../../group-chats.js';
 import { isJsonSchemaSupported } from '../../textgen-settings.js';
 import { debounce_timeout } from '../../constants.js';
@@ -345,6 +345,12 @@ async function visualNovelUpdateLayers(container) {
     await Promise.allSettled(setLayerIndicesPromises);
 }
 
+/**
+ * Sets the expression for the given character image.
+ * @param {JQuery<HTMLElement>} img - The image element to set the image on
+ * @param {string} path - The path to the image
+ * @returns {Promise<void>} - A promise that resolves when the image is set
+ */
 async function setImage(img, path) {
     // Cohee: If something goes wrong, uncomment this to return to the old behavior
     /*
@@ -412,7 +418,9 @@ async function setImage(img, path) {
                     expressionHolder.css('min-width', 100);
                     expressionHolder.css('min-height', 100);
 
-                    resolve();
+                    expressionClone.one('load', function () {
+                        resolve();
+                    });
                 });
 
             expressionClone.removeClass('expression-clone');
