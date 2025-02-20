@@ -261,7 +261,7 @@ app.use(responseTime());
 
 
 /** @type {number} */
-const server_port = cliArguments.port ?? process.env.SILLY_TAVERN_PORT ?? getConfigValue('port', DEFAULT_PORT);
+const server_port = cliArguments.port ?? getConfigValue('port', DEFAULT_PORT);
 /** @type {boolean} */
 const autorun = (cliArguments.autorun ?? getConfigValue('autorun', DEFAULT_AUTORUN)) && !cliArguments.ssl;
 /** @type {boolean} */

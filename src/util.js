@@ -21,6 +21,14 @@ import { LOG_LEVELS } from './constants.js';
 let CACHED_CONFIG = null;
 
 /**
+ * Converts a configuration key to an environment variable key.
+ * @param {string} key Configuration key
+ * @returns {string} Environment variable key
+ * @example keyToEnv('extensions.models.speechToText') // 'SILLYTAVERN_EXTENSIONS_MODELS_SPEECHTOTEXT'
+ */
+export const keyToEnv = (key) => 'SILLYTAVERN_' + String(key).toUpperCase().replace(/\./g, '_');
+
+/**
  * Returns the config object from the config.yaml file.
  * @returns {object} Config object
  */
@@ -53,6 +61,10 @@ export function getConfig() {
  * @returns {any} Value for the given key
  */
 export function getConfigValue(key, defaultValue = null) {
+    const envKey = keyToEnv(key);
+    if (envKey in process.env) {
+        return process.env[envKey];
+    }
     const config = getConfig();
     return _.get(config, key, defaultValue);
 }
