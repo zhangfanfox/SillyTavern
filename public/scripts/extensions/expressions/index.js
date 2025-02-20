@@ -418,9 +418,11 @@ async function setImage(img, path) {
                     expressionHolder.css('min-width', 100);
                     expressionHolder.css('min-height', 100);
 
-                    expressionClone.one('load', function () {
+                    if (expressionClone.prop('complete')) {
                         resolve();
-                    });
+                    } else {
+                        expressionClone.one('load', () => resolve());
+                    }
                 });
 
             expressionClone.removeClass('expression-clone');
