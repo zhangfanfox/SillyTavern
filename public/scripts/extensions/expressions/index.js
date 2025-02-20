@@ -1904,7 +1904,7 @@ async function onClickExpressionDelete(event) {
 
     const confirmation = await Popup.show.confirm(t`Delete Expression`, t`Are you sure you want to delete this expression? Once deleted, it\'s gone forever!`
         + '<br /><br />'
-        + t`Expression:` + ' <tt>' + expressionListItem.attr('data-filename')) + '</tt>';
+        + t`Expression:` + ' <tt>' + expressionListItem.attr('data-filename') + '</tt>');
     if (!confirmation) {
         return;
     }
