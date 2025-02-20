@@ -1739,12 +1739,13 @@ async function onClickExpressionUpload(event) {
                     });
                 }
 
+                spriteName = null;
+                const suggestedSpriteName = generateUniqueSpriteName(expression, existingFiles);
+
                 const message = await renderExtensionTemplateAsync(MODULE_NAME, 'templates/upload-expression', { expression, clickedFileName });
 
-                spriteName = generateUniqueSpriteName(expression, existingFiles);
-
                 const input = await Popup.show.input(t`Upload Expression Sprite`, message,
-                    spriteName, { customButtons: customButtons });
+                    suggestedSpriteName, { customButtons: customButtons });
 
                 if (input) {
                     if (!validateExpressionSpriteName(expression, input)) {
@@ -1752,8 +1753,6 @@ async function onClickExpressionUpload(event) {
                         return;
                     }
                     spriteName = input;
-                } else {
-                    spriteName = null;
                 }
             }
         } else {
@@ -1762,6 +1761,8 @@ async function onClickExpressionUpload(event) {
 
         if (!spriteName) {
             toastr.warning(t`Cancelled uploading sprite.`, t`Upload Cancelled`);
+            // Reset the input
+            e.target.form.reset();
             return;
         }
 
