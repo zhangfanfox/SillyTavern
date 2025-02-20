@@ -1552,7 +1552,7 @@ async function onClickExpressionAddCustom() {
         toastr.warning('Invalid custom expression name provided', 'Add Custom Expression');
         return;
     }
-    if (DEFAULT_EXPRESSIONS.includes(expressionName)) {
+    if (DEFAULT_EXPRESSIONS.includes(expressionName) || DEFAULT_EXPRESSIONS.some(x => expressionName.startsWith(x))) {
         toastr.warning('Expression name already exists', 'Add Custom Expression');
         return;
     }
