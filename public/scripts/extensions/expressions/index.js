@@ -1699,7 +1699,8 @@ async function onClickExpressionUpload(event) {
     const handleExpressionUploadChange = async (e) => {
         const file = e.target.files[0];
 
-        if (!file) {
+        if (!file || !file.name) {
+            console.debug('No valid file selected');
             return;
         }
 
