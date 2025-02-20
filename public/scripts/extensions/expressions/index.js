@@ -210,7 +210,7 @@ async function visualNovelSetCharacterSprites(vnContainer, spriteFolderName, exp
 
         const spriteFile = chooseSpriteForExpression(memberSpriteFolderName, expression, { prevExpressionSrc: prevExpressionSrc });
         if (expressionImage.length) {
-            if (spriteFolderName == memberSpriteFolderName) {
+            if (!spriteFolderName || spriteFolderName == memberSpriteFolderName) {
                 await validateImages(memberSpriteFolderName, true);
                 setExpressionOverrideHtml(true); // <= force clear expression override input
                 const path = spriteFile?.imageSrc || '';
