@@ -54,7 +54,6 @@ export function getConfig() {
     }
 }
 
-
 /**
  * Returns the value for the given key from the config object.
  * @param {string} key - Key to get from the config object
@@ -81,6 +80,16 @@ export function getConfigValue(key, defaultValue = null, typeConverter = null) {
         default:
             return value;
     }
+}
+
+/**
+ * THIS FUNCTION IS DEPRECATED AND ONLY EXISTS FOR BACKWARDS COMPATIBILITY. DON'T USE IT.
+ * @param {any} _key Unused
+ * @param {any} _value Unused
+ * @deprecated Configs are read-only. Use environment variables instead.
+ */
+export function setConfigValue(_key, _value) {
+    console.trace(color.yellow('setConfigValue is deprecated and should not be used.'));
 }
 
 /**
