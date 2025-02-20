@@ -209,7 +209,8 @@ img.expression.default {
     flex-direction: row;
 }
 
-#expressions_container:has(#expressions_allow_multiple:not(:checked)) #image_list .expression_list_item[data-expression-type="additional"] {
+#expressions_container:has(#expressions_allow_multiple:not(:checked)) #image_list .expression_list_item[data-expression-type="additional"],
+#expressions_container:has(#expressions_allow_multiple:not(:checked)) label[for="expressions_reroll_if_same"] {
     opacity: 0.3;
     transition: opacity var(--animation-duration) ease;
 }
