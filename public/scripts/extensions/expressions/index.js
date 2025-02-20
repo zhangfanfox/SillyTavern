@@ -234,6 +234,10 @@ async function visualNovelSetCharacterSprites(vnContainer, spriteFolderName, exp
             setSpritePromises.push(fadeInPromise);
         }
 
+        if (!img) {
+            continue;
+        }
+
         img.attr('data-sprite-folder-name', spriteFolderName);
         img.attr('data-expression', expression);
         img.attr('data-sprite-filename', spriteFile?.fileName || null);
@@ -679,7 +683,8 @@ async function setSpriteSlashCommand({ type }, searchTerm) {
         return '';
     }
 
-    const spriteFolderName = getSpriteFolderName();
+    const currentLastMessage = selected_group ? getLastCharacterMessage() : null;
+    const spriteFolderName = getSpriteFolderName(currentLastMessage, currentLastMessage?.name);
 
     let label = searchTerm;
 
@@ -2135,7 +2140,8 @@ function migrateSettings() {
 
     const localEnumProviders = {
         expressions: () => {
-            const spriteFolderName = getSpriteFolderName();
+            const currentLastMessage = selected_group ? getLastCharacterMessage() : null;
+            const spriteFolderName = getSpriteFolderName(currentLastMessage, currentLastMessage?.name);
             const expressions = getCachedExpressions();
             return expressions.map(expression => {
                 const spriteCount = spriteCache[spriteFolderName]?.find(x => x.label === expression)?.files.length ?? 0;
@@ -2149,7 +2155,8 @@ function migrateSettings() {
             });
         },
         sprites: () => {
-            const spriteFolderName = getSpriteFolderName();
+            const currentLastMessage = selected_group ? getLastCharacterMessage() : null;
+            const spriteFolderName = getSpriteFolderName(currentLastMessage, currentLastMessage?.name);
             const sprites = spriteCache[spriteFolderName]?.map(x => x.files)?.flat() ?? [];
             return sprites.map(x => {
                 return new SlashCommandEnumValue(x.title,
