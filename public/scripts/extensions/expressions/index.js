@@ -1902,6 +1902,10 @@ async function onClickExpressionDelete(event) {
     const expressionListItem = $(this).closest('.expression_list_item');
     const expression = expressionListItem.data('expression');
 
+    if (expressionListItem.attr('data-expression-type') === 'failure') {
+        return;
+    }
+
     const confirmation = await Popup.show.confirm(t`Delete Expression`, t`Are you sure you want to delete this expression? Once deleted, it\'s gone forever!`
         + '<br /><br />'
         + t`Expression:` + ' <tt>' + expressionListItem.attr('data-filename') + '</tt>');
