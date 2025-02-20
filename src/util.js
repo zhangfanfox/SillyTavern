@@ -787,8 +787,8 @@ export function toBoolean(value) {
  * @returns {boolean|string|null} boolean else original input string or null if input is
  */
 export function stringToBool(str) {
-    if (str === 'true') return true;
-    if (str === 'false') return false;
+    if (String(str).trim().toLowerCase() === 'true') return true;
+    if (String(str).trim().toLowerCase() === 'false') return false;
     return str;
 }
 

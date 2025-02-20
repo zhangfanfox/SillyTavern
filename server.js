@@ -285,10 +285,10 @@ const enableAccounts = getConfigValue('enableUserAccounts', DEFAULT_ACCOUNTS, 'b
 const uploadsPath = path.join(globalThis.DATA_ROOT, UPLOADS_DIRECTORY);
 
 
-/** @type {boolean | "auto"} */
-let enableIPv6 = stringToBool(cliArguments.enableIPv6) ?? getConfigValue('protocol.ipv6', DEFAULT_ENABLE_IPV6);
-/** @type {boolean | "auto"} */
-let enableIPv4 = stringToBool(cliArguments.enableIPv4) ?? getConfigValue('protocol.ipv4', DEFAULT_ENABLE_IPV4);
+/** @type {boolean | string} */
+let enableIPv6 = stringToBool(cliArguments.enableIPv6) ?? stringToBool(getConfigValue('protocol.ipv6', DEFAULT_ENABLE_IPV6)) ?? DEFAULT_ENABLE_IPV6;
+/** @type {boolean | string} */
+let enableIPv4 = stringToBool(cliArguments.enableIPv4) ?? stringToBool(getConfigValue('protocol.ipv4', DEFAULT_ENABLE_IPV4)) ?? DEFAULT_ENABLE_IPV4;
 
 /** @type {string} */
 const autorunHostname = cliArguments.autorunHostname ?? getConfigValue('autorunHostname', DEFAULT_AUTORUN_HOSTNAME);
