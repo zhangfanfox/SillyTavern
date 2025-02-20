@@ -7,7 +7,7 @@ import { jsonParser, getIpFromRequest } from '../express-common.js';
 import { color, Cache, getConfigValue } from '../util.js';
 import { KEY_PREFIX, getUserAvatar, toKey, getPasswordHash, getPasswordSalt } from '../users.js';
 
-const DISCREET_LOGIN = getConfigValue('enableDiscreetLogin', false);
+const DISCREET_LOGIN = getConfigValue('enableDiscreetLogin', false, 'boolean');
 const MFA_CACHE = new Cache(5 * 60 * 1000);
 
 export const router = express.Router();

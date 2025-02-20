@@ -21,9 +21,9 @@ import { getContentOfType } from './endpoints/content-manager.js';
 
 export const KEY_PREFIX = 'user:';
 const AVATAR_PREFIX = 'avatar:';
-const ENABLE_ACCOUNTS = getConfigValue('enableUserAccounts', false);
-const AUTHELIA_AUTH = getConfigValue('autheliaAuth', false);
-const PER_USER_BASIC_AUTH = getConfigValue('perUserBasicAuth', false);
+const ENABLE_ACCOUNTS = getConfigValue('enableUserAccounts', false, 'boolean');
+const AUTHELIA_AUTH = getConfigValue('autheliaAuth', false, 'boolean');
+const PER_USER_BASIC_AUTH = getConfigValue('perUserBasicAuth', false, 'boolean');
 const ANON_CSRF_SECRET = crypto.randomBytes(64).toString('base64');
 
 /**
