@@ -285,6 +285,12 @@ async function visualNovelUpdateLayers(container) {
     let images = Array.from($('#visual-novel-wrapper .expression-holder')).sort(sortFunction);
     let imagesWidth = [];
 
+    for (const image of images) {
+        if (image instanceof HTMLImageElement && !image.complete) {
+            await new Promise(resolve => image.addEventListener('load', resolve, { once: true }));
+        }
+    }
+
     images.forEach(image => {
         imagesWidth.push($(image).width());
     });
@@ -320,9 +326,15 @@ async function visualNovelUpdateLayers(container) {
         element.show();
 
         const promise = new Promise(resolve => {
-            element.animate({ left: currentPosition + 'px' }, 500, () => {
-                resolve();
-            });
+            if (power_user.reduced_motion) {
+                element.css('left', currentPosition + 'px');
+                requestAnimationFrame(() => resolve());
+            }
+            else {
+                element.animate({ left: currentPosition + 'px' }, 500, () => {
+                    resolve();
+                });
+            }
         });
 
         currentPosition += imagesWidth[index];
