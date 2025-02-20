@@ -9,7 +9,6 @@ import { promises as dnsPromise } from 'node:dns';
 
 import yaml from 'yaml';
 import { sync as commandExistsSync } from 'command-exists';
-import { sync as writeFileAtomicSync } from 'write-file-atomic';
 import _ from 'lodash';
 import yauzl from 'yauzl';
 import mime from 'mime-types';
@@ -56,19 +55,6 @@ export function getConfig() {
 export function getConfigValue(key, defaultValue = null) {
     const config = getConfig();
     return _.get(config, key, defaultValue);
-}
-
-/**
- * Sets a value for the given key in the config object and writes it to the config.yaml file.
- * @param {string} key Key to set
- * @param {any} value Value to set
- */
-export function setConfigValue(key, value) {
-    // Reset cache so that the next getConfig call will read the updated config file
-    CACHED_CONFIG = null;
-    const config = getConfig();
-    _.set(config, key, value);
-    writeFileAtomicSync('./config.yaml', yaml.stringify(config));
 }
 
 /**

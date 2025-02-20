@@ -274,7 +274,7 @@ const listenAddressIPv4 = cliArguments.listenAddressIPv4 ?? getConfigValue('list
 const enableCorsProxy = cliArguments.corsProxy ?? getConfigValue('enableCorsProxy', DEFAULT_CORS_PROXY);
 const enableWhitelist = cliArguments.whitelist ?? getConfigValue('whitelistMode', DEFAULT_WHITELIST);
 /** @type {string} */
-const dataRoot = cliArguments.dataRoot ?? getConfigValue('dataRoot', './data');
+globalThis.DATA_ROOT = cliArguments.dataRoot ?? getConfigValue('dataRoot', './data');
 /** @type {boolean} */
 const disableCsrf = cliArguments.disableCsrf ?? getConfigValue('disableCsrfProtection', DEFAULT_CSRF_DISABLED);
 const basicAuthMode = cliArguments.basicAuthMode ?? getConfigValue('basicAuthMode', DEFAULT_BASIC_AUTH);
@@ -282,7 +282,7 @@ const perUserBasicAuth = getConfigValue('perUserBasicAuth', DEFAULT_PER_USER_BAS
 /** @type {boolean} */
 const enableAccounts = getConfigValue('enableUserAccounts', DEFAULT_ACCOUNTS);
 
-const uploadsPath = path.join(dataRoot, UPLOADS_DIRECTORY);
+const uploadsPath = path.join(globalThis.DATA_ROOT, UPLOADS_DIRECTORY);
 
 
 /** @type {boolean | "auto"} */
@@ -466,7 +466,7 @@ app.use(cookieSession({
     sameSite: 'strict',
     httpOnly: true,
     maxAge: getSessionCookieAge(),
-    secret: getCookieSecret(),
+    secret: getCookieSecret(globalThis.DATA_ROOT),
 }));
 
 app.use(setUserDataMiddleware);
@@ -1137,7 +1137,7 @@ function apply404Middleware() {
 }
 
 // User storage module needs to be initialized before starting the server
-initUserStorage(dataRoot)
+initUserStorage(globalThis.DATA_ROOT)
     .then(ensurePublicDirectoriesExist)
     .then(migrateUserData)
     .then(migrateSystemPrompts)

@@ -104,6 +104,15 @@ const keyMigrationMap = [
         newKey: 'extensions.models.textToSpeech',
         migrate: (value) => value,
     },
+    // uncommend one release after 1.12.13
+    /*
+    {
+        oldKey: 'cookieSecret',
+        newKey: 'cookieSecret',
+        migrate: () => void 0,
+        remove: true,
+    },
+    */
 ];
 
 /**
@@ -163,8 +172,17 @@ function addMissingConfigValues() {
 
         // Migrate old keys to new keys
         const migratedKeys = [];
-        for (const { oldKey, newKey, migrate } of keyMigrationMap) {
+        for (const { oldKey, newKey, migrate, remove } of keyMigrationMap) {
             if (_.has(config, oldKey)) {
+                if (remove) {
+                    _.unset(config, oldKey);
+                    migratedKeys.push({
+                        oldKey,
+                        newValue: void 0,
+                    });
+                    continue;
+                }
+
                 const oldValue = _.get(config, oldKey);
                 const newValue = migrate(oldValue);
                 _.set(config, newKey, newValue);
