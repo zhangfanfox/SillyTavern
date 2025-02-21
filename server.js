@@ -344,7 +344,7 @@ app.use(CORS);
 if (listen && basicAuthMode) app.use(basicAuthMiddleware);
 
 app.use(whitelistMiddleware(enableWhitelist));
-app.use(accessLoggerMiddleware());
+app.use(accessLoggerMiddleware(listen));
 
 if (enableCorsProxy) {
     app.use(bodyParser.json({
