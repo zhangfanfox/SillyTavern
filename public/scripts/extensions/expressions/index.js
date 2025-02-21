@@ -1601,8 +1601,9 @@ async function onClickExpressionAddCustom() {
 
 async function onClickExpressionRemoveCustom() {
     const selectedExpression = String($('#expression_custom').val());
+    const noCustomExpressions = extension_settings.expressions.custom.length === 0;
 
-    if (!selectedExpression) {
+    if (!selectedExpression || noCustomExpressions) {
         console.debug('No custom expression selected');
         return;
     }
