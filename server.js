@@ -58,7 +58,7 @@ import {
 import getWebpackServeMiddleware from './src/middleware/webpack-serve.js';
 import basicAuthMiddleware from './src/middleware/basicAuth.js';
 import whitelistMiddleware from './src/middleware/whitelist.js';
-import accessLoggerMiddleware, { getAccessLogPath, migrateAccessLog } from './src/middleware/accessLogger.js';
+import accessLoggerMiddleware, { getAccessLogPath, migrateAccessLog } from './src/middleware/accessLogWriter.js';
 import multerMonkeyPatch from './src/middleware/multerMonkeyPatch.js';
 import initRequestProxy from './src/request-proxy.js';
 import getCacheBusterMiddleware from './src/middleware/cacheBuster.js';
