@@ -55,8 +55,9 @@
     --interactable-outline-color: var(--white100);
     --interactable-outline-color-faint: var(--white20a);
 
-    --reasoning-mix-rate: 50%;
-    --reasoning-mix-color: var(--grey30);
+    --reasoning-body-color: var(--SmartThemeEmColor);
+    --reasoning-em-color: color-mix(in srgb, var(--SmartThemeEmColor) 67%, var(--SmartThemeBlurTintColor) 33%);
+    --reasoning-saturation: 0.5;
 
 
     /*Default Theme, will be changed by ToolCool Color Picker*/
@@ -351,13 +352,13 @@ input[type='checkbox']:focus-visible {
 
 .mes_reasoning {
     display: block;
-    border-left: 2px solid var(--SmartThemeEmColor);
+    border-left: 2px solid var(--reasoning-body-color);
     border-radius: 2px;
     padding: 5px;
     padding-left: 14px;
     margin-bottom: 0.5em;
     overflow-y: auto;
-    color: color-mix(in srgb, var(--SmartThemeBodyColor) var(--reasoning-mix-rate), var(--reasoning-mix-color));
+    color: hsl(from var(--reasoning-body-color) h calc(s * var(--reasoning-saturation)) l);
 }
 
 .mes_reasoning_details {
@@ -457,7 +458,7 @@ input[type='checkbox']:focus-visible {
 }
 .mes_reasoning i,
 .mes_reasoning em {
-    color: color-mix(in srgb, var(--SmartThemeEmColor) var(--reasoning-mix-rate), var(--reasoning-mix-color));
+    color: hsl(from var(--reasoning-em-color) h calc(s * var(--reasoning-saturation)) l);
 }
 
 .mes_text q i,
@@ -466,21 +467,21 @@ input[type='checkbox']:focus-visible {
 }
 .mes_reasoning q i,
 .mes_reasoning q em {
-    color: color-mix(in srgb, var(--SmartThemeQuoteColor) var(--reasoning-mix-rate), var(--reasoning-mix-color));
+    color: hsl(from var(--SmartThemeQuoteColor) h calc(s * var(--reasoning-saturation)) l);
 }
 
 .mes_text u {
     color: var(--SmartThemeUnderlineColor);
 }
 .mes_reasoning u {
-    color: color-mix(in srgb, var(--SmartThemeUnderlineColor) var(--reasoning-mix-rate), var(--reasoning-mix-color));
+    color: hsl(from var(--SmartThemeUnderlineColor) h calc(s * var(--reasoning-saturation)) l);
 }
 
 .mes_text q {
     color: var(--SmartThemeQuoteColor);
 }
 .mes_reasoning q {
-    color: color-mix(in srgb, var(--SmartThemeQuoteColor) var(--reasoning-mix-rate), var(--reasoning-mix-color));
+    color: hsl(from var(--SmartThemeQuoteColor) h calc(s * var(--reasoning-saturation)) l);
 }
 
 .mes_text font[color] em,
