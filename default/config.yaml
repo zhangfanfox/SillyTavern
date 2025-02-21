@@ -85,6 +85,11 @@ cookieSecret: ''
 disableCsrfProtection: false
 # Disable startup security checks - NOT RECOMMENDED
 securityOverride: false
+# -- LOGGING CONFIGURATION --
+logging:
+  # Enable access logging to access.log file
+  # Records new connections with timestamp, IP address and user agent
+  enableAccessLog: true
 # -- RATE LIMITING CONFIGURATION --
 rateLimiting:
   # Use X-Real-IP header instead of socket IP for rate limiting
