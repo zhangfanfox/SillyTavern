@@ -178,6 +178,7 @@ async function visualNovelRemoveInactive(container) {
  * @returns {Promise<Array>} - An array of promises that resolve when the sprites are set
  */
 async function visualNovelSetCharacterSprites(vnContainer, spriteFolderName, expression) {
+    const originalExpression = expression;
     const context = getContext();
     const group = context.groups.find(x => x.id == context.groupId);
 
@@ -207,6 +208,10 @@ async function visualNovelSetCharacterSprites(vnContainer, spriteFolderName, exp
         }
 
         const prevExpressionSrc = expressionImage.find('img').attr('src') || null;
+
+        if (!originalExpression && Array.isArray(spriteCache[memberSpriteFolderName]) && spriteCache[memberSpriteFolderName].length > 0) {
+            expression = await getLastMessageSprite(avatar);
+        }
 
         const spriteFile = chooseSpriteForExpression(memberSpriteFolderName, expression, { prevExpressionSrc: prevExpressionSrc });
         if (expressionImage.length) {
@@ -249,6 +254,23 @@ async function visualNovelSetCharacterSprites(vnContainer, spriteFolderName, exp
     }
 
     return setSpritePromises;
+}
+
+/**
+ * Classifies the text of the latest message and returns the expression label.
+ * @param {string} avatar - The avatar of the character to get the last message for
+ * @returns {Promise<string>} - The expression label
+ */
+async function getLastMessageSprite(avatar) {
+    const context = getContext();
+    const lastMessage = context.chat.slice().reverse().find(x => x.original_avatar == avatar || (x.force_avatar && x.force_avatar.includes(encodeURIComponent(avatar))));
+
+    if (lastMessage) {
+        const text = lastMessage.mes || '';
+        return await getExpressionLabel(text);
+    }
+
+    return null;
 }
 
 async function visualNovelUpdateLayers(container) {
@@ -445,7 +467,7 @@ async function setImage(img, path) {
     });
 }
 
-async function moduleWorker() {
+async function moduleWorker({ newChat = false } = {}) {
     const context = getContext();
 
     // non-characters not supported
@@ -512,6 +534,10 @@ async function moduleWorker() {
         }
 
         offlineMode.css('display', 'none');
+    }
+
+    if (context.groupId && vnMode && newChat) {
+        await forceUpdateVisualNovelMode();
     }
 
     // Don't bother classifying if current char has no sprites and no default expressions are enabled
@@ -2134,7 +2160,7 @@ function migrateSettings() {
             $('#visual-novel-wrapper').empty();
         }
 
-        updateFunction();
+        updateFunction({ newChat: true });
     });
     eventSource.on(event_types.MOVABLE_PANELS_RESET, updateVisualNovelModeDebounced);
     eventSource.on(event_types.GROUP_UPDATED, updateVisualNovelModeDebounced);
