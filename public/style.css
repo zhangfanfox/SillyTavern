@@ -55,6 +55,9 @@
     --interactable-outline-color: var(--white100);
     --interactable-outline-color-faint: var(--white20a);
 
+    --reasoning-mix-rate: 50%;
+    --reasoning-mix-color: var(--grey30);
+
 
     /*Default Theme, will be changed by ToolCool Color Picker*/
     --SmartThemeBodyColor: rgb(220, 220, 210);
@@ -354,7 +357,7 @@ input[type='checkbox']:focus-visible {
     padding-left: 14px;
     margin-bottom: 0.5em;
     overflow-y: auto;
-    color: var(--SmartThemeEmColor);
+    color: color-mix(in srgb, var(--SmartThemeBodyColor) var(--reasoning-mix-rate), var(--reasoning-mix-color));
 }
 
 .mes_reasoning_details {
@@ -372,18 +375,6 @@ input[type='checkbox']:focus-visible {
 
 .mes_reasoning *:last-child {
     margin-bottom: 0;
-}
-
-.mes_reasoning em,
-.mes_reasoning i,
-.mes_reasoning u,
-.mes_reasoning q,
-.mes_reasoning blockquote {
-    filter: saturate(0.5);
-}
-
-.mes_reasoning_details .mes_reasoning em {
-    color: color-mix(in srgb, var(--SmartThemeEmColor) 67%, var(--SmartThemeBlurTintColor) 33%);
 }
 
 .mes_reasoning_header_block {
@@ -461,25 +452,35 @@ input[type='checkbox']:focus-visible {
 }
 
 .mes_text i,
-.mes_text em,
+.mes_text em {
+    color: var(--SmartThemeEmColor);
+}
 .mes_reasoning i,
 .mes_reasoning em {
-    color: var(--SmartThemeEmColor);
+    color: color-mix(in srgb, var(--SmartThemeEmColor) var(--reasoning-mix-rate), var(--reasoning-mix-color));
 }
 
 .mes_text q i,
 .mes_text q em {
     color: inherit;
 }
-
-.mes_text u,
-.mes_reasoning u {
-    color: var(--SmartThemeUnderlineColor);
+.mes_reasoning q i,
+.mes_reasoning q em {
+    color: color-mix(in srgb, var(--SmartThemeQuoteColor) var(--reasoning-mix-rate), var(--reasoning-mix-color));
 }
 
-.mes_text q,
-.mes_reasoning q {
+.mes_text u {
+    color: var(--SmartThemeUnderlineColor);
+}
+.mes_reasoning u {
+    color: color-mix(in srgb, var(--SmartThemeUnderlineColor) var(--reasoning-mix-rate), var(--reasoning-mix-color));
+}
+
+.mes_text q {
     color: var(--SmartThemeQuoteColor);
+}
+.mes_reasoning q {
+    color: color-mix(in srgb, var(--SmartThemeQuoteColor) var(--reasoning-mix-rate), var(--reasoning-mix-color));
 }
 
 .mes_text font[color] em,
