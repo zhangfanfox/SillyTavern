@@ -28,15 +28,14 @@ export function migrateAccessLog() {
 
 /**
  * Creates middleware for logging access and new connections
- * @param {boolean} listen If listen mode is enabled via config or command line
  * @returns {import('express').RequestHandler}
  */
-export default function accessLoggerMiddleware(listen) {
+export default function accessLoggerMiddleware() {
     return function (req, res, next) {
         const clientIp = getRealIpFromHeader(req);
         const userAgent = req.headers['user-agent'];
 
-        if (listen && !knownIPs.has(clientIp)) {
+        if (!knownIPs.has(clientIp)) {
             // Log new connection
             console.info(color.yellow(`New connection from ${clientIp}; User Agent: ${userAgent}\n`));
             knownIPs.add(clientIp);
