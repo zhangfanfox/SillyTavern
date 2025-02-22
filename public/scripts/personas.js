@@ -1581,7 +1581,7 @@ async function duplicatePersona(avatarId) {
 /**
  * If a current user avatar is not bound to persona, bind it.
  */
-function migrateNonPersonaUser() {
+async function migrateNonPersonaUser() {
     if (user_avatar in power_user.personas) {
         return;
     }
@@ -1589,12 +1589,12 @@ function migrateNonPersonaUser() {
     power_user.personas[user_avatar] = name1;
     void getOrCreatePersonaDescriptor();
     setPersonaDescription();
+    await getUserAvatars(true, user_avatar);
     saveSettingsDebounced();
 }
 
-
-export function initPersonas() {
-    migrateNonPersonaUser();
+export async function initPersonas() {
+    await migrateNonPersonaUser();
     $('#persona_delete_button').on('click', deleteUserAvatar);
     $('#lock_persona_default').on('click', () => togglePersonaLock('default'));
     $('#lock_user_name').on('click', () => togglePersonaLock('chat'));

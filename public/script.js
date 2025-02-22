@@ -985,7 +985,7 @@ async function firstLoadInit() {
     await initTokenizers();
     initBackgrounds();
     initAuthorsNote();
-    initPersonas();
+    await initPersonas();
     initRossMods();
     initStats();
     initCfg();
