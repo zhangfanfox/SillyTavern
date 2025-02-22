@@ -1304,10 +1304,13 @@ function updatePersonaUIStates() {
     const { isTemporary, info } = getPersonaTemporaryLockInfo();
     if (isTemporary) {
         const messageContainer = document.createElement('div');
-        messageContainer.innerHTML = t`Temporary persona in use.`;
+        const messageSpan = document.createElement('span');
+        messageSpan.textContent = t`Temporary persona in use.`;
+        messageContainer.appendChild(messageSpan);
+        messageContainer.classList.add('flex-container', 'alignItemsBaseline');
 
         const infoIcon = document.createElement('i');
-        infoIcon.classList.add('fa-solid', 'fa-circle-info', 'opacity50p', 'marginLeft5');
+        infoIcon.classList.add('fa-solid', 'fa-circle-info', 'opacity50p');
         infoIcon.title = info;
         messageContainer.appendChild(infoIcon);
 
@@ -1610,7 +1613,22 @@ async function duplicatePersona(avatarId) {
     saveSettingsDebounced();
 }
 
+/**
+ * If a current user avatar is not bound to persona, bind it.
+ */
+function migrateNonPersonaUser() {
+    if (user_avatar in power_user.personas) {
+        return;
+    }
+
+    power_user.personas[user_avatar] = name1;
+    void getOrCreatePersonaDescriptor();
+    setPersonaDescription();
+    saveSettingsDebounced();
+}
+
 export function initPersonas() {
+    migrateNonPersonaUser();
     $('#persona_delete_button').on('click', deleteUserAvatar);
     $('#lock_persona_default').on('click', () => togglePersonaLock('default'));
     $('#lock_user_name').on('click', () => togglePersonaLock('chat'));
