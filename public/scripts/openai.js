@@ -4132,6 +4132,7 @@ function getGroqMaxContext(model, isUnlocked) {
         'llama-3.1-8b-instant': max_128k,
         'llama3-70b-8192': max_8k,
         'llama3-8b-8192': max_8k,
+        'llama-guard-3-8b': max_8k,
         'mixtral-8x7b-32768': max_32k,
         'deepseek-r1-distill-llama-70b': max_128k,
         'llama-3.3-70b-specdec': max_8k,
