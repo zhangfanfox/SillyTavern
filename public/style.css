@@ -3028,7 +3028,7 @@ select option:not(:checked) {
     white-space: nowrap;
     margin-right: 10px;
     font-size: calc(var(--mainFontSize) * 1.25);
-    color: var(--grey50);
+    opacity: 0.5;
 }
 
 #persona_connections_buttons {
