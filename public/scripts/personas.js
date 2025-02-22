@@ -589,7 +589,7 @@ export function updatePersonaConnectionsAvatarList() {
     }).filter(entity => entity?.item !== undefined);
 
     if (entities.length)
-        buildAvatarList($('#persona_connections_list'), entities);
+        buildAvatarList($('#persona_connections_list'), entities, { interactable: true });
     else
         $('#persona_connections_list').text(t`[No character connections. Click one of the buttons above to connect this persona.]`);
 }
