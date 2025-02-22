@@ -673,31 +673,6 @@ export function autoSelectPersona(name) {
     }
 }
 
-/**
- * Updates the name of a persona if it exists.
- * @param {string} avatarId User avatar id
- * @param {string} newName New name for the persona
- */
-async function updatePersonaNameIfExists(avatarId, newName) {
-    if (avatarId in power_user.personas) {
-        power_user.personas[avatarId] = newName;
-        console.log(`Updated persona name for ${avatarId} to ${newName}`);
-    } else {
-        power_user.personas[avatarId] = newName;
-        power_user.persona_descriptions[avatarId] = {
-            description: '',
-            position: persona_description_positions.IN_PROMPT,
-            depth: DEFAULT_DEPTH,
-            role: DEFAULT_ROLE,
-            lorebook: '',
-        };
-        console.log(`Created persona name for ${avatarId} as ${newName}`);
-    }
-
-    await getUserAvatars(true, avatarId);
-    saveSettingsDebounced();
-}
-
 async function renamePersona(avatarId) {
     const currentName = power_user.personas[avatarId];
     const newName = await Popup.show.input(t`Rename Persona`, t`Enter a new name for this persona:`, currentName);
@@ -717,66 +692,6 @@ async function renamePersona(avatarId) {
     await getUserAvatars(true, avatarId);
     updatePersonaUIStates();
     setPersonaDescription();
-}
-
-async function bindUserNameToPersona() {
-    const avatarId = user_avatar;
-
-    if (!avatarId) {
-        console.warn('No avatar id found');
-        return;
-    }
-
-    let personaUnbind = false;
-    const existingPersona = power_user.personas[avatarId];
-    const personaName = await Popup.show.input(
-        t`Enter a name for this persona:`,
-        t`(If empty name is provided, this will unbind the name from this avatar)`,
-        existingPersona || '',
-        { onClose: (p) => { personaUnbind = p.value === '' && p.result === POPUP_RESULT.AFFIRMATIVE; } });
-
-    // If the user clicked cancel, don't do anything
-    if (personaName === null && !personaUnbind) {
-        return;
-    }
-
-    if (personaName && personaName.length > 0) {
-        // If the user clicked ok and entered a name, bind the name to the persona
-        console.log(`Binding persona ${avatarId} to name ${personaName}`);
-        power_user.personas[avatarId] = personaName;
-        const descriptor = power_user.persona_descriptions[avatarId];
-        const isCurrentPersona = avatarId === user_avatar;
-
-        // Create a description object if it doesn't exist
-        if (!descriptor) {
-            // If the user is currently using this persona, set the description to the current description
-            power_user.persona_descriptions[avatarId] = {
-                description: isCurrentPersona ? power_user.persona_description : '',
-                position: isCurrentPersona ? power_user.persona_description_position : persona_description_positions.IN_PROMPT,
-                depth: isCurrentPersona ? power_user.persona_description_depth : DEFAULT_DEPTH,
-                role: isCurrentPersona ? power_user.persona_description_role : DEFAULT_ROLE,
-                lorebook: isCurrentPersona ? power_user.persona_description_lorebook : '',
-            };
-        }
-
-        // If the user is currently using this persona, update the name
-        if (isCurrentPersona) {
-            console.log(`Auto-updating user name to ${personaName}`);
-            setUserName(personaName);
-            await updatePersonaNameIfExists(user_avatar, personaName);
-        }
-    } else {
-        // If the user clicked ok, but didn't enter a name, delete the persona
-        console.log(`Unbinding persona ${avatarId}`);
-        delete power_user.personas[avatarId];
-        delete power_user.persona_descriptions[avatarId];
-    }
-
-    saveSettingsDebounced();
-    await getUserAvatars(true, avatarId);
-    setPersonaDescription();
-
-    retriggerFirstMessageOnEmptyChat();
 }
 
 function selectCurrentPersona({ toastPersonaNameChange = true } = {}) {
