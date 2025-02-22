@@ -270,7 +270,7 @@ async function getLastMessageSprite(avatar) {
         return await getExpressionLabel(text);
     }
 
-    return null;
+    return extension_settings.expressions.fallback_expression;
 }
 
 async function visualNovelUpdateLayers(container) {
