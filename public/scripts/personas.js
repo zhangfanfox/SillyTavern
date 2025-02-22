@@ -22,7 +22,7 @@ import {
 } from '../script.js';
 import { persona_description_positions, power_user } from './power-user.js';
 import { getTokenCountAsync } from './tokenizers.js';
-import { PAGINATION_TEMPLATE, clearInfoBlock, debounce, delay, download, ensureImageFormatSupported, flashHighlight, getBase64Async, getCharIndex, onlyUnique, parseJsonFile, setInfoBlock } from './utils.js';
+import { PAGINATION_TEMPLATE, clearInfoBlock, debounce, delay, download, ensureImageFormatSupported, flashHighlight, getBase64Async, getCharIndex, isFalseBoolean, isTrueBoolean, onlyUnique, parseJsonFile, setInfoBlock } from './utils.js';
 import { debounce_timeout } from './constants.js';
 import { FILTER_TYPES, FilterHelper } from './filters.js';
 import { groups, selected_group } from './group-chats.js';
@@ -32,6 +32,11 @@ import { openWorldInfoEditor, world_names } from './world-info.js';
 import { renderTemplateAsync } from './templates.js';
 import { saveMetadataDebounced } from './extensions.js';
 import { accountStorage } from './util/AccountStorage.js';
+import { SlashCommand } from './slash-commands/SlashCommand.js';
+import { SlashCommandNamedArgument, ARGUMENT_TYPE, SlashCommandArgument } from './slash-commands/SlashCommandArgument.js';
+import { commonEnumProviders } from './slash-commands/SlashCommandCommonEnumsProvider.js';
+import { SlashCommandEnumValue } from './slash-commands/SlashCommandEnumValue.js';
+import { SlashCommandParser } from './slash-commands/SlashCommandParser.js';
 
 /**
  * @typedef {object} PersonaConnection A connection between a character and a character or group entity
@@ -1605,8 +1610,186 @@ async function migrateNonPersonaUser() {
     await getUserAvatars(true, user_avatar);
 }
 
+
+/**
+ * Locks or unlocks the persona of the current chat.
+ * @param {{type: string}} _args Named arguments
+ * @param {string} value The value to set the lock to
+ * @returns {Promise<string>} The value of the lock after setting
+ */
+async function lockPersonaCallback(_args, value) {
+    const type = /** @type {PersonaLockType} */ (_args.type ?? 'chat');
+
+    if (!['chat', 'character', 'default'].includes(type)) {
+        toastr.warning(t`Unknown lock type "${type}"`, t`Persona Management`);
+        return '';
+    }
+
+    if (!value) {
+        return String(isPersonaLocked(type));
+    }
+
+    if (['toggle', 't'].includes(value.trim().toLowerCase())) {
+        const result = await togglePersonaLock(type);
+        return String(result);
+    }
+
+    if (isTrueBoolean(value)) {
+        await setPersonaLockState(true, type);
+        return 'true';
+    }
+
+    if (isFalseBoolean(value)) {
+        await setPersonaLockState(false, type);
+        return 'false';
+
+    }
+
+    return '';
+}
+
+/**
+ * Sets a persona name and optionally an avatar.
+ * @param {{mode: 'lookup' | 'temp' | 'all'}} namedArgs Named arguments
+ * @param {string} name Name to set
+ * @returns {string}
+ */
+function setNameCallback({ mode = 'all' }, name) {
+    if (!name) {
+        toastr.warning('You must specify a name to change to');
+        return '';
+    }
+
+    if (!['lookup', 'temp', 'all'].includes(mode)) {
+        toastr.warning('Mode must be one of "lookup", "temp" or "all"');
+        return '';
+    }
+
+    name = name.trim();
+
+    // If the name matches a persona avatar, or a name, auto-select it
+    if (['lookup', 'all'].includes(mode)) {
+        let persona = Object.entries(power_user.personas).find(([avatar, _]) => avatar === name)?.[1];
+        if (!persona) persona = Object.entries(power_user.personas).find(([_, personaName]) => personaName.toLowerCase() === name.toLowerCase())?.[1];
+        if (persona) {
+            autoSelectPersona(persona);
+            retriggerFirstMessageOnEmptyChat();
+            return '';
+        } else if (mode === 'lookup') {
+            toastr.warning(`Persona ${name} not found`);
+            return '';
+        }
+    }
+
+    if (['temp', 'all'].includes(mode)) {
+        // Otherwise, set just the name
+        setUserName(name); //this prevented quickReply usage
+        retriggerFirstMessageOnEmptyChat();
+    }
+
+    return '';
+}
+
+function syncCallback() {
+    $('#sync_name_button').trigger('click');
+    return '';
+}
+
+function registerPersonaSlashCommands() {
+    SlashCommandParser.addCommandObject(SlashCommand.fromProps({
+        name: 'persona-lock',
+        callback: lockPersonaCallback,
+        returns: 'The current lock state for the given type',
+        helpString: 'Locks/unlocks a persona (name and avatar) to the current chat. Gets the current lock state for the given type if no state is provided.',
+        namedArgumentList: [
+            SlashCommandNamedArgument.fromProps({
+                name: 'type',
+                description: 'The type of the lock, where it should apply to',
+                typeList: [ARGUMENT_TYPE.STRING],
+                defaultValue: 'chat',
+                enumList: [
+                    new SlashCommandEnumValue('chat', 'Lock the persona to the current chat.'),
+                    new SlashCommandEnumValue('character', 'Lock this persona to the currently selected character. If the setting is enabled, mutliple personas can be locked to the same character.'),
+                    new SlashCommandEnumValue('default', 'Lock this persona as the default persona for all new chats.'),
+                ],
+            }),
+        ],
+        unnamedArgumentList: [
+            SlashCommandArgument.fromProps({
+                description: 'state',
+                typeList: [ARGUMENT_TYPE.STRING],
+                enumProvider: commonEnumProviders.boolean('onOffToggle'),
+            }),
+        ],
+    }));
+    // TODO: Legacy command. Might be removed in the future and replaced by /persona-lock with aliases.
+    SlashCommandParser.addCommandObject(SlashCommand.fromProps({
+        name: 'lock',
+        /** @type {(args: { type: string }, value: string) => Promise<string>} */
+        callback: (args, value) => {
+            if (!value) {
+                value = 'toggle';
+                toastr.warning(t`Using /lock without a provided state to toggle the persona is deprecated. Please use /persona-lock instead.
+                        In the future this command with no state provided will return the current state, instead of toggling it.`, t`Deprecation Warning`);
+            }
+            return lockPersonaCallback(args, value);
+        },
+        returns: 'The current lock state for the given type',
+        aliases: ['bind'],
+        helpString: 'Locks/unlocks a persona (name and avatar) to the current chat. Gets the current lock state for the given type if no state is provided.',
+        namedArgumentList: [
+            SlashCommandNamedArgument.fromProps({
+                name: 'type',
+                description: 'The type of the lock, where it should apply to',
+                typeList: [ARGUMENT_TYPE.STRING],
+                defaultValue: 'chat',
+                enumList: [
+                    new SlashCommandEnumValue('chat', 'Lock the persona to the current chat.'),
+                    new SlashCommandEnumValue('character', 'Lock this persona to the currently selected character. If the setting is enabled, mutliple personas can be locked to the same character.'),
+                    new SlashCommandEnumValue('default', 'Lock this persona as the default persona for all new chats.'),
+                ],
+            }),
+        ],
+        unnamedArgumentList: [
+            SlashCommandArgument.fromProps({
+                description: 'state',
+                typeList: [ARGUMENT_TYPE.STRING],
+                defaultValue: 'toggle',
+                enumProvider: commonEnumProviders.boolean('onOffToggle'),
+            }),
+        ],
+    }));
+    SlashCommandParser.addCommandObject(SlashCommand.fromProps({
+        name: 'persona-set',
+        callback: setNameCallback,
+        aliases: ['persona', 'name'],
+        namedArgumentList: [
+            new SlashCommandNamedArgument(
+                'mode', 'The mode for persona selection. ("lookup" = search for existing persona, "temp" = create a temporary name, set a temporary name, "all" = allow both in the same command)',
+                [ARGUMENT_TYPE.STRING], false, false, 'all', ['lookup', 'temp', 'all'],
+            ),
+        ],
+        unnamedArgumentList: [
+            SlashCommandArgument.fromProps({
+                description: 'persona name',
+                typeList: [ARGUMENT_TYPE.STRING],
+                isRequired: true,
+                enumProvider: commonEnumProviders.personas,
+            }),
+        ],
+        helpString: 'Selects the given persona with its name and avatar (by name or avatar url). If no matching persona exists, applies a temporary name.',
+    }));
+    SlashCommandParser.addCommandObject(SlashCommand.fromProps({
+        name: 'persona-sync',
+        aliases: ['sync'],
+        callback: syncCallback,
+        helpString: 'Syncs the user persona in user-attributed messages in the current chat.',
+    }));
+}
+
 export async function initPersonas() {
     await migrateNonPersonaUser();
+    registerPersonaSlashCommands();
     $('#persona_delete_button').on('click', deleteUserAvatar);
     $('#lock_persona_default').on('click', () => togglePersonaLock('default'));
     $('#lock_user_name').on('click', () => togglePersonaLock('chat'));
