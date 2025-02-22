@@ -2167,15 +2167,15 @@ function getStreamingReply(data, state) {
             state.reasoning += (data.choices?.filter(x => x?.delta?.reasoning)?.[0]?.delta?.reasoning || '');
         }
         return data.choices?.[0]?.delta?.content ?? data.choices?.[0]?.message?.content ?? data.choices?.[0]?.text ?? '';
-    } else if(oai_settings.chat_completion_source === chat_completion_sources.CUSTOM){
+    } else if (oai_settings.chat_completion_source === chat_completion_sources.CUSTOM) {
         if (oai_settings.show_thoughts) {
             state.reasoning +=
-            data.choices?.filter(x => x?.delta?.reasoning_content)?.[0]?.delta?.reasoning_content??
-            data.choices?.filter(x => x?.delta?.reasoning)?.[0]?.delta?.reasoning??
-            '';
+                data.choices?.filter(x => x?.delta?.reasoning_content)?.[0]?.delta?.reasoning_content ??
+                data.choices?.filter(x => x?.delta?.reasoning)?.[0]?.delta?.reasoning ??
+                '';
         }
         return data.choices?.[0]?.delta?.content ?? data.choices?.[0]?.message?.content ?? data.choices?.[0]?.text ?? '';
-    }else{
+    } else {
         return data.choices?.[0]?.delta?.content ?? data.choices?.[0]?.message?.content ?? data.choices?.[0]?.text ?? '';
     }
 }
