@@ -55,6 +55,10 @@ export default function whitelistMiddleware(whitelistMode) {
         safeReadFileSync('./public/error/forbidden-by-whitelist.html') ?? '',
     );
 
+    const noLogPaths = [
+        '/favicon.ico',
+    ];
+
     return function (req, res, next) {
         const clientIp = getIpFromRequest(req);
         const forwardedIp = getForwardedIp(req);
@@ -68,11 +72,15 @@ export default function whitelistMiddleware(whitelistMode) {
             const ipDetails = forwardedIp
                 ? `${clientIp} (forwarded from ${forwardedIp})`
                 : clientIp;
-            console.warn(
-                color.red(
-                    `Blocked connection from ${clientIp}; User Agent: ${userAgent}\n\tTo allow this connection, add its IP address to the whitelist or disable whitelist mode by editing config.yaml in the root directory of your SillyTavern installation.\n`,
-                ),
-            );
+
+            if (!noLogPaths.includes(req.path)) {
+                console.warn(
+                    color.red(
+                        `Blocked connection from ${clientIp}; User Agent: ${userAgent}\n\tTo allow this connection, add its IP address to the whitelist or disable whitelist mode by editing config.yaml in the root directory of your SillyTavern installation.\n`,
+                    ),
+                );
+            }
+
             return res.status(403).send(forbiddenWebpage({ ipDetails }));
         }
         next();
