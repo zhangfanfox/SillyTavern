@@ -646,7 +646,7 @@ function getFolderNameByMessage(message) {
  * @param {boolean} [options.vnMode=null] If true, the expression will be sent in Visual Novel mode. If null, it will be determined by the current chat mode.
  * @param {string?} [options.overrideSpriteFile=null] - Set if a specific sprite file should be used. Must be sprite file name.
  */
-async function sendExpressionCall(spriteFolderName, expression, { force = false, vnMode = null, overrideSpriteFile = null } = {}) {
+export async function sendExpressionCall(spriteFolderName, expression, { force = false, vnMode = null, overrideSpriteFile = null } = {}) {
     lastExpression[spriteFolderName.split('/')[0]] = expression;
     if (vnMode === null) {
         vnMode = isVisualNovelMode();
