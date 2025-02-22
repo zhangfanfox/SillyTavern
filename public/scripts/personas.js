@@ -25,7 +25,7 @@ import { PAGINATION_TEMPLATE, clearInfoBlock, debounce, delay, download, ensureI
 import { debounce_timeout } from './constants.js';
 import { FILTER_TYPES, FilterHelper } from './filters.js';
 import { groups, selected_group } from './group-chats.js';
-import { POPUP_RESULT, POPUP_TYPE, Popup, callGenericPopup } from './popup.js';
+import { POPUP_TYPE, Popup, callGenericPopup } from './popup.js';
 import { t } from './i18n.js';
 import { openWorldInfoEditor, world_names } from './world-info.js';
 import { renderTemplateAsync } from './templates.js';
@@ -1027,7 +1027,7 @@ function onPersonaDescriptionDepthRoleInput() {
 
 /**
  * Opens a popup to set the lorebook for the current persona.
- * @param {PointerEvent} event Click event
+ * @param {JQuery.ClickEvent} event Click event
  */
 async function onPersonaLoreButtonClick(event) {
     const personaName = power_user.personas[user_avatar];
