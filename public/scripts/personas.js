@@ -191,6 +191,18 @@ function getUserAvatarBlock(avatarId) {
 }
 
 /**
+ * Initialize missing personas in the power user settings.
+ * @param {string[]} avatarsList List of avatar file names
+ */
+function addMissingPersonas(avatarsList) {
+    for (const persona of avatarsList) {
+        if (!power_user.personas[persona]) {
+            initPersona(persona, '[Unnamed Persona]', '');
+        }
+    }
+}
+
+/**
  * Gets a list of user avatars.
  * @param {boolean} doRender Whether to render the list
  * @param {string} openPageAt Item to be opened at
@@ -212,6 +224,8 @@ export async function getUserAvatars(doRender = true, openPageAt = '') {
             return allEntities;
         }
 
+        // If any persona is missing from the power user settings, we add it
+        addMissingPersonas(allEntities);
         // Before printing the personas, we check if we should enable/disable search sorting
         verifyPersonaSearchSortRule();
 
@@ -1586,11 +1600,9 @@ async function migrateNonPersonaUser() {
         return;
     }
 
-    power_user.personas[user_avatar] = name1;
-    void getOrCreatePersonaDescriptor();
+    initPersona(user_avatar, name1, '');
     setPersonaDescription();
     await getUserAvatars(true, user_avatar);
-    saveSettingsDebounced();
 }
 
 export async function initPersonas() {
