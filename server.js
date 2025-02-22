@@ -340,9 +340,14 @@ const CORS = cors({
 
 app.use(CORS);
 
-if (listen && basicAuthMode) app.use(basicAuthMiddleware);
+if (listen && basicAuthMode) {
+    app.use(basicAuthMiddleware);
+}
 
-app.use(whitelistMiddleware(enableWhitelist));
+if (enableWhitelist) {
+    app.use(whitelistMiddleware());
+}
+
 if (listen) {
     app.use(accessLoggerMiddleware());
 }

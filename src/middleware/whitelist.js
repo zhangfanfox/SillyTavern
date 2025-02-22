@@ -47,10 +47,9 @@ function getForwardedIp(req) {
 
 /**
  * Returns a middleware function that checks if the client IP is in the whitelist.
- * @param {boolean} whitelistMode If whitelist mode is enabled via config or command line
  * @returns {import('express').RequestHandler} The middleware function
  */
-export default function whitelistMiddleware(whitelistMode) {
+export default function whitelistMiddleware() {
     const forbiddenWebpage = Handlebars.compile(
         safeReadFileSync('./public/error/forbidden-by-whitelist.html') ?? '',
     );
@@ -65,8 +64,8 @@ export default function whitelistMiddleware(whitelistMode) {
         const userAgent = req.headers['user-agent'];
 
         //clientIp = req.connection.remoteAddress.split(':').pop();
-        if (whitelistMode === true && !whitelist.some(x => ipMatching.matches(clientIp, ipMatching.getMatch(x)))
-            || forwardedIp && whitelistMode === true && !whitelist.some(x => ipMatching.matches(forwardedIp, ipMatching.getMatch(x)))
+        if (!whitelist.some(x => ipMatching.matches(clientIp, ipMatching.getMatch(x)))
+            || forwardedIp && !whitelist.some(x => ipMatching.matches(forwardedIp, ipMatching.getMatch(x)))
         ) {
             // Log the connection attempt with real IP address
             const ipDetails = forwardedIp
