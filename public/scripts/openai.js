@@ -2167,6 +2167,14 @@ function getStreamingReply(data, state) {
             state.reasoning += (data.choices?.filter(x => x?.delta?.reasoning)?.[0]?.delta?.reasoning || '');
         }
         return data.choices?.[0]?.delta?.content ?? data.choices?.[0]?.message?.content ?? data.choices?.[0]?.text ?? '';
+    } else if (oai_settings.chat_completion_source === chat_completion_sources.CUSTOM) {
+        if (oai_settings.show_thoughts) {
+            state.reasoning +=
+                data.choices?.filter(x => x?.delta?.reasoning_content)?.[0]?.delta?.reasoning_content ??
+                data.choices?.filter(x => x?.delta?.reasoning)?.[0]?.delta?.reasoning ??
+                '';
+        }
+        return data.choices?.[0]?.delta?.content ?? data.choices?.[0]?.message?.content ?? data.choices?.[0]?.text ?? '';
     } else {
         return data.choices?.[0]?.delta?.content ?? data.choices?.[0]?.message?.content ?? data.choices?.[0]?.text ?? '';
     }
@@ -4387,7 +4395,7 @@ async function onModelChange() {
         if (oai_settings.max_context_unlocked) {
             $('#openai_max_context').attr('max', unlocked_max);
         }
-        else if (['sonar', 'sonar-reasoning'].includes(oai_settings.perplexity_model)) {
+        else if (['sonar', 'sonar-reasoning', 'sonar-reasoning-pro', 'r1-1776'].includes(oai_settings.perplexity_model)) {
             $('#openai_max_context').attr('max', 127000);
         }
         else if (['sonar-pro'].includes(oai_settings.perplexity_model)) {
