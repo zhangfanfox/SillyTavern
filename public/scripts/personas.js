@@ -30,6 +30,7 @@ import { t } from './i18n.js';
 import { openWorldInfoEditor, world_names } from './world-info.js';
 import { renderTemplateAsync } from './templates.js';
 import { saveMetadataDebounced } from './extensions.js';
+import { accountStorage } from './util/AccountStorage.js';
 
 /**
  * @typedef {object} PersonaConnection A connection between a character and a character or group entity
@@ -67,7 +68,7 @@ export function isPersonaPanelOpen() {
 }
 
 function switchPersonaGridView() {
-    const state = localStorage.getItem(GRID_STORAGE_KEY) === 'true';
+    const state = accountStorage.getItem(GRID_STORAGE_KEY) === 'true';
     $('#user_avatar_block').toggleClass('gridView', state);
 }
 
@@ -218,7 +219,7 @@ export async function getUserAvatars(doRender = true, openPageAt = '') {
 
         const storageKey = 'Personas_PerPage';
         const listId = '#user_avatar_block';
-        const perPage = Number(localStorage.getItem(storageKey)) || 5;
+        const perPage = Number(accountStorage.getItem(storageKey)) || 5;
 
         $('#persona_pagination_container').pagination({
             dataSource: entities,
@@ -241,7 +242,7 @@ export async function getUserAvatars(doRender = true, openPageAt = '') {
                 updatePersonaUIStates();
             },
             afterSizeSelectorChange: function (e) {
-                localStorage.setItem(storageKey, e.target.value);
+                accountStorage.setItem(storageKey, e.target.value);
             },
             afterPaging: function (e) {
                 savePersonasPage = e;
@@ -1631,8 +1632,8 @@ export function initPersonas() {
         saveSettingsDebounced();
     });
     $('#persona_grid_toggle').on('click', () => {
-        const state = localStorage.getItem(GRID_STORAGE_KEY) === 'true';
-        localStorage.setItem(GRID_STORAGE_KEY, String(!state));
+        const state = accountStorage.getItem(GRID_STORAGE_KEY) === 'true';
+        accountStorage.setItem(GRID_STORAGE_KEY, String(!state));
         switchPersonaGridView();
     });
 

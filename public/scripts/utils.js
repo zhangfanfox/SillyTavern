@@ -8,7 +8,7 @@ import {
 import { getContext } from './extensions.js';
 import { characters, getRequestHeaders, this_chid } from '../script.js';
 import { isMobile } from './RossAscends-mods.js';
-import { collapseNewlines } from './power-user.js';
+import { collapseNewlines, power_user } from './power-user.js';
 import { debounce_timeout } from './constants.js';
 import { Popup, POPUP_RESULT, POPUP_TYPE } from './popup.js';
 import { SlashCommandClosure } from './slash-commands/SlashCommandClosure.js';
@@ -677,6 +677,19 @@ export function sortByCssOrder(a, b) {
 }
 
 /**
+ * Trims leading and trailing whitespace from the input string based on a configuration setting.
+ * @param {string} input - The string to be trimmed
+ * @returns {string} The trimmed string if trimming is enabled; otherwise, returns the original string
+ */
+
+export function trimSpaces(input) {
+    if (!input || typeof input !== 'string') {
+        return input;
+    }
+    return power_user.trim_spaces ? input.trim() : input;
+}
+
+/**
  * Trims a string to the end of a nearest sentence.
  * @param {string} input The string to trim.
  * @returns {string} The trimmed string.
@@ -994,13 +1007,18 @@ export function getImageSizeFromDataURL(dataUrl) {
     });
 }
 
-export function getCharaFilename(chid) {
+/**
+ * Gets the filename of the character avatar without extension
+ * @param {number?} [chid=null] - Character ID. If not provided, uses the current character ID
+ * @param {object} [options={}] - Options arguments
+ * @param {string?} [options.manualAvatarKey=null] - Manually take the following avatar key, instead of using the chid to determine the name
+ * @returns {string?} The filename of the character avatar without extension, or null if the character ID is invalid
+ */
+export function getCharaFilename(chid = null, { manualAvatarKey = null } = {}) {
     const context = getContext();
-    const fileName = context.characters[chid ?? context.characterId]?.avatar;
+    const fileName = manualAvatarKey ?? context.characters[chid ?? context.characterId]?.avatar;
 
-    if (fileName) {
-        return fileName.replace(/\.[^/.]+$/, '');
-    }
+    return fileName?.replace(/\.[^/.]+$/, '') ?? null;
 }
 
 /**
@@ -1733,17 +1751,17 @@ export function hasAnimation(control) {
 
 /**
  * Run an action once an animation on a control ends. If the control has no animation, the action will be executed immediately.
- *
+ * The action will be executed after the animation ends or after the timeout, whichever comes first.
  * @param {HTMLElement} control - The control element to listen for animation end event
  * @param {(control:*?) => void} callback - The callback function to be executed when the animation ends
+ * @param {number} [timeout=500] - The timeout in milliseconds to wait for the animation to end before executing the callback
  */
-export function runAfterAnimation(control, callback) {
+export function runAfterAnimation(control, callback, timeout = 500) {
     if (hasAnimation(control)) {
-        const onAnimationEnd = () => {
-            control.removeEventListener('animationend', onAnimationEnd);
-            callback(control);
-        };
-        control.addEventListener('animationend', onAnimationEnd);
+        Promise.race([
+            new Promise((r) => setTimeout(r, timeout)), // Fallback timeout
+            new Promise((r) => control.addEventListener('animationend', r, { once: true })),
+        ]).finally(() => callback(control));
     } else {
         callback(control);
     }
@@ -2056,6 +2074,23 @@ export function toggleDrawer(drawer, expand = true) {
     // Set the height of "autoSetHeight" textareas within the inline-drawer to their scroll height
     if (!CSS.supports('field-sizing', 'content')) {
         content.querySelectorAll('textarea.autoSetHeight').forEach(resetScrollHeight);
+    }
+}
+
+/**
+ * Sets or removes a dataset property on an HTMLElement
+ *
+ * Utility function to make it easier to reset dataset properties on null, without them being "null" as value.
+ *
+ * @param {HTMLElement} element - The element to modify
+ * @param {string} name - The name of the dataset property
+ * @param {string|null} value - The value to set - If null, the dataset property will be removed
+ */
+export function setDatasetProperty(element, name, value) {
+    if (value === null) {
+        delete element.dataset[name];
+    } else {
+        element.dataset[name] = value;
     }
 }
 

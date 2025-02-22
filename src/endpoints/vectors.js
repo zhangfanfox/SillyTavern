@@ -132,35 +132,35 @@ function getSourceSettings(source, request) {
     switch (source) {
         case 'togetherai':
             return {
-                model: String(request.headers['x-togetherai-model']),
+                model: String(request.body.model),
             };
         case 'openai':
             return {
-                model: String(request.headers['x-openai-model']),
+                model: String(request.body.model),
             };
         case 'cohere':
             return {
-                model: String(request.headers['x-cohere-model']),
+                model: String(request.body.model),
             };
         case 'llamacpp':
             return {
-                apiUrl: String(request.headers['x-llamacpp-url']),
+                apiUrl: String(request.body.apiUrl),
             };
         case 'vllm':
             return {
-                apiUrl: String(request.headers['x-vllm-url']),
-                model: String(request.headers['x-vllm-model']),
+                apiUrl: String(request.body.apiUrl),
+                model: String(request.body.model),
             };
         case 'ollama':
             return {
-                apiUrl: String(request.headers['x-ollama-url']),
-                model: String(request.headers['x-ollama-model']),
-                keep: Boolean(request.headers['x-ollama-keep']),
+                apiUrl: String(request.body.apiUrl),
+                model: String(request.body.model),
+                keep: Boolean(request.body.keep),
             };
         case 'extras':
             return {
-                extrasUrl: String(request.headers['x-extras-url']),
-                extrasKey: String(request.headers['x-extras-key']),
+                extrasUrl: String(request.body.extrasUrl),
+                extrasKey: String(request.body.extrasKey),
             };
         case 'transformers':
             return {
@@ -360,7 +360,7 @@ async function regenerateCorruptedIndexErrorHandler(req, res, error) {
 
             if (exists) {
                 const path = index.folderPath;
-                console.error(`Corrupted index detected at ${path}, regenerating...`);
+                console.warn(`Corrupted index detected at ${path}, regenerating...`);
                 await index.deleteIndex();
                 return res.redirect(307, req.originalUrl + '?regenerated=true');
             }
@@ -474,7 +474,7 @@ router.post('/purge-all', jsonParser, async (req, res) => {
                 continue;
             }
             await fs.promises.rm(sourcePath, { recursive: true });
-            console.log(`Deleted vector source store at ${sourcePath}`);
+            console.info(`Deleted vector source store at ${sourcePath}`);
         }
 
         return res.sendStatus(200);
@@ -498,7 +498,7 @@ router.post('/purge', jsonParser, async (req, res) => {
                 continue;
             }
             await fs.promises.rm(sourcePath, { recursive: true });
-            console.log(`Deleted vector index at ${sourcePath}`);
+            console.info(`Deleted vector index at ${sourcePath}`);
         }
 
         return res.sendStatus(200);
