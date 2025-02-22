@@ -3026,7 +3026,6 @@ select option:not(:checked) {
     overflow: hidden;
     text-align: left;
     white-space: nowrap;
-    margin-right: 10px;
     font-size: calc(var(--mainFontSize) * 1.25);
     opacity: 0.5;
 }
