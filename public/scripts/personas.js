@@ -10,6 +10,7 @@ import {
     getRequestHeaders,
     getThumbnailUrl,
     groupToEntity,
+    menu_type,
     name1,
     name2,
     reloadCurrentChat,
@@ -1363,6 +1364,55 @@ export function getConnectedPersonas(characterKey = undefined) {
     return connectedPersonas;
 }
 
+
+/**
+ * Shows a popup with all personas connected to the currently selected character or group.
+ * In the popup, the user can select a persona to load for the current character or group, or shift-click to remove the connection.
+ * @return {Promise<void>}
+ */
+export async function showCharConnections() {
+    let isRemoving = false;
+
+    const connections = getConnectedPersonas();
+    const message = t`The following personas are connected to the current character.\n\nClick on a persona to select it for the current character.\nShift + Click to unlink the persona from the character.`;
+    const selectedPersona = await askForPersonaSelection(t`Persona Connections`, message, connections, {
+        okButton: t`Ok`,
+        highlightPersonas: true,
+        targetedChar: getCurrentConnectionObj(),
+        shiftClickHandler: (element, ev) => {
+
+            const personaId = $(element).attr('data-pid');
+
+            /** @type {PersonaConnection[]} */
+            const connections = power_user.persona_descriptions[personaId]?.connections;
+            if (connections) {
+                console.log(`Unlocking persona ${personaId} from current character ${name2}`);
+                power_user.persona_descriptions[personaId].connections = connections.filter(c => {
+                    if (menu_type == 'group_edit' && c.type == 'group' && c.id == selected_group) return false;
+                    else if (c.type == 'character' && c.id == characters[this_chid]?.avatar) return false;
+                    return true;
+                });
+                saveSettingsDebounced();
+                updatePersonaConnectionsAvatarList();
+                if (power_user.persona_show_notifications) {
+                    toastr.info(t`User persona ${power_user.personas[personaId]} is now unlocked from the current character ${name2}.`, t`Persona unlocked`);
+                }
+
+                isRemoving = true;
+                $('#char_connections_button').trigger('click');
+            }
+        },
+    });
+
+    // One of the persona was selected. So load it.
+    if (!isRemoving && selectedPersona) {
+        setUserAvatar(selectedPersona, { toastPersonaNameChange: false });
+        if (power_user.persona_show_notifications) {
+            toastr.success(t`Selected persona ${power_user.personas[selectedPersona]} for current chat.`, t`Connected Persona Selected`);
+        }
+    }
+}
+
 /**
  * Retrieves the current connection object based on whether the current chat is with a char or a group.
  *
@@ -1542,6 +1592,7 @@ function migrateNonPersonaUser() {
     saveSettingsDebounced();
 }
 
+
 export function initPersonas() {
     migrateNonPersonaUser();
     $('#persona_delete_button').on('click', deleteUserAvatar);
@@ -1609,6 +1660,8 @@ export function initPersonas() {
         $('#avatar_upload_file').trigger('click');
     });
 
+    $('#char_connections_button').on('click', showCharConnections);
+
     eventSource.on('charManagementDropdown', (target) => {
         if (target === 'convert_to_persona') {
             convertCharacterToPersona();
@@ -1617,3 +1670,4 @@ export function initPersonas() {
     eventSource.on(event_types.CHAT_CHANGED, loadPersonaForCurrentChat);
     switchPersonaGridView();
 }
+
