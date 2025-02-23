@@ -61,7 +61,11 @@ let savePersonasPage = 0;
 const GRID_STORAGE_KEY = 'Personas_GridView';
 const DEFAULT_DEPTH = 2;
 const DEFAULT_ROLE = 0;
+
+/** @type {string} The currently selected persona (identified by its avatar) */
 export let user_avatar = '';
+
+/** @type {FilterHelper} Filter helper for the persona list */
 export const personasFilter = new FilterHelper(debounce(getUserAvatars, debounce_timeout.quick));
 
 
@@ -441,13 +445,25 @@ export function initPersona(avatarId, personaName, personaDescription) {
     saveSettingsDebounced();
 }
 
+/**
+ * Converts a character given character (either by character id or the current character) to a persona.
+ *
+ * If a persona with the same name already exists, the user is prompted to confirm whether or not to overwrite it.
+ * If the character description contains {{char}} or {{user}} macros, the user is prompted to confirm whether or not to swap them for persona macros.
+ *
+ * The function creates a new persona with the same name as the character, and sets the persona description to the character description with the macros swapped.
+ * The function also saves the settings and refreshes the persona selector.
+ *
+ * @param {number} [characterId] - The ID of the character to convert to a persona. Defaults to the current character ID.
+ * @returns {Promise<boolean>} A promise that resolves to true if the character was converted, false otherwise.
+ */
 export async function convertCharacterToPersona(characterId = null) {
     if (null === characterId) characterId = this_chid;
 
     const avatarUrl = characters[characterId]?.avatar;
     if (!avatarUrl) {
         console.log('No avatar found for this character');
-        return;
+        return false;
     }
 
     const name = characters[characterId]?.name;
@@ -458,7 +474,7 @@ export async function convertCharacterToPersona(characterId = null) {
         const confirm = await Popup.show.confirm(t`Overwrite Existing Persona`, t`This character exists as a persona already. Do you want to overwrite it?`);
         if (!confirm) {
             console.log('User cancelled the overwrite of the persona');
-            return;
+            return false;
         }
     }
 
@@ -496,6 +512,7 @@ export async function convertCharacterToPersona(characterId = null) {
     await getUserAvatars(true, overwriteName);
     // Reload the persona description
     setPersonaDescription();
+    return true;
 }
 
 /**
@@ -507,6 +524,9 @@ const countPersonaDescriptionTokens = debounce(async () => {
     $('#persona_description_token_count').text(String(count));
 }, debounce_timeout.relaxed);
 
+/**
+ * Updates the UI for the Persona Management page with the current persona values
+ */
 export function setPersonaDescription() {
     $('#your_name').text(name1);
 
@@ -683,22 +703,33 @@ export async function askForPersonaSelection(title, text, personas, { okButton =
     return Number(result) >= 100 ? personas[Number(result) - 100] : null;
 }
 
+/**
+ * Automatically selects a persona based on the given name if a matching persona exists.
+ * @param {string} name - The name to search for
+ * @returns {boolean} True if a matching persona was found and selected, false otherwise
+ */
 export function autoSelectPersona(name) {
     for (const [key, value] of Object.entries(power_user.personas)) {
         if (value === name) {
             console.log(`Auto-selecting persona ${key} for name ${name}`);
             setUserAvatar(key);
-            return;
+            return true;
         }
     }
+    return false;
 }
 
+/**
+ * Renames the persona with the given avatar ID by showing a popup to enter a new name.
+ * @param {string} avatarId - ID of the avatar to rename
+ * @returns {Promise<boolean>} A promise that resolves to true if the persona was renamed, false otherwise
+ */
 async function renamePersona(avatarId) {
     const currentName = power_user.personas[avatarId];
     const newName = await Popup.show.input(t`Rename Persona`, t`Enter a new name for this persona:`, currentName);
     if (!newName || newName === currentName) {
         console.debug('User cancelled renaming persona or name is unchanged');
-        return;
+        return false;
     }
 
     power_user.personas[avatarId] = newName;
@@ -712,9 +743,16 @@ async function renamePersona(avatarId) {
     await getUserAvatars(true, avatarId);
     updatePersonaUIStates();
     setPersonaDescription();
+    return true;
 }
 
-function selectCurrentPersona({ toastPersonaNameChange = true } = {}) {
+/**
+ * Selects the persona with the currently set avatar ID by updating the user name and persona description, and updating the locked persona if the setting is enabled.
+ * @param {object} [options={}] - Optional settings
+ * @param {boolean} [options.toastPersonaNameChange=true] - Whether to show a toast when the persona name is changed
+ * @returns {Promise<void>}
+ */
+async function selectCurrentPersona({ toastPersonaNameChange = true } = {}) {
     const personaName = power_user.personas[user_avatar];
     if (personaName) {
         const shouldAutoLock = power_user.persona_auto_lock && user_avatar !== chat_metadata['persona'];
@@ -1211,6 +1249,14 @@ function getPersonaStates(avatarId) {
     };
 }
 
+/**
+ * Updates the UI to reflect the current states of all personas and the selected user's persona.
+ * This includes updating class states on avatar containers to indicate default status, chat lock,
+ * and character lock, as well as updating icons and labels in the persona management panel to reflect
+ * the current state of the user's persona.
+ * Additionally, it manages the display of temporary persona lock information.
+ */
+
 function updatePersonaUIStates() {
     // Update the persona list
     $('#user_avatar_block .avatar-container').each(function () {
@@ -1258,15 +1304,21 @@ function updatePersonaUIStates() {
 }
 
 /**
- * Checks if the currently selected persona is temporary due to either a different default persona
- * or a different persona being locked to the current chat. If so, it also returns a string that
- * can be used to describe this situation to the user.
+ * @typedef {Object} PersonaLockInfo
+ * @property {boolean} isTemporary - Whether the selected persona is temporary based on current locks.
+ * @property {boolean} hasDifferentChatLock - True if the chat persona is set and differs from the user avatar.
+ * @property {boolean} hasDifferentDefaultLock - True if the default persona is set and differs from the user avatar.
+ * @property {string} info - Detailed information about the current, chat, and default personas.
+ */
+
+/**
+ * Computes temporary lock information for the current persona.
  *
- * @returns {{isTemporary: boolean, hasDifferentChatLock: boolean, hasDifferentDefaultLock: boolean, info: string?}} An object containing 4 properties:
- *   - isTemporary: A boolean indicating if the current persona is temporary
- *   - hasDifferentChatLock: A boolean indicating if the current chat has a different persona locked to it
- *   - hasDifferentDefaultLock: A boolean indicating if there is a different default persona set
- *   - info: A string describing the situation, or an empty if not temporary
+ * This function checks whether the currently selected persona is temporary by comparing
+ * the chat persona and the default persona to the user avatar. If either is different,
+ * the currently selected persona is considered temporary and a detailed message is generated.
+ *
+ * @returns {PersonaLockInfo} An object containing flags and a message describing the persona lock status.
  */
 function getPersonaTemporaryLockInfo() {
     const hasDifferentChatLock = !!chat_metadata['persona'] && chat_metadata['persona'] !== user_avatar;
@@ -1286,6 +1338,13 @@ function getPersonaTemporaryLockInfo() {
     };
 }
 
+/**
+ * Loads the appropriate persona for the current chat session based on locks (chat lock, char lock, default persona)
+ *
+ * @param {Object} [options={}] - Optional arguments
+ * @param {boolean} [options.doRender=false] - Whether to render the persona immediately
+ * @returns {Promise<boolean>} - A promise that resolves to a boolean indicating whether a persona was selected
+ */
 async function loadPersonaForCurrentChat({ doRender = false } = {}) {
     // Cache persona list to check if they exist
     const userAvatars = await getUserAvatars(doRender);
@@ -1317,7 +1376,7 @@ async function loadPersonaForCurrentChat({ doRender = false } = {}) {
         if (chatPersona) {
             // If the chat-bound persona is the currently selected one, we can simply exit out
             if (chatPersona === user_avatar) {
-                return;
+                return false;
             }
             // Otherwise ask if we want to switch
             const autoLock = power_user.persona_auto_lock;
@@ -1328,11 +1387,11 @@ async function loadPersonaForCurrentChat({ doRender = false } = {}) {
                 if (autoLock) {
                     lockPersona('chat');
                 }
-                return;
+                return false;
             }
         } else {
             // If we don't have a chat-bound persona, we simply return and keep the current one we have
-            return;
+            return false;
         }
     }
 
@@ -1392,6 +1451,8 @@ async function loadPersonaForCurrentChat({ doRender = false } = {}) {
     }
 
     updatePersonaUIStates();
+
+    return !!chatPersona;
 }
 
 /**
@@ -1462,7 +1523,6 @@ export async function showCharConnections() {
  *
  * @returns {PersonaConnection} An object representing the current connection
  */
-
 export function getCurrentConnectionObj() {
     if (selected_group)
         return { type: 'group', id: selected_group };
@@ -1579,6 +1639,11 @@ async function syncUserNameToPersona() {
     await reloadCurrentChat();
 }
 
+/**
+ * Retriggers the first message to reload it from the char definition.
+ *
+ * Only works if only the first message is present, and not in group mode.
+ */
 export function retriggerFirstMessageOnEmptyChat() {
     if (this_chid >= 0 && !selected_group && chat.length === 1) {
         $('#firstmessage_textarea').trigger('input');
@@ -1812,6 +1877,10 @@ function registerPersonaSlashCommands() {
     }));
 }
 
+/**
+ * Initializes the persona management and all its functionality.
+ * This is called during the initialization of the page.
+ */
 export async function initPersonas() {
     await migrateNonPersonaUser();
     registerPersonaSlashCommands();
