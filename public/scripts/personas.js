@@ -26,7 +26,7 @@ import { PAGINATION_TEMPLATE, clearInfoBlock, debounce, delay, download, ensureI
 import { debounce_timeout } from './constants.js';
 import { FILTER_TYPES, FilterHelper } from './filters.js';
 import { groups, selected_group } from './group-chats.js';
-import { POPUP_TYPE, Popup, callGenericPopup } from './popup.js';
+import { POPUP_RESULT, POPUP_TYPE, Popup, callGenericPopup } from './popup.js';
 import { t } from './i18n.js';
 import { openWorldInfoEditor, world_names } from './world-info.js';
 import { renderTemplateAsync } from './templates.js';
@@ -1309,6 +1309,31 @@ async function loadPersonaForCurrentChat({ doRender = false } = {}) {
             chatPersona = '';
         }
         if (chatPersona) connectType = 'chat';
+    }
+
+    // If the persona panel is open when the chat changes, this is likely because a character was selected from that panel.
+    // In that case, we are not automatically switching persona - but need to make changes if there is any chat-bound connection
+    if (isPersonaPanelOpen()) {
+        if (chatPersona) {
+            // If the chat-bound persona is the currently selected one, we can simply exit out
+            if (chatPersona === user_avatar) {
+                return;
+            }
+            // Otherwise ask if we want to switch
+            const autoLock = power_user.persona_auto_lock;
+            const result = await Popup.show.confirm(t`Switch Persona?`,
+                t`You have a connected persona for the current chat (${power_user.personas[chatPersona]}). Do you want to stick to the current persona (${power_user.personas[user_avatar]}) ${(autoLock ? t`and lock that to the chat` : '')}, or switch to ${power_user.personas[chatPersona]} instead?`,
+                { okButton: autoLock ? t`Keep and Lock` : t`Keep`, cancelButton: t`Switch` });
+            if (result === POPUP_RESULT.AFFIRMATIVE) {
+                if (autoLock) {
+                    lockPersona('chat');
+                }
+                return;
+            }
+        } else {
+            // If we don't have a chat-bound persona, we simply return and keep the current one we have
+            return;
+        }
     }
 
     // Check if we have any persona connected to the current character
