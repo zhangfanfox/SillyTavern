@@ -3,6 +3,15 @@
     flex-direction: column;
 }
 
+#memory_contents {
+    field-sizing: content;
+    max-height: 50dvh;
+}
+
+#memory_restore {
+    width: max-content;
+}
+
 #memory_settings textarea {
     font-size: calc(var(--mainFontSize) * 0.9);
     line-height: 1.2;
@@ -34,4 +43,10 @@ label[for="memory_frozen"] input {
     display: flex;
     flex-direction: column;
     row-gap: 5px;
+}
+
+#summaryExtensionPopout {
+    display: flex;
+    flex-direction: column;
+    padding-top: 25px;
 }
