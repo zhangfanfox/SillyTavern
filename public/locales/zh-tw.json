@@ -634,7 +634,7 @@
     "Prefer Character Card Prompt": "角色卡主要提示詞優先",
     "If checked and the character card contains a jailbreak override (Post History Instruction), use that instead": "如果選中並且角色卡包含越獄覆寫（聊天歷史後指示），則使用該提示詞。",
     "Prefer Character Card Jailbreak": "角色卡越獄優先",
-    "Avoid cropping and resizing imported character images. When off, crop/resize to 512x768": "避免裁剪和調整匯入的角色圖像大小。未勾選時將會裁剪／調整大小到 512x768。",
+    "never_resize_avatars_tooltip": "避免裁剪和調整匯入的角色圖像大小。未勾選時將會裁剪／調整大小到 512x768。",
     "Never resize avatars": "永不調整頭像大小",
     "Show actual file names on the disk, in the characters list display only": "僅在角色列表顯示實際檔案名稱。",
     "Show avatar filenames": "顯示頭像檔案名",
