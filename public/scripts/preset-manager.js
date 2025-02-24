@@ -21,6 +21,7 @@ import { groups, selected_group } from './group-chats.js';
 import { instruct_presets } from './instruct-mode.js';
 import { kai_settings } from './kai-settings.js';
 import { convertNovelPreset } from './nai-settings.js';
+import { openai_settings, openai_setting_names, oai_settings } from './openai.js';
 import { Popup, POPUP_RESULT, POPUP_TYPE } from './popup.js';
 import { context_presets, getContextSettings, power_user } from './power-user.js';
 import { SlashCommand } from './slash-commands/SlashCommand.js';
@@ -349,7 +350,11 @@ class PresetManager {
      * @returns {string} Selected preset name
      */
     getSelectedPresetName() {
-        return $(this.select).find('option:selected').text();
+        if (this.apiId === 'openai') {
+            return oai_settings.preset_settings_openai
+        } else {
+            return $(this.select).find('option:selected').text();
+        }
     }
 
     /**
@@ -455,6 +460,10 @@ class PresetManager {
             case 'textgenerationwebui':
                 presets = textgenerationwebui_presets;
                 preset_names = textgenerationwebui_preset_names;
+                break;
+            case 'openai':
+                presets = openai_settings;
+                preset_names = openai_setting_names;
                 break;
             case 'context':
                 presets = context_presets;
