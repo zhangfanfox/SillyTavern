@@ -58,6 +58,7 @@ import {
 import getWebpackServeMiddleware from './src/middleware/webpack-serve.js';
 import basicAuthMiddleware from './src/middleware/basicAuth.js';
 import whitelistMiddleware from './src/middleware/whitelist.js';
+import accessLoggerMiddleware, { getAccessLogPath, migrateAccessLog } from './src/middleware/accessLogWriter.js';
 import multerMonkeyPatch from './src/middleware/multerMonkeyPatch.js';
 import initRequestProxy from './src/request-proxy.js';
 import getCacheBusterMiddleware from './src/middleware/cacheBuster.js';
@@ -243,7 +244,6 @@ const cliArguments = yargs(hideBin(process.argv))
         describe: 'Request proxy URL (HTTP or SOCKS protocols)',
     }).option('requestProxyBypass', {
         type: 'array',
-        default: null,
         describe: 'Request proxy bypass list (space separated list of hosts)',
     }).parseSync();
 
@@ -340,9 +340,17 @@ const CORS = cors({
 
 app.use(CORS);
 
-if (listen && basicAuthMode) app.use(basicAuthMiddleware);
+if (listen && basicAuthMode) {
+    app.use(basicAuthMiddleware);
+}
 
-app.use(whitelistMiddleware(enableWhitelist, listen));
+if (enableWhitelist) {
+    app.use(whitelistMiddleware());
+}
+
+if (listen) {
+    app.use(accessLoggerMiddleware());
+}
 
 if (enableCorsProxy) {
     app.use(bodyParser.json({
@@ -556,7 +564,13 @@ app.use('/api/users', usersPublicRouter);
 
 // Everything below this line requires authentication
 app.use(requireLoginMiddleware);
-app.get('/api/ping', (_, response) => response.sendStatus(204));
+app.get('/api/ping', (request, response) => {
+    if (request.query.extend && request.session) {
+        request.session.touch = Date.now();
+    }
+
+    response.sendStatus(204);
+});
 
 // File uploads
 app.use(multer({ dest: uploadsPath, limits: { fieldSize: 10 * 1024 * 1024 } }).single('avatar'));
@@ -754,6 +768,7 @@ const preSetupTasks = async function () {
     await checkForNewContent(directories);
     await ensureThumbnailCache();
     cleanUploads();
+    migrateAccessLog();
 
     await settingsInit();
     await statsInit();
@@ -856,7 +871,7 @@ const postSetupTasks = async function (v6Failed, v4Failed, useIPv6, useIPv4) {
     if (listen) {
         console.log();
         console.log('To limit connections to internal localhost only ([::1] or 127.0.0.1), change the setting in config.yaml to "listen: false".');
-        console.log('Check the "access.log" file in the SillyTavern directory to inspect incoming connections.');
+        console.log('Check the "access.log" file in the data directory to inspect incoming connections:', color.green(getAccessLogPath()));
     }
     console.log('\n' + getSeparator(plainGoToLog.length) + '\n');
     console.log(goToLog);
