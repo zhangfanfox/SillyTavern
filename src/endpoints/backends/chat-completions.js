@@ -125,6 +125,7 @@ async function sendClaudeRequest(request, response) {
             controller.abort();
         });
         const additionalHeaders = {};
+        const betaHeaders = ['output-128k-2025-02-19'];
         const useTools = request.body.model.startsWith('claude-3') && Array.isArray(request.body.tools) && request.body.tools.length > 0;
         const useSystemPrompt = (request.body.model.startsWith('claude-2') || request.body.model.startsWith('claude-3')) && request.body.claude_use_sysprompt;
         const convertedPrompt = convertClaudeMessages(request.body.messages, request.body.assistant_prefill, useSystemPrompt, useTools, getPromptNames(request));
@@ -155,7 +156,7 @@ async function sendClaudeRequest(request, response) {
             delete requestBody.system;
         }
         if (useTools) {
-            additionalHeaders['anthropic-beta'] = 'tools-2024-05-16';
+            betaHeaders.push('tools-2024-05-16');
             requestBody.tool_choice = { type: request.body.tool_choice };
             requestBody.tools = request.body.tools
                 .filter(tool => tool.type === 'function')
@@ -176,7 +177,11 @@ async function sendClaudeRequest(request, response) {
         }
 
         if (enableSystemPromptCache || cachingAtDepth !== -1) {
-            additionalHeaders['anthropic-beta'] = 'prompt-caching-2024-07-31';
+            betaHeaders.push('prompt-caching-2024-07-31');
+        }
+
+        if (betaHeaders.length) {
+            additionalHeaders['anthropic-beta'] = betaHeaders.join(',');
         }
 
         console.debug('Claude request:', requestBody);
