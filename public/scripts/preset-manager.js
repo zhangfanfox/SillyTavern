@@ -350,11 +350,7 @@ class PresetManager {
      * @returns {string} Selected preset name
      */
     getSelectedPresetName() {
-        if (this.apiId === 'openai') {
-            return oai_settings.preset_settings_openai
-        } else {
-            return $(this.select).find('option:selected').text();
-        }
+        return $(this.select).find('option:selected').text();
     }
 
     /**
@@ -616,30 +612,26 @@ class PresetManager {
     }
 
     getCompletionPresetByName(name) {
-        // Retrieve a completion preset by name
+        // Retrieve a completion preset by name. Return undefined if not found.
         let { presets, preset_names } = this.getPresetList();
         let preset;
 
         // Some APIs use an array of names, others use an object of {name: index}
         if (Array.isArray(preset_names)) {  // array of names
-            if (!preset_names.includes(name)) {
-                preset = undefined;
-            } else {
+            if (preset_names.includes(name)) {
                 preset = presets[preset_names.indexOf(name)];
             }
         } else {  // object of {names: index}
-            if (preset_names[name] === undefined) {
-                preset = undefined;
-            } else {
+            if (preset_names[name] !== undefined) {
                 preset = presets[preset_names[name]];
             }
         }
 
-        // if the preset isn't found, return null
         if (preset === undefined) {
             console.error(`Preset ${name} not found`);
-            return;
         }
+
+        // if the preset isn't found, returns undefined
         return preset;
     }
 
