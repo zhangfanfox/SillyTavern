@@ -615,6 +615,34 @@ class PresetManager {
         return settings;
     }
 
+    getCompletionPresetByName(name) {
+        // Retrieve a completion preset by name
+        let { presets, preset_names } = this.getPresetList();
+        let preset;
+
+        // Some APIs use an array of names, others use an object of {name: index}
+        if (Array.isArray(preset_names)) {  // array of names
+            if (!preset_names.includes(name)) {
+                preset = undefined;
+            } else {
+                preset = presets[preset_names.indexOf(name)];
+            }
+        } else {  // object of {names: index}
+            if (preset_names[name] === undefined) {
+                preset = undefined;
+            } else {
+                preset = presets[preset_names[name]];
+            }
+        }
+
+        // if the preset isn't found, return null
+        if (preset === undefined) {
+            console.error(`Preset ${name} not found`);
+            return;
+        }
+        return preset;
+    }
+
     // pass no arguments to delete current preset
     async deletePreset(name) {
         const { preset_names, presets } = this.getPresetList();
