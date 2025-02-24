@@ -4981,6 +4981,7 @@ export function isImageInliningSupported() {
         'gemini-1.5-pro-exp-0827',
         'claude-3',
         'claude-3-5',
+        'claude-3-7',
         'gpt-4-turbo',
         'gpt-4o',
         'gpt-4o-mini',
