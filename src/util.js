@@ -65,7 +65,9 @@ export function getConfigValue(key, defaultValue = null, typeConverter = null) {
     function _getValue() {
         const envKey = keyToEnv(key);
         if (envKey in process.env) {
-            return process.env[envKey];
+            const needsJsonParse = defaultValue && typeof defaultValue === 'object';
+            const envValue = process.env[envKey];
+            return needsJsonParse ? (tryParse(envValue) ?? defaultValue) : envValue;
         }
         const config = getConfig();
         return _.get(config, key, defaultValue);
