@@ -68,6 +68,8 @@ export let user_avatar = '';
 /** @type {FilterHelper} Filter helper for the persona list */
 export const personasFilter = new FilterHelper(debounce(getUserAvatars, debounce_timeout.quick));
 
+/** @type {function(string): void} */
+let navigateToAvatar = () => { };
 
 /**
  * Checks if the Persona Management panel is currently open
@@ -276,14 +278,16 @@ export async function getUserAvatars(doRender = true, openPageAt = '') {
             },
         });
 
-        if (openPageAt) {
-            const avatarIndex = entities.indexOf(openPageAt);
+        navigateToAvatar = (avatarId) => {
+            const avatarIndex = entities.indexOf(avatarId);
             const page = Math.floor(avatarIndex / perPage) + 1;
 
             if (avatarIndex !== -1) {
                 $('#persona_pagination_container').pagination('go', page);
             }
-        }
+        };
+
+        openPageAt && navigateToAvatar(openPageAt);
 
         return allEntities;
     }
@@ -1255,9 +1259,15 @@ function getPersonaStates(avatarId) {
  * and character lock, as well as updating icons and labels in the persona management panel to reflect
  * the current state of the user's persona.
  * Additionally, it manages the display of temporary persona lock information.
+ * @param {Object} [options={}] - Optional settings
+ * @param {boolean} [options.navigateToCurrent=false] - Whether to navigate to the current persona in the persona list
  */
 
-function updatePersonaUIStates() {
+function updatePersonaUIStates({ navigateToCurrent = false } = {}) {
+    if (navigateToCurrent) {
+        navigateToAvatar(user_avatar);
+    }
+
     // Update the persona list
     $('#user_avatar_block .avatar-container').each(function () {
         const avatarId = $(this).attr('data-avatar-id');
@@ -1450,7 +1460,7 @@ async function loadPersonaForCurrentChat({ doRender = false } = {}) {
         }
     }
 
-    updatePersonaUIStates();
+    updatePersonaUIStates({ navigateToCurrent: true });
 
     return !!chatPersona;
 }
