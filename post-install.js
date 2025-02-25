@@ -109,7 +109,7 @@ const keyMigrationMap = [
         newKey: 'logging.minLogLevel',
         migrate: (value) => value,
     },
-    // uncommend one release after 1.12.13
+    // uncomment one release after 1.12.13
     /*
     {
         oldKey: 'cookieSecret',
