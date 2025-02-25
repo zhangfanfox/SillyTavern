@@ -1437,7 +1437,7 @@ async function loadPersonaForCurrentChat({ doRender = false } = {}) {
     }
 
     // Persona avatar found, select it
-    if (chatPersona) {
+    if (chatPersona && user_avatar !== chatPersona) {
         const willAutoLock = power_user.persona_auto_lock && user_avatar !== chat_metadata['persona'];
         setUserAvatar(chatPersona, { toastPersonaNameChange: false });
 
