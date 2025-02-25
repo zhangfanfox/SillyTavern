@@ -3999,6 +3999,8 @@ function onSettingsPresetChange() {
         n: ['#n_openai', 'n', false],
     };
 
+    const presetNameBefore = oai_settings.preset_settings_openai;
+
     const presetName = $('#settings_preset_openai').find(':selected').text();
     oai_settings.preset_settings_openai = presetName;
 
@@ -4024,6 +4026,7 @@ function onSettingsPresetChange() {
         settingsToUpdate: settingsToUpdate,
         settings: oai_settings,
         savePreset: saveOpenAIPreset,
+        presetNameBefore: presetNameBefore,
     }).finally(r => {
         $('.model_custom_select').empty();
 
