@@ -1956,6 +1956,7 @@ export async function initPersonas() {
             convertCharacterToPersona();
         }
     });
+    eventSource.on(event_types.CHAT_CHANGED, updatePersonaUIStates);
     eventSource.on(event_types.CHAT_CHANGED, loadPersonaForCurrentChat);
     switchPersonaGridView();
 }
