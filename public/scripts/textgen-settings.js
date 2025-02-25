@@ -319,8 +319,9 @@ export function validateTextGenUrl() {
 }
 
 /**
- * @param {string | null} type if it's set, ignores active API
- * @returns
+ * Gets the API URL for the selected text generation type.
+ * @param {string} type If it's set, ignores active type
+ * @returns {string} API URL
  */
 export function getTextGenServer(type = null) {
     const selectedType = type ?? settings.type;
@@ -1221,11 +1222,12 @@ function isDynamicTemperatureSupported() {
 }
 
 /**
- * @param {string | null} type if it's set, ignores active API
- * @returns {number}
+ * Gets the number of logprobs to request based on the selected type.
+ * @param {string} type If it's set, ignores active type
+ * @returns {number} Number of logprobs to request
  */
 export function getLogprobsNumber(type = null) {
-    const selectedType = type || settings.type;
+    const selectedType = type ?? settings.type;
     if (selectedType === VLLM || selectedType === INFERMATICAI) {
         return 5;
     }

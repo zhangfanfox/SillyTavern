@@ -5708,7 +5708,7 @@ function parseAndSaveLogprobs(data, continueFrom) {
 /**
  * Extracts the message from the response data.
  * @param {object} data Response data
- * @param {string | null} activeApi if it's set, ignores active API
+ * @param {string} activeApi If it's set, ignores active API
  * @returns {string} Extracted message
  */
 export function extractMessageFromData(data, activeApi = null) {
