@@ -5708,14 +5708,15 @@ function parseAndSaveLogprobs(data, continueFrom) {
 /**
  * Extracts the message from the response data.
  * @param {object} data Response data
+ * @param {string | null} activeApi if it's set, ignores active API
  * @returns {string} Extracted message
  */
-function extractMessageFromData(data) {
+export function extractMessageFromData(data, activeApi = null) {
     if (typeof data === 'string') {
         return data;
     }
 
-    switch (main_api) {
+    switch (activeApi ?? main_api) {
         case 'kobold':
             return data.results[0].text;
         case 'koboldhorde':
@@ -8873,7 +8874,7 @@ const swipe_right = () => {
     }
 };
 
-const CONNECT_API_MAP = {
+export const CONNECT_API_MAP = {
     // Default APIs not contined inside text gen / chat gen
     'kobold': {
         selected: 'kobold',
