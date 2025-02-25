@@ -393,8 +393,8 @@ export let proxies = [
 ];
 export let selected_proxy = proxies[0];
 
-let openai_setting_names;
-let openai_settings;
+export let openai_setting_names;
+export let openai_settings;
 
 /** @type {import('./PromptManager.js').PromptManager} */
 export let promptManager = null;
@@ -1497,8 +1497,14 @@ async function sendWindowAIRequest(messages, signal, stream) {
     }
 }
 
-export function getChatCompletionModel() {
-    switch (oai_settings.chat_completion_source) {
+/**
+ * Gets the API model for the selected chat completion source.
+ * @param {string} source If it's set, ignores active source
+ * @returns {string} API model
+ */
+export function getChatCompletionModel(source = null) {
+    const activeSource = source ?? oai_settings.chat_completion_source;
+    switch (activeSource) {
         case chat_completion_sources.CLAUDE:
             return oai_settings.claude_model;
         case chat_completion_sources.OPENAI:
@@ -1532,7 +1538,7 @@ export function getChatCompletionModel() {
         case chat_completion_sources.DEEPSEEK:
             return oai_settings.deepseek_model;
         default:
-            throw new Error(`Unknown chat completion source: ${oai_settings.chat_completion_source}`);
+            throw new Error(`Unknown chat completion source: ${activeSource}`);
     }
 }
 
@@ -2149,6 +2155,9 @@ async function sendOpenAIRequest(type, messages, signal) {
  */
 function getStreamingReply(data, state) {
     if (oai_settings.chat_completion_source === chat_completion_sources.CLAUDE) {
+        if (oai_settings.show_thoughts) {
+            state.reasoning += data?.delta?.thinking || '';
+        }
         return data?.delta?.text || '';
     } else if (oai_settings.chat_completion_source === chat_completion_sources.MAKERSUITE) {
         if (oai_settings.show_thoughts) {
@@ -3990,6 +3999,8 @@ function onSettingsPresetChange() {
         n: ['#n_openai', 'n', false],
     };
 
+    const presetNameBefore = oai_settings.preset_settings_openai;
+
     const presetName = $('#settings_preset_openai').find(':selected').text();
     oai_settings.preset_settings_openai = presetName;
 
@@ -4015,6 +4026,7 @@ function onSettingsPresetChange() {
         settingsToUpdate: settingsToUpdate,
         settings: oai_settings,
         savePreset: saveOpenAIPreset,
+        presetNameBefore: presetNameBefore,
     }).finally(r => {
         $('.model_custom_select').empty();
 
@@ -4981,6 +4993,7 @@ export function isImageInliningSupported() {
         'gemini-1.5-pro-exp-0827',
         'claude-3',
         'claude-3-5',
+        'claude-3-7',
         'gpt-4-turbo',
         'gpt-4o',
         'gpt-4o-mini',
