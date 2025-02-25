@@ -1382,6 +1382,7 @@ async function loadPersonaForCurrentChat({ doRender = false } = {}) {
 
     // If the persona panel is open when the chat changes, this is likely because a character was selected from that panel.
     // In that case, we are not automatically switching persona - but need to make changes if there is any chat-bound connection
+    /*
     if (isPersonaPanelOpen()) {
         if (chatPersona) {
             // If the chat-bound persona is the currently selected one, we can simply exit out
@@ -1404,6 +1405,7 @@ async function loadPersonaForCurrentChat({ doRender = false } = {}) {
             return false;
         }
     }
+    */
 
     // Check if we have any persona connected to the current character
     if (!chatPersona) {
