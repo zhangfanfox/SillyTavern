@@ -998,7 +998,7 @@ function parseReasoningFromString(str, { strict = true } = {}) {
 }
 
 function registerReasoningAppEvents() {
-    const eventHandler = (/** @type {number} */ idx) => {
+    const eventHandler = async (/** @type {number} */ idx) => {
         if (!power_user.reasoning.auto_parse) {
             return;
         }
@@ -1048,7 +1048,7 @@ function registerReasoningAppEvents() {
 
         if (contentUpdated) {
             syncMesToSwipe();
-            saveChatDebounced();
+            await saveChatConditional();
 
             // Find if a message already exists in DOM and must be updated
             const messageRendered = document.querySelector(`.mes[mesid="${idx}"]`) !== null;
