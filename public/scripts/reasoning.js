@@ -998,7 +998,7 @@ function parseReasoningFromString(str, { strict = true } = {}) {
 }
 
 function registerReasoningAppEvents() {
-    const eventHandler = async (/** @type {number} */ idx) => {
+    const eventHandler = (/** @type {number} */ idx) => {
         if (!power_user.reasoning.auto_parse) {
             return;
         }
