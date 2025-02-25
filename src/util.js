@@ -76,7 +76,7 @@ export function getConfigValue(key, defaultValue = null, typeConverter = null) {
     const value = _getValue();
     switch (typeConverter) {
         case 'number':
-            return Number(value);
+            return isNaN(parseFloat(value)) ? defaultValue : parseFloat(value);
         case 'boolean':
             return toBoolean(value);
         default:
