@@ -1497,8 +1497,14 @@ async function sendWindowAIRequest(messages, signal, stream) {
     }
 }
 
-export function getChatCompletionModel() {
-    switch (oai_settings.chat_completion_source) {
+/**
+ * Gets the API model for the selected chat completion source.
+ * @param {string} source If it's set, ignores active source
+ * @returns {string} API model
+ */
+export function getChatCompletionModel(source = null) {
+    const activeSource = source ?? oai_settings.chat_completion_source;
+    switch (activeSource) {
         case chat_completion_sources.CLAUDE:
             return oai_settings.claude_model;
         case chat_completion_sources.OPENAI:
@@ -1532,7 +1538,7 @@ export function getChatCompletionModel() {
         case chat_completion_sources.DEEPSEEK:
             return oai_settings.deepseek_model;
         default:
-            throw new Error(`Unknown chat completion source: ${oai_settings.chat_completion_source}`);
+            throw new Error(`Unknown chat completion source: ${activeSource}`);
     }
 }
 
