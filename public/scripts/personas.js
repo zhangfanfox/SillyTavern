@@ -26,7 +26,7 @@ import { PAGINATION_TEMPLATE, clearInfoBlock, debounce, delay, download, ensureI
 import { debounce_timeout } from './constants.js';
 import { FILTER_TYPES, FilterHelper } from './filters.js';
 import { groups, selected_group } from './group-chats.js';
-import { POPUP_RESULT, POPUP_TYPE, Popup, callGenericPopup } from './popup.js';
+import { POPUP_TYPE, Popup, callGenericPopup } from './popup.js';
 import { t } from './i18n.js';
 import { openWorldInfoEditor, world_names } from './world-info.js';
 import { renderTemplateAsync } from './templates.js';
@@ -102,11 +102,14 @@ export function initUserAvatar(avatar) {
 /**
  * Sets a user avatar file
  * @param {string} imgfile Link to an image file
+ * @param {object} [options] Optional settings
+ * @param {boolean} [options.toastPersonaNameChange=true] Whether to show a toast when the persona name is changed
+ * @param {boolean} [options.navigateToCurrent=false] Whether to navigate to the current persona after setting the avatar
  */
-export function setUserAvatar(imgfile, { toastPersonaNameChange = true } = {}) {
+export function setUserAvatar(imgfile, { toastPersonaNameChange = true, navigateToCurrent = false } = {}) {
     user_avatar = imgfile && typeof imgfile === 'string' ? imgfile : $(this).attr('data-avatar-id');
     reloadUserAvatar();
-    updatePersonaUIStates();
+    updatePersonaUIStates({ navigateToCurrent: navigateToCurrent });
     selectCurrentPersona({ toastPersonaNameChange: toastPersonaNameChange });
     saveSettingsDebounced();
     $('.zoomed_avatar[forchar]').remove();
@@ -1451,7 +1454,7 @@ async function loadPersonaForCurrentChat({ doRender = false } = {}) {
     // Persona avatar found, select it
     if (chatPersona && user_avatar !== chatPersona) {
         const willAutoLock = power_user.persona_auto_lock && user_avatar !== chat_metadata['persona'];
-        setUserAvatar(chatPersona, { toastPersonaNameChange: false });
+        setUserAvatar(chatPersona, { toastPersonaNameChange: false, navigateToCurrent: true });
 
         if (power_user.persona_show_notifications) {
             let message = t`Auto-selected persona based on ${connectType} connection.<br />Your messages will now be sent as ${power_user.personas[chatPersona]}.`;
@@ -1462,7 +1465,7 @@ async function loadPersonaForCurrentChat({ doRender = false } = {}) {
         }
     }
 
-    updatePersonaUIStates({ navigateToCurrent: true });
+    updatePersonaUIStates();
 
     return !!chatPersona;
 }
