@@ -41,7 +41,7 @@ import {
     showMoreMessages,
     stopGeneration,
     substituteParams,
-    syncCurrentSwipeInfoExtras,
+    syncMesToSwipe,
     system_avatar,
     system_message_types,
     this_chid,
@@ -2880,7 +2880,7 @@ async function addSwipeCallback(args, value) {
 
     if (isTrueBoolean(args.switch)) {
         // Make sure ad-hoc changes to extras are saved before swiping away
-        syncCurrentSwipeInfoExtras();
+        syncMesToSwipe();
         lastMessage.swipe_id = newSwipeId;
         lastMessage.mes = lastMessage.swipes[newSwipeId];
         lastMessage.extra = structuredClone(lastMessage.swipe_info?.[newSwipeId]?.extra ?? lastMessage.extra ?? {});
