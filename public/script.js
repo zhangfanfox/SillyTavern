@@ -6099,7 +6099,7 @@ export function syncMesToSwipe(messageId = null) {
     }
 
     const targetMessageId = messageId ?? chat.length - 1;
-    if (chat.length > targetMessageId) {
+    if (chat.length > targetMessageId || targetMessageId < 0) {
         console.warn(`[syncMesToSwipe] Invalid message ID: ${messageId}`);
         return false;
     }
@@ -6120,7 +6120,7 @@ export function syncMesToSwipe(messageId = null) {
     }
 
     const targetSwipeInfo = targetMessage.swipe_info[targetMessage.swipe_id];
-    if (typeof targetSwipeInfo !== 'object') {
+    if (!targetSwipeInfo || typeof targetSwipeInfo !== 'object') {
         return false;
     }
 
