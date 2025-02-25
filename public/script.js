@@ -6120,7 +6120,7 @@ export function syncMesToSwipe(messageId = null) {
     }
 
     const targetSwipeInfo = targetMessage.swipe_info[targetMessage.swipe_id];
-    if (!targetSwipeInfo || typeof targetSwipeInfo !== 'object') {
+    if (typeof targetSwipeInfo !== 'object') {
         return false;
     }
 
