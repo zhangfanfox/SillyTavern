@@ -1048,6 +1048,7 @@ function registerReasoningAppEvents() {
 
         if (contentUpdated) {
             syncMesToSwipe();
+            saveChatDebounced();
 
             // Find if a message already exists in DOM and must be updated
             const messageRendered = document.querySelector(`.mes[mesid="${idx}"]`) !== null;
