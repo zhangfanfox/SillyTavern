@@ -774,17 +774,18 @@ export async function canResolve(name, useIPv6 = true, useIPv4 = true) {
 /**
  * Checks the network interfaces to determine the presence of IPv6 and IPv4 addresses.
  *
- * @returns {Promise<[boolean, boolean, boolean, boolean]>} A promise that resolves to an array containing:
- * - [0]: `hasIPv6` (boolean) - Whether the computer has any IPv6 address, including (`::1`).
- * - [1]: `hasIPv4` (boolean) - Whether the computer has any IPv4 address, including (`127.0.0.1`).
- * - [2]: `hasIPv6Local` (boolean) - Whether the computer has local IPv6 address (`::1`).
- * - [3]: `hasIPv4Local` (boolean) - Whether the computer has local IPv4 address (`127.0.0.1`).
+ * @typedef {object} IPQueryResult
+ * @property {boolean} hasIPv6Any - Whether the computer has any IPv6 address, including (`::1`).
+ * @property {boolean} hasIPv4Any - Whether the computer has any IPv4 address, including (`127.0.0.1`).
+ * @property {boolean} hasIPv6Local - Whether the computer has local IPv6 address (`::1`).
+ * @property {boolean} hasIPv4Local - Whether the computer has local IPv4 address (`127.0.0.1`).
+ * @returns {Promise<IPQueryResult>} A promise that resolves to an array containing:
  */
 export async function getHasIP() {
-    let hasIPv6 = false;
+    let hasIPv6Any = false;
     let hasIPv6Local = false;
 
-    let hasIPv4 = false;
+    let hasIPv4Any = false;
     let hasIPv4Local = false;
 
     const interfaces = os.networkInterfaces();
@@ -796,28 +797,24 @@ export async function getHasIP() {
 
         for (const info of iface) {
             if (info.family === 'IPv6') {
-                hasIPv6 = true;
+                hasIPv6Any = true;
                 if (info.address === '::1') {
                     hasIPv6Local = true;
                 }
             }
 
             if (info.family === 'IPv4') {
-                hasIPv4 = true;
+                hasIPv4Any = true;
                 if (info.address === '127.0.0.1') {
                     hasIPv4Local = true;
                 }
             }
-            if (hasIPv6 && hasIPv4 && hasIPv6Local && hasIPv4Local) break;
+            if (hasIPv6Any && hasIPv4Any && hasIPv6Local && hasIPv4Local) break;
         }
-        if (hasIPv6 && hasIPv4 && hasIPv6Local && hasIPv4Local) break;
+        if (hasIPv6Any && hasIPv4Any && hasIPv6Local && hasIPv4Local) break;
     }
-    return [
-        hasIPv6,
-        hasIPv4,
-        hasIPv6Local,
-        hasIPv4Local,
-    ];
+
+    return { hasIPv6Any, hasIPv4Any, hasIPv6Local, hasIPv4Local };
 }
 
 
@@ -860,10 +857,10 @@ export function stringToBool(str) {
 export function setupLogLevel() {
     const logLevel = getConfigValue('logging.minLogLevel', LOG_LEVELS.DEBUG, 'number');
 
-    globalThis.console.debug = logLevel <= LOG_LEVELS.DEBUG ? console.debug : () => {};
-    globalThis.console.info = logLevel <= LOG_LEVELS.INFO ? console.info : () => {};
-    globalThis.console.warn = logLevel <= LOG_LEVELS.WARN ? console.warn : () => {};
-    globalThis.console.error = logLevel <= LOG_LEVELS.ERROR ? console.error : () => {};
+    globalThis.console.debug = logLevel <= LOG_LEVELS.DEBUG ? console.debug : () => { };
+    globalThis.console.info = logLevel <= LOG_LEVELS.INFO ? console.info : () => { };
+    globalThis.console.warn = logLevel <= LOG_LEVELS.WARN ? console.warn : () => { };
+    globalThis.console.error = logLevel <= LOG_LEVELS.ERROR ? console.error : () => { };
 }
 
 /**

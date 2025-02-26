@@ -308,17 +308,11 @@ export class ServerStartup {
         let useIPv6 = (this.cliArgs.enableIPv6 === true);
         let useIPv4 = (this.cliArgs.enableIPv4 === true);
 
-        let hasIPv6 = false,
-            hasIPv4 = false,
-            hasIPv6Local = false,
-            hasIPv4Local = false,
-            hasIPv6Any = false,
-            hasIPv4Any = false;
-
         if (this.cliArgs.enableIPv6 === 'auto' || this.cliArgs.enableIPv4 === 'auto') {
-            [hasIPv6Any, hasIPv4Any, hasIPv6Local, hasIPv4Local] = await getHasIP();
+            const ipQuery = await getHasIP();
+            let hasIPv6 = false, hasIPv4 = false;
 
-            hasIPv6 = this.cliArgs.listen ? hasIPv6Any : hasIPv6Local;
+            hasIPv6 = this.cliArgs.listen ? ipQuery.hasIPv6Any : ipQuery.hasIPv6Local;
             if (this.cliArgs.enableIPv6 === 'auto') {
                 useIPv6 = hasIPv6;
             }
@@ -330,7 +324,7 @@ export class ServerStartup {
                 }
             }
 
-            hasIPv4 = this.cliArgs.listen ? hasIPv4Any : hasIPv4Local;
+            hasIPv4 = this.cliArgs.listen ? ipQuery.hasIPv4Any : ipQuery.hasIPv4Local;
             if (this.cliArgs.enableIPv4 === 'auto') {
                 useIPv4 = hasIPv4;
             }
@@ -351,7 +345,7 @@ export class ServerStartup {
         }
 
         if (!useIPv6 && !useIPv4) {
-            console.error('Both IPv6 and IPv4 are disabled');
+            console.error('Both IPv6 and IPv4 are disabled or not detected');
             process.exit(1);
         }
 
