@@ -190,13 +190,46 @@ export class ServerStartup {
     }
 
     /**
+     * Prints a fatal error message and exits the process.
+     * @param {string} message
+     */
+    #fatal(message) {
+        console.error(color.red(message));
+        process.exit(1);
+    }
+
+    /**
+     * Checks if SSL options are valid. If not, it will print an error message and exit the process.
+     * @returns {void}
+     */
+    #verifySslOptions() {
+        if (!this.cliArgs.ssl) return;
+
+        if (!this.cliArgs.certPath) {
+            this.#fatal('Error: SSL certificate path is required when using HTTPS. Check your config');
+        }
+
+        if (!this.cliArgs.keyPath) {
+            this.#fatal('Error: SSL key path is required when using HTTPS. Check your config');
+        }
+
+        if (!fs.existsSync(this.cliArgs.certPath)) {
+            this.#fatal('Error: SSL certificate path does not exist');
+        }
+
+        if (!fs.existsSync(this.cliArgs.keyPath)) {
+            this.#fatal('Error: SSL key path does not exist');
+        }
+    }
+
+    /**
      * Creates an HTTPS server.
      * @param {URL} url The URL to listen on
      * @param {number} ipVersion the ip version to use
      * @returns {Promise<void>} A promise that resolves when the server is listening
-     * @throws {Error} If the server fails to start
      */
     #createHttpsServer(url, ipVersion) {
+        this.#verifySslOptions();
         return new Promise((resolve, reject) => {
             const sslOptions = {
                 cert: fs.readFileSync(this.cliArgs.certPath),
@@ -222,7 +255,6 @@ export class ServerStartup {
      * @param {URL} url The URL to listen on
      * @param {number} ipVersion the ip version to use
      * @returns {Promise<void>} A promise that resolves when the server is listening
-     * @throws {Error} If the server fails to start
      */
     #createHttpServer(url, ipVersion) {
         return new Promise((resolve, reject) => {
@@ -257,7 +289,7 @@ export class ServerStartup {
             try {
                 await createFunc(this.cliArgs.getIPv6ListenUrl(), 6);
             } catch (error) {
-                console.error('non-fatal error: failed to start server on IPv6');
+                console.error('Warning: failed to start server on IPv6');
                 console.error(error);
 
                 v6Failed = true;
@@ -268,7 +300,7 @@ export class ServerStartup {
             try {
                 await createFunc(this.cliArgs.getIPv4ListenUrl(), 4);
             } catch (error) {
-                console.error('non-fatal error: failed to start server on IPv4');
+                console.error('Warning: failed to start server on IPv4');
                 console.error(error);
 
                 v4Failed = true;
@@ -285,18 +317,15 @@ export class ServerStartup {
      */
     #handleServerListenFail({ v6Failed, v4Failed, useIPv6, useIPv4 }) {
         if (v6Failed && !useIPv4) {
-            console.error(color.red('fatal error: Failed to start server on IPv6 and IPv4 disabled'));
-            process.exit(1);
+            this.#fatal('Error: Failed to start server on IPv6 and IPv4 disabled');
         }
 
         if (v4Failed && !useIPv6) {
-            console.error(color.red('fatal error: Failed to start server on IPv4 and IPv6 disabled'));
-            process.exit(1);
+            this.#fatal('Error: Failed to start server on IPv4 and IPv6 disabled');
         }
 
         if (v6Failed && v4Failed) {
-            console.error(color.red('fatal error: Failed to start server on both IPv6 and IPv4'));
-            process.exit(1);
+            this.#fatal('Error: Failed to start server on both IPv6 and IPv4');
         }
     }
 
