@@ -34,12 +34,8 @@ import { canResolve, color, getConfigValue, stringToBool } from './util.js';
  */
 
 /**
- * Gets the hostname to use for autorun in the browser.
- * @param {boolean} useIPv6 If use IPv6
- * @param {boolean} useIPv4 If use IPv4
- * @returns {Promise<string>} The hostname to use for autorun
+ * Provides a command line arguments parser.
  */
-
 export class CommandLineParser {
     constructor() {
         /** @type {CommandLineArguments} */
@@ -85,32 +81,33 @@ export class CommandLineParser {
 
     /**
      * Parses command line arguments.
+     * Arguments that are not provided will be filled with config values.
      * @param {string[]} args Process startup arguments.
      * @returns {CommandLineArguments} Parsed command line arguments.
      */
     parse(args) {
         const cliArguments = yargs(hideBin(args))
-            .usage('Usage: <your-start-script> <command> [options]')
+            .usage('Usage: <your-start-script> [options]\nOptions that are not provided will be filled with config values.')
             .option('enableIPv6', {
                 type: 'string',
                 default: null,
-                describe: 'Enables IPv6 protocol.',
+                describe: 'Enables IPv6 protocol',
             }).option('enableIPv4', {
                 type: 'string',
                 default: null,
-                describe: 'Enables IPv4 protocol.',
+                describe: 'Enables IPv4 protocol',
             }).option('port', {
                 type: 'number',
                 default: null,
-                describe: 'Sets the port under which SillyTavern will run.\nIf not provided falls back to yaml config \'port\'.',
+                describe: 'Sets the server listening port',
             }).option('dnsPreferIPv6', {
                 type: 'boolean',
                 default: null,
-                describe: 'Prefers IPv6 for DNS\nyou should probably have the enabled if you\'re on an IPv6 only network\nIf not provided falls back to yaml config \'dnsPreferIPv6\'.',
+                describe: 'Prefers IPv6 for DNS\nYou should probably have the enabled if you\'re on an IPv6 only network',
             }).option('autorun', {
                 type: 'boolean',
                 default: null,
-                describe: 'Automatically launch SillyTavern in the browser.\nAutorun is automatically disabled if --ssl is set to true.\nIf not provided falls back to yaml config \'autorun\'.',
+                describe: 'Automatically launch SillyTavern in the browser',
             }).option('autorunHostname', {
                 type: 'string',
                 default: null,
@@ -122,23 +119,23 @@ export class CommandLineParser {
             }).option('listen', {
                 type: 'boolean',
                 default: null,
-                describe: 'SillyTavern is listening on all network interfaces (Wi-Fi, LAN, localhost). If false, will limit it only to internal localhost (127.0.0.1).\nIf not provided falls back to yaml config \'listen\'.',
+                describe: 'Whether to listen on all network interfaces',
             }).option('listenAddressIPv6', {
                 type: 'string',
                 default: null,
-                describe: 'Set SillyTavern to listen to a specific IPv6 address. If not set, it will fallback to listen to all.',
+                describe: 'Specific IPv6 address to listen to',
             }).option('listenAddressIPv4', {
                 type: 'string',
                 default: null,
-                describe: 'Set SillyTavern to listen to a specific IPv4 address. If not set, it will fallback to listen to all.',
+                describe: 'Specific IPv4 address to listen to',
             }).option('corsProxy', {
                 type: 'boolean',
                 default: null,
-                describe: 'Enables CORS proxy\nIf not provided falls back to yaml config \'enableCorsProxy\'',
+                describe: 'Enables CORS proxy',
             }).option('disableCsrf', {
                 type: 'boolean',
                 default: null,
-                describe: 'Disables CSRF protection',
+                describe: 'Disables CSRF protection - NOT RECOMMENDED',
             }).option('ssl', {
                 type: 'boolean',
                 default: false,
@@ -146,11 +143,11 @@ export class CommandLineParser {
             }).option('certPath', {
                 type: 'string',
                 default: 'certs/cert.pem',
-                describe: 'Path to your certificate file.',
+                describe: 'Path to SSL certificate file',
             }).option('keyPath', {
                 type: 'string',
                 default: 'certs/privkey.pem',
-                describe: 'Path to your private key file.',
+                describe: 'Path to SSL private key file',
             }).option('whitelist', {
                 type: 'boolean',
                 default: null,
@@ -162,7 +159,7 @@ export class CommandLineParser {
             }).option('avoidLocalhost', {
                 type: 'boolean',
                 default: null,
-                describe: 'Avoids using \'localhost\' for autorun in auto mode.\nuse if you don\'t have \'localhost\' in your hosts file',
+                describe: 'Avoids using \'localhost\' for autorun in auto mode.\nUse if you don\'t have \'localhost\' in your hosts file',
             }).option('basicAuthMode', {
                 type: 'boolean',
                 default: null,
