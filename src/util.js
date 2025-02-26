@@ -6,6 +6,7 @@ import { Readable } from 'node:stream';
 import { createRequire } from 'node:module';
 import { Buffer } from 'node:buffer';
 import { promises as dnsPromise } from 'node:dns';
+import os from 'os';
 
 import yaml from 'yaml';
 import { sync as commandExistsSync } from 'command-exists';
@@ -771,6 +772,56 @@ export async function canResolve(name, useIPv6 = true, useIPv4 = true) {
 }
 
 /**
+ * Checks the network interfaces to determine the presence of IPv6 and IPv4 addresses.
+ *
+ * @returns {Promise<[boolean, boolean, boolean, boolean]>} A promise that resolves to an array containing:
+ * - [0]: `hasIPv6` (boolean) - Whether the computer has any IPv6 address, including (`::1`).
+ * - [1]: `hasIPv4` (boolean) - Whether the computer has any IPv4 address, including (`127.0.0.1`).
+ * - [2]: `hasIPv6Local` (boolean) - Whether the computer has local IPv6 address (`::1`).
+ * - [3]: `hasIPv4Local` (boolean) - Whether the computer has local IPv4 address (`127.0.0.1`).
+ */
+export async function getHasIP() {
+    let hasIPv6 = false;
+    let hasIPv6Local = false;
+
+    let hasIPv4 = false;
+    let hasIPv4Local = false;
+
+    const interfaces = os.networkInterfaces();
+
+    for (const iface of Object.values(interfaces)) {
+        if (iface === undefined) {
+            continue;
+        }
+
+        for (const info of iface) {
+            if (info.family === 'IPv6') {
+                hasIPv6 = true;
+                if (info.address === '::1') {
+                    hasIPv6Local = true;
+                }
+            }
+
+            if (info.family === 'IPv4') {
+                hasIPv4 = true;
+                if (info.address === '127.0.0.1') {
+                    hasIPv4Local = true;
+                }
+            }
+            if (hasIPv6 && hasIPv4 && hasIPv6Local && hasIPv4Local) break;
+        }
+        if (hasIPv6 && hasIPv4 && hasIPv6Local && hasIPv4Local) break;
+    }
+    return [
+        hasIPv6,
+        hasIPv4,
+        hasIPv6Local,
+        hasIPv4Local,
+    ];
+}
+
+
+/**
  * Converts various JavaScript primitives to boolean values.
  * Handles special case for "true"/"false" strings (case-insensitive)
  *
@@ -1004,4 +1055,17 @@ export class MemoryLimitedMap {
 export function safeReadFileSync(filePath, options = { encoding: 'utf-8' }) {
     if (fs.existsSync(filePath)) return fs.readFileSync(filePath, options);
     return null;
+}
+
+/**
+ * Set the title of the terminal window
+ * @param {string} title Desired title for the window
+ */
+export function setWindowTitle(title) {
+    if (process.platform === 'win32') {
+        process.title = title;
+    }
+    else {
+        process.stdout.write(`\x1b]2;${title}\x1b\x5c`);
+    }
 }

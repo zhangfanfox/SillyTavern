@@ -14,7 +14,7 @@ import archiver from 'archiver';
 import _ from 'lodash';
 import { sync as writeFileAtomicSync } from 'write-file-atomic';
 
-import { USER_DIRECTORY_TEMPLATE, DEFAULT_USER, PUBLIC_DIRECTORIES, SETTINGS_FILE } from './constants.js';
+import { USER_DIRECTORY_TEMPLATE, DEFAULT_USER, PUBLIC_DIRECTORIES, SETTINGS_FILE, UPLOADS_DIRECTORY } from './constants.js';
 import { getConfigValue, color, delay, generateTimestamp } from './util.js';
 import { readSecret, writeSecret } from './endpoints/secrets.js';
 import { getContentOfType } from './endpoints/content-manager.js';
@@ -118,6 +118,27 @@ export async function ensurePublicDirectoriesExist() {
         }
     }
     return directoriesList;
+}
+
+export function cleanUploads() {
+    try {
+        const uploadsPath = path.join(globalThis.DATA_ROOT, UPLOADS_DIRECTORY);
+        if (fs.existsSync(uploadsPath)) {
+            const uploads = fs.readdirSync(uploadsPath);
+
+            if (!uploads.length) {
+                return;
+            }
+
+            console.debug(`Cleaning uploads folder (${uploads.length} files)`);
+            uploads.forEach(file => {
+                const pathToFile = path.join(uploadsPath, file);
+                fs.unlinkSync(pathToFile);
+            });
+        }
+    } catch (err) {
+        console.error(err);
+    }
 }
 
 /**
@@ -476,6 +497,25 @@ export function getCookieSessionName() {
     const hostname = os.hostname() || 'localhost';
     const suffix = crypto.createHash('sha256').update(hostname).digest('hex').slice(0, 8);
     return `session-${suffix}`;
+}
+
+export function getSessionCookieAge() {
+    // Defaults to "no expiration" if not set
+    const configValue = getConfigValue('sessionTimeout', -1, 'number');
+
+    // Convert to milliseconds
+    if (configValue > 0) {
+        return configValue * 1000;
+    }
+
+    // "No expiration" is just 400 days as per RFC 6265
+    if (configValue < 0) {
+        return 400 * 24 * 60 * 60 * 1000;
+    }
+
+    // 0 means session cookie is deleted when the browser session ends
+    // (depends on the implementation of the browser)
+    return undefined;
 }
 
 /**
