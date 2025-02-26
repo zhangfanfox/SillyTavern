@@ -138,15 +138,15 @@ export class CommandLineParser {
                 describe: 'Disables CSRF protection - NOT RECOMMENDED',
             }).option('ssl', {
                 type: 'boolean',
-                default: false,
+                default: null,
                 describe: 'Enables SSL',
             }).option('certPath', {
                 type: 'string',
-                default: 'certs/cert.pem',
+                default: null,
                 describe: 'Path to SSL certificate file',
             }).option('keyPath', {
                 type: 'string',
-                default: 'certs/privkey.pem',
+                default: null,
                 describe: 'Path to SSL private key file',
             }).option('whitelist', {
                 type: 'boolean',
