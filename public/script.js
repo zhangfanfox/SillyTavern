@@ -500,7 +500,7 @@ export const event_types = {
     CHARACTER_DELETED: 'characterDeleted',
     CHARACTER_DUPLICATED: 'character_duplicated',
     CHARACTER_RENAMED: 'character_renamed',
-    RENAMED_PAST_CHAT: 'renamed_past_chat',
+    CHARACTER_RENAMED_IN_PAST_CHAT: 'character_renamed_in_past_chat',
     /** @deprecated The event is aliased to STREAM_TOKEN_RECEIVED. */
     SMOOTH_STREAM_TOKEN_RECEIVED: 'stream_token_received',
     STREAM_TOKEN_RECEIVED: 'stream_token_received',
@@ -6440,7 +6440,7 @@ async function renamePastChats(oldAvatar, newAvatar, newName) {
                     }
                 }
 
-                await eventSource.emit(event_types.RENAMED_PAST_CHAT, currentChat, oldAvatar, newAvatar);
+                await eventSource.emit(event_types.CHARACTER_RENAMED_IN_PAST_CHAT, currentChat, oldAvatar, newAvatar);
 
                 const saveChatResponse = await fetch('/api/chats/save', {
                     method: 'POST',
