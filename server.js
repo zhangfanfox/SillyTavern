@@ -18,7 +18,6 @@ import responseTime from 'response-time';
 import helmet from 'helmet';
 import bodyParser from 'body-parser';
 import open from 'open';
-import fetch from 'node-fetch';
 
 // local library imports
 import { CommandLineParser } from './src/command-line.js';
@@ -36,7 +35,6 @@ import {
     setUserDataMiddleware,
     shouldRedirectToLogin,
     tryAutoLogin,
-    router as userDataRouter,
     cleanUploads,
     getSessionCookieAge,
 } from './src/users.js';
@@ -64,8 +62,6 @@ import { ensureThumbnailCache } from './src/endpoints/thumbnails.js';
 
 // Routers
 import { router as usersPublicRouter } from './src/endpoints/users-public.js';
-import { router as usersPrivateRouter } from './src/endpoints/users-private.js';
-import { router as usersAdminRouter } from './src/endpoints/users-admin.js';
 import { init as statsInit, onExit as statsOnExit } from './src/endpoints/stats.js';
 import { checkForNewContent } from './src/endpoints/content-manager.js';
 import { init as settingsInit } from './src/endpoints/settings.js';
@@ -255,16 +251,9 @@ app.get('/api/ping', (request, response) => {
 });
 
 // File uploads
-const uploadsPath = path.join(globalThis.DATA_ROOT, UPLOADS_DIRECTORY);
+const uploadsPath = path.join(cliArgs.dataRoot, UPLOADS_DIRECTORY);
 app.use(multer({ dest: uploadsPath, limits: { fieldSize: 10 * 1024 * 1024 } }).single('avatar'));
 app.use(multerMonkeyPatch);
-
-// User data mount
-app.use('/', userDataRouter);
-// Private endpoints
-app.use('/api/users', usersPrivateRouter);
-// Admin endpoints
-app.use('/api/users', usersAdminRouter);
 
 app.get('/version', async function (_, response) {
     const data = await getVersion();
@@ -335,8 +324,8 @@ async function preSetupTasks() {
  * @param {import('./src/server-startup.js').ServerStartupResult} result The result of the server startup
  * @returns {Promise<void>}
  */
-async function postSetupTasks({ v6Failed, v4Failed, useIPv6, useIPv4 }) {
-    const autorunHostname = await cliArgs.getAutorunHostname(useIPv6, useIPv4);
+async function postSetupTasks(result) {
+    const autorunHostname = await cliArgs.getAutorunHostname(result);
     const autorunUrl = cliArgs.getAutorunUrl(autorunHostname);
     console.log('Launching...');
 
@@ -348,13 +337,13 @@ async function postSetupTasks({ v6Failed, v4Failed, useIPv6, useIPv4 }) {
 
     let logListen = 'SillyTavern is listening on';
 
-    if (useIPv6 && !v6Failed) {
+    if (result.useIPv6 && !result.v6Failed) {
         logListen += color.green(
             ' IPv6: ' + cliArgs.getIPv6ListenUrl().host,
         );
     }
 
-    if (useIPv4 && !v4Failed) {
+    if (result.useIPv4 && !result.v4Failed) {
         logListen += color.green(
             ' IPv4: ' + cliArgs.getIPv4ListenUrl().host,
         );

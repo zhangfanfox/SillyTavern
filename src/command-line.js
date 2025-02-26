@@ -4,33 +4,33 @@ import ipRegex from 'ip-regex';
 import { canResolve, color, getConfigValue, stringToBool } from './util.js';
 
 /**
- * @typedef {object} CommandLineArguments
- * @property {string} dataRoot
- * @property {number} port
- * @property {boolean} listen
- * @property {string} listenAddressIPv6
- * @property {string} listenAddressIPv4
- * @property {boolean|string} enableIPv4
- * @property {boolean|string} enableIPv6
- * @property {boolean} dnsPreferIPv6
- * @property {boolean} autorun
- * @property {string} autorunHostname
- * @property {number} autorunPortOverride
- * @property {boolean} enableCorsProxy
- * @property {boolean} disableCsrf
- * @property {boolean} ssl
- * @property {string} certPath
- * @property {string} keyPath
- * @property {boolean} whitelistMode
- * @property {boolean} avoidLocalhost
- * @property {boolean} basicAuthMode
- * @property {boolean} requestProxyEnabled
- * @property {string} requestProxyUrl
- * @property {string[]} requestProxyBypass
- * @property {function(): URL} getIPv4ListenUrl
- * @property {function(): URL} getIPv6ListenUrl
- * @property {function(boolean, boolean): Promise<string>} getAutorunHostname
- * @property {function(string): URL} getAutorunUrl
+ * @typedef {object} CommandLineArguments Parsed command line arguments
+ * @property {string} dataRoot Data root directory
+ * @property {number} port Port number
+ * @property {boolean} listen If SillyTavern is listening on all network interfaces
+ * @property {string} listenAddressIPv6 IPv6 address to listen to
+ * @property {string} listenAddressIPv4 IPv4 address to listen to
+ * @property {boolean|string} enableIPv4 If enable IPv4 protocol ("auto" is also allowed)
+ * @property {boolean|string} enableIPv6 If enable IPv6 protocol ("auto" is also allowed)
+ * @property {boolean} dnsPreferIPv6 If prefer IPv6 for DNS
+ * @property {boolean} autorun If automatically launch SillyTavern in the browser
+ * @property {string} autorunHostname Autorun hostname
+ * @property {number} autorunPortOverride Autorun port override (-1 is use server port)
+ * @property {boolean} enableCorsProxy If enable CORS proxy
+ * @property {boolean} disableCsrf If disable CSRF protection
+ * @property {boolean} ssl If enable SSL
+ * @property {string} certPath Path to certificate
+ * @property {string} keyPath Path to private key
+ * @property {boolean} whitelistMode If enable whitelist mode
+ * @property {boolean} avoidLocalhost If avoid using 'localhost' for autorun in auto mode
+ * @property {boolean} basicAuthMode If enable basic authentication
+ * @property {boolean} requestProxyEnabled If enable outgoing request proxy
+ * @property {string} requestProxyUrl Request proxy URL
+ * @property {string[]} requestProxyBypass Request proxy bypass list
+ * @property {function(): URL} getIPv4ListenUrl Get IPv4 listen URL
+ * @property {function(): URL} getIPv6ListenUrl Get IPv6 listen URL
+ * @property {function(import('./server-startup.js').ServerStartupResult): Promise<string>} getAutorunHostname Get autorun hostname
+ * @property {function(string): URL} getAutorunUrl Get autorun URL
  */
 
 /**
@@ -220,7 +220,7 @@ export class CommandLineParser {
                     (':' + this.port),
                 );
             },
-            getAutorunHostname: async function (useIPv6, useIPv4) {
+            getAutorunHostname: async function ({ useIPv6, useIPv4 }) {
                 if (this.autorunHostname === 'auto') {
                     let localhostResolve = await canResolve('localhost', useIPv6, useIPv4);
 

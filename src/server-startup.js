@@ -4,6 +4,9 @@ import fs from 'node:fs';
 import { color, urlHostnameToIPv6, getHasIP } from './util.js';
 
 // Express routers
+import { router as userDataRouter } from './users.js';
+import { router as usersPrivateRouter } from './endpoints/users-private.js';
+import { router as usersAdminRouter } from './endpoints/users-admin.js';
 import { router as movingUIRouter } from './endpoints/moving-ui.js';
 import { router as imagesRouter } from './endpoints/images.js';
 import { router as quickRepliesRouter } from './endpoints/quick-replies.js';
@@ -128,6 +131,9 @@ export function redirectDeprecatedEndpoints(app) {
  * @param {import('express').Express} app The Express app to use
  */
 export function setupPrivateEndpoints(app) {
+    app.use('/', userDataRouter);
+    app.use('/api/users', usersPrivateRouter);
+    app.use('/api/users', usersAdminRouter);
     app.use('/api/moving-ui', movingUIRouter);
     app.use('/api/images', imagesRouter);
     app.use('/api/quick-replies', quickRepliesRouter);
@@ -274,13 +280,10 @@ export class ServerStartup {
 
     /**
      * Handles the case where the server failed to start on one or both protocols.
-     * @param {boolean} v6Failed If the server failed to start on IPv6
-     * @param {boolean} v4Failed If the server failed to start on IPv4
-     * @param {boolean} useIPv6 If use IPv6
-     * @param {boolean} useIPv4 If use IPv4
+     * @param {ServerStartupResult} result The results of the server startup
      * @returns {void}
      */
-    #handleServerListenFail(v6Failed, v4Failed, useIPv6, useIPv4) {
+    #handleServerListenFail({ v6Failed, v4Failed, useIPv6, useIPv4 }) {
         if (v6Failed && !useIPv4) {
             console.error(color.red('fatal error: Failed to start server on IPv6 and IPv4 disabled'));
             process.exit(1);
@@ -353,7 +356,8 @@ export class ServerStartup {
         }
 
         const [v6Failed, v4Failed] = await this.#startHTTPorHTTPS(useIPv6, useIPv4);
-        this.#handleServerListenFail(v6Failed, v4Failed, useIPv6, useIPv4);
-        return { v6Failed, v4Failed, useIPv6, useIPv4 };
+        const result = { v6Failed, v4Failed, useIPv6, useIPv4 };
+        this.#handleServerListenFail(result);
+        return result;
     }
 }
