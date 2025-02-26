@@ -327,10 +327,10 @@ async function preSetupTasks() {
 async function postSetupTasks(result) {
     const autorunHostname = await cliArgs.getAutorunHostname(result);
     const autorunUrl = cliArgs.getAutorunUrl(autorunHostname);
-    console.log('Launching...');
 
     if (cliArgs.autorun) {
-        open(autorunUrl.toString());
+        console.log('Launching in a browser...');
+        await open(autorunUrl.toString());
     }
 
     setWindowTitle('SillyTavern WebServer');
@@ -457,5 +457,5 @@ initUserStorage(globalThis.DATA_ROOT)
     .then(verifySecuritySettings)
     .then(preSetupTasks)
     .then(apply404Middleware)
-    .then(new ServerStartup(app, cliArgs).start)
+    .then(() => new ServerStartup(app, cliArgs).start())
     .then(postSetupTasks);
