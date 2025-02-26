@@ -500,6 +500,7 @@ export const event_types = {
     CHARACTER_DELETED: 'characterDeleted',
     CHARACTER_DUPLICATED: 'character_duplicated',
     CHARACTER_RENAMED: 'character_renamed',
+    RENAMED_PAST_CHAT: 'renamed_past_chat',
     /** @deprecated The event is aliased to STREAM_TOKEN_RECEIVED. */
     SMOOTH_STREAM_TOKEN_RECEIVED: 'stream_token_received',
     STREAM_TOKEN_RECEIVED: 'stream_token_received',
@@ -6359,7 +6360,7 @@ export async function renameCharacter(name = null, { silent = false, renameChats
                 <i><b>Sprites folder (if any) should be renamed manually.</b></i>`, 'confirm');
 
                 if (renamePastChatsConfirm) {
-                    await renamePastChats(newAvatar, newValue);
+                    await renamePastChats(oldAvatar, newAvatar, newValue);
                     await reloadCurrentChat();
                     toastr.success(t`Character renamed and past chats updated!`, t`Rename Character`);
                 } else {
@@ -6387,7 +6388,7 @@ export async function renameCharacter(name = null, { silent = false, renameChats
     return true;
 }
 
-async function renamePastChats(newAvatar, newValue) {
+async function renamePastChats(oldAvatar, newAvatar, newName) {
     const pastChats = await getPastCharacterChats();
 
     for (const { file_name } of pastChats) {
@@ -6397,7 +6398,7 @@ async function renamePastChats(newAvatar, newValue) {
                 method: 'POST',
                 headers: getRequestHeaders(),
                 body: JSON.stringify({
-                    ch_name: newValue,
+                    ch_name: newName,
                     file_name: fileNameWithoutExtension,
                     avatar_url: newAvatar,
                 }),
@@ -6413,15 +6414,17 @@ async function renamePastChats(newAvatar, newValue) {
                     }
 
                     if (message.name !== undefined) {
-                        message.name = newValue;
+                        message.name = newName;
                     }
                 }
+
+                await eventSource.emit(event_types.RENAMED_PAST_CHAT, currentChat, oldAvatar, newAvatar);
 
                 const saveChatResponse = await fetch('/api/chats/save', {
                     method: 'POST',
                     headers: getRequestHeaders(),
                     body: JSON.stringify({
-                        ch_name: newValue,
+                        ch_name: newName,
                         file_name: fileNameWithoutExtension,
                         chat: currentChat,
                         avatar_url: newAvatar,
