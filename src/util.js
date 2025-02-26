@@ -6,7 +6,7 @@ import { Readable } from 'node:stream';
 import { createRequire } from 'node:module';
 import { Buffer } from 'node:buffer';
 import { promises as dnsPromise } from 'node:dns';
-import os from 'os';
+import os from 'node:os';
 
 import yaml from 'yaml';
 import { sync as commandExistsSync } from 'command-exists';
