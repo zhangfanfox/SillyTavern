@@ -79,8 +79,8 @@ function isIpFormat(entry) {
 }
 
 /**
- * Validate the IP addresses in the whitelist.
- * Hostnames are resolved to IP addresses.
+ * Resolves hostnames in the whitelist to IP addresses.
+ * This function will modify the whitelist array in place.
  */
 async function resolveHostnames() {
     for (let i = 0; i < whitelist.length; i++) {
