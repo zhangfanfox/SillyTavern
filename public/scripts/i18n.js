@@ -100,6 +100,10 @@ export function t(strings, ...values) {
  */
 export function translate(text, key = null) {
     const translationKey = key || text;
+    if (translationKey === null || translationKey === undefined) {
+        console.trace('WARN: No translation key provided');
+        return '';
+    }
     if (trackMissingDynamicTranslate && localeData && !Object.hasOwn(localeData, translationKey) && !trackMissingDynamicTranslate.includes(translationKey)) {
         trackMissingDynamicTranslate.push(translationKey);
     }
