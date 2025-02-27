@@ -41,7 +41,7 @@ import {
 
 import getWebpackServeMiddleware from './src/middleware/webpack-serve.js';
 import basicAuthMiddleware from './src/middleware/basicAuth.js';
-import whitelistMiddleware from './src/middleware/whitelist.js';
+import getWhitelistMiddleware from './src/middleware/whitelist.js';
 import accessLoggerMiddleware, { getAccessLogPath, migrateAccessLog } from './src/middleware/accessLogWriter.js';
 import multerMonkeyPatch from './src/middleware/multerMonkeyPatch.js';
 import initRequestProxy from './src/request-proxy.js';
@@ -125,7 +125,8 @@ if (cliArgs.listen && cliArgs.basicAuthMode) {
 }
 
 if (cliArgs.whitelistMode) {
-    app.use(whitelistMiddleware());
+    const whitelistMiddleware = await getWhitelistMiddleware();
+    app.use(whitelistMiddleware);
 }
 
 if (cliArgs.listen) {

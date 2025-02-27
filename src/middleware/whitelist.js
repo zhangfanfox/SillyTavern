@@ -22,8 +22,6 @@ if (fs.existsSync(whitelistPath)) {
     }
 }
 
-await resolveHostnames();
-
 /**
  * Get the client IP address from the request headers.
  * @param {import('express').Request} req Express request object
@@ -110,9 +108,9 @@ async function resolveHostnames() {
 
 /**
  * Returns a middleware function that checks if the client IP is in the whitelist.
- * @returns {import('express').RequestHandler} The middleware function
+ * @returns {Promise<import('express').RequestHandler>} Promise that resolves to the middleware function
  */
-export default function whitelistMiddleware() {
+export default async function getWhitelistMiddleware() {
     const forbiddenWebpage = Handlebars.compile(
         safeReadFileSync('./public/error/forbidden-by-whitelist.html') ?? '',
     );
@@ -120,6 +118,8 @@ export default function whitelistMiddleware() {
     const noLogPaths = [
         '/favicon.ico',
     ];
+
+    await resolveHostnames();
 
     return function (req, res, next) {
         const clientIp = getIpFromRequest(req);
