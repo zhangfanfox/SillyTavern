@@ -178,9 +178,7 @@ async function getMissingTranslations() {
     const missingData = [];
 
     if (trackMissingDynamicTranslate) {
-        for (const key of trackMissingDynamicTranslate) {
-            missingData.push({ key, language: localeFile, value: key });
-        }
+        missingData.push(...trackMissingDynamicTranslate.map(key => ({ key, language: localeFile, value: key })));
     }
 
     // Determine locales to search for untranslated strings
@@ -219,19 +217,17 @@ async function getMissingTranslations() {
     uniqueMissingData.sort((a, b) => a.language.localeCompare(b.language) || a.key.localeCompare(b.key));
 
     // Map to { language: { key: value } }
-    let missingDataMap = {};
-    for (const { key, value } of uniqueMissingData) {
-        missingDataMap[key] = value;
-    }
+    const missingDataMap = Object.fromEntries(uniqueMissingData.map(({ key, value }) => [key, value]));
 
-    console.log('Missing Translations:');
+    console.log(`Missing Translations (${uniqueMissingData.length}):`);
     console.table(uniqueMissingData);
-    console.log('Full map of missing data:');
+    console.log(`Full map of missing data (${Object.keys(missingDataMap).length}):`);
     console.log(missingDataMap);
 
     if (trackMissingDynamicTranslate) {
-        console.log('Dynamic translations missing:');
-        console.log(trackMissingDynamicTranslate);
+        const trackMissingDynamicTranslateMap = Object.fromEntries(trackMissingDynamicTranslate.map(key => [key, key]));
+        console.log(`Dynamic translations missing (${Object.keys(trackMissingDynamicTranslateMap).length}):`);
+        console.log(trackMissingDynamicTranslateMap);
     }
 
     toastr.success(`Found ${uniqueMissingData.length} missing translations. See browser console for details.`);
