@@ -1945,7 +1945,7 @@ async function sendOpenAIRequest(type, messages, signal) {
     }
 
     // Remove logit bias, logprobs and stop strings if it's not supported by the model
-    if (isOAI && oai_settings.openai_model.includes('vision') || isOpenRouter && oai_settings.openrouter_model.includes('vision')) {
+    if (isOAI && oai_settings.openai_model.includes('vision') || isOpenRouter && oai_settings.openrouter_model.includes('vision') || isOAI && oai_settings.openai_model.includes('gpt-4.5-preview')) {
         delete generate_data.logit_bias;
         delete generate_data.stop;
         delete generate_data.logprobs;
@@ -4997,6 +4997,8 @@ export function isImageInliningSupported() {
         'gpt-4-turbo',
         'gpt-4o',
         'gpt-4o-mini',
+        'gpt-4.5-preview',
+        'gpt-4.5-preview-2025-02-27',
         'o1',
         'o1-2024-12-17',
         'chatgpt-4o-latest',
