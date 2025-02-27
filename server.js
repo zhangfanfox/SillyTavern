@@ -26,7 +26,6 @@ import {
     initUserStorage,
     getCookieSecret,
     getCookieSessionName,
-    getAllEnabledUsers,
     ensurePublicDirectoriesExist,
     getUserDirectoriesList,
     migrateSystemPrompts,
@@ -34,9 +33,10 @@ import {
     requireLoginMiddleware,
     setUserDataMiddleware,
     shouldRedirectToLogin,
-    tryAutoLogin,
     cleanUploads,
     getSessionCookieAge,
+    verifySecuritySettings,
+    loginPageMiddleware,
 } from './src/users.js';
 
 import getWebpackServeMiddleware from './src/middleware/webpack-serve.js';
@@ -49,7 +49,6 @@ import getCacheBusterMiddleware from './src/middleware/cacheBuster.js';
 import corsProxyMiddleware from './src/middleware/corsProxy.js';
 import {
     getVersion,
-    getConfigValue,
     color,
     removeColorFormatting,
     getSeparator,
@@ -72,6 +71,11 @@ util.inspect.defaultOptions.maxArrayLength = null;
 util.inspect.defaultOptions.maxStringLength = null;
 util.inspect.defaultOptions.depth = 4;
 
+// Set a working directory for the server
+const serverDirectory = import.meta.dirname ?? path.dirname(fileURLToPath(import.meta.url));
+console.log(`Node version: ${process.version}. Running in ${process.env.NODE_ENV} environment. Server directory: ${serverDirectory}`);
+process.chdir(serverDirectory);
+
 // Work around a node v20.0.0, v20.1.0, and v20.2.0 bug. The issue was fixed in v20.3.0.
 // https://github.com/nodejs/node/issues/47822#issuecomment-1564708870
 // Safe to remove once support for Node v20 is dropped.
@@ -80,19 +84,26 @@ if (process.versions && process.versions.node && process.versions.node.match(/20
     if (net.setDefaultAutoSelectFamily) net.setDefaultAutoSelectFamily(false);
 }
 
-const cliParser = new CommandLineParser();
-const cliArgs = cliParser.parse(process.argv);
+const cliArgs = new CommandLineParser().parse(process.argv);
 globalThis.DATA_ROOT = cliArgs.dataRoot;
+globalThis.COMMAND_LINE_ARGS = cliArgs;
 
 if (!cliArgs.enableIPv6 && !cliArgs.enableIPv4) {
     console.error('error: You can\'t disable all internet protocols: at least IPv6 or IPv4 must be enabled.');
     process.exit(1);
 }
 
-// change all relative paths
-const serverDirectory = import.meta.dirname ?? path.dirname(fileURLToPath(import.meta.url));
-console.log(`Node version: ${process.version}. Running in ${process.env.NODE_ENV} environment. Server directory: ${serverDirectory}`);
-process.chdir(serverDirectory);
+try {
+    if (cliArgs.dnsPreferIPv6) {
+        dns.setDefaultResultOrder('ipv6first');
+        console.log('Preferring IPv6 for DNS resolution');
+    } else {
+        dns.setDefaultResultOrder('ipv4first');
+        console.log('Preferring IPv4 for DNS resolution');
+    }
+} catch (error) {
+    console.warn('Failed to set DNS resolution order. Possibly unsupported in this Node version.');
+}
 
 const app = express();
 app.use(helmet({
@@ -100,19 +111,6 @@ app.use(helmet({
 }));
 app.use(compression());
 app.use(responseTime());
-
-/** @type {boolean} */
-const enableAccounts = getConfigValue('enableUserAccounts', false, 'boolean');
-
-if (cliArgs.dnsPreferIPv6) {
-    // Set default DNS resolution order to IPv6 first
-    dns.setDefaultResultOrder('ipv6first');
-    console.log('Preferring IPv6 for DNS resolution');
-} else {
-    // Set default DNS resolution order to IPv4 first
-    dns.setDefaultResultOrder('ipv4first');
-    console.log('Preferring IPv4 for DNS resolution');
-}
 
 // CORS Settings //
 const CORS = cors({
@@ -213,24 +211,7 @@ app.get('/', getCacheBusterMiddleware(), (request, response) => {
 });
 
 // Host login page
-app.get('/login', async (request, response) => {
-    if (!enableAccounts) {
-        console.log('User accounts are disabled. Redirecting to index page.');
-        return response.redirect('/');
-    }
-
-    try {
-        const autoLogin = await tryAutoLogin(request, cliArgs.basicAuthMode);
-
-        if (autoLogin) {
-            return response.redirect('/');
-        }
-    } catch (error) {
-        console.error('Error during auto-login:', error);
-    }
-
-    return response.sendFile('login.html', { root: path.join(process.cwd(), 'public') });
-});
+app.get('/login', loginPageMiddleware);
 
 // Host frontend assets
 const webpackMiddleware = getWebpackServeMiddleware();
@@ -289,7 +270,8 @@ async function preSetupTasks() {
     await settingsInit();
     await statsInit();
 
-    const cleanupPlugins = await initializePlugins();
+    const pluginsDirectory = path.join(serverDirectory, 'plugins');
+    const cleanupPlugins = await loadPlugins(app, pluginsDirectory);
     const consoleTitle = process.title;
 
     let isExiting = false;
@@ -363,80 +345,6 @@ async function postSetupTasks(result) {
     console.log('\n' + getSeparator(plainGoToLog.length) + '\n');
 
     setupLogLevel();
-}
-
-/**
- * Loads server plugins from a directory.
- * @returns {Promise<Function>} Function to be run on server exit
- */
-async function initializePlugins() {
-    try {
-        const pluginDirectory = path.join(serverDirectory, 'plugins');
-        const cleanupPlugins = await loadPlugins(app, pluginDirectory);
-        return cleanupPlugins;
-    } catch {
-        console.log('Plugin loading failed.');
-        return () => { };
-    }
-}
-
-/**
- * Prints an error message and exits the process if necessary
- * @param {string} message The error message to print
- * @returns {void}
- */
-function logSecurityAlert(message) {
-    if (cliArgs.basicAuthMode || cliArgs.whitelistMode) return; // safe!
-    console.error(color.red(message));
-    if (getConfigValue('securityOverride', false, 'boolean')) {
-        console.warn(color.red('Security has been overridden. If it\'s not a trusted network, change the settings.'));
-        return;
-    }
-    process.exit(1);
-}
-
-async function verifySecuritySettings() {
-    // Skip all security checks as listen is set to false
-    if (!cliArgs.listen) {
-        return;
-    }
-
-    if (!enableAccounts) {
-        logSecurityAlert('Your current SillyTavern configuration is insecure (listening to non-localhost). Enable whitelisting, basic authentication or user accounts.');
-    }
-
-    const users = await getAllEnabledUsers();
-    const unprotectedUsers = users.filter(x => !x.password);
-    const unprotectedAdminUsers = unprotectedUsers.filter(x => x.admin);
-
-    if (unprotectedUsers.length > 0) {
-        console.warn(color.blue('A friendly reminder that the following users are not password protected:'));
-        unprotectedUsers.map(x => `${color.yellow(x.handle)} ${color.red(x.admin ? '(admin)' : '')}`).forEach(x => console.warn(x));
-        console.log();
-        console.warn(`Consider setting a password in the admin panel or by using the ${color.blue('recover.js')} script.`);
-        console.log();
-
-        if (unprotectedAdminUsers.length > 0) {
-            logSecurityAlert('If you are not using basic authentication or whitelisting, you should set a password for all admin users.');
-        }
-    }
-
-    if (cliArgs.basicAuthMode) {
-        const perUserBasicAuth = getConfigValue('perUserBasicAuth', false, 'boolean');
-        if (perUserBasicAuth && !enableAccounts) {
-            console.error(color.red(
-                'Per-user basic authentication is enabled, but user accounts are disabled. This configuration may be insecure.',
-            ));
-        } else if (!perUserBasicAuth) {
-            const basicAuthUserName = getConfigValue('basicAuthUser.username', '');
-            const basicAuthUserPassword = getConfigValue('basicAuthUser.password', '');
-            if (!basicAuthUserName || !basicAuthUserPassword) {
-                console.warn(color.yellow(
-                    'Basic Authentication is enabled, but username or password is not set or empty!',
-                ));
-            }
-        }
-    }
 }
 
 /**
