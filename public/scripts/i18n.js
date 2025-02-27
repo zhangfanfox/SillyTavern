@@ -9,6 +9,9 @@ var langs;
 // eslint-disable-next-line prefer-const
 var localeData;
 
+/** @type {Array<string>|null} Array of translations keys if they should be tracked - if not tracked then null */
+let trackMissingDynamicTranslate = null;
+
 export const getCurrentLocale = () => localeFile;
 
 /**
@@ -97,6 +100,9 @@ export function t(strings, ...values) {
  */
 export function translate(text, key = null) {
     const translationKey = key || text;
+    if (trackMissingDynamicTranslate && localeData && !Object.hasOwn(localeData, translationKey) && !trackMissingDynamicTranslate.includes(translationKey)) {
+        trackMissingDynamicTranslate.push(translationKey);
+    }
     return localeData?.[translationKey] || text;
 }
 
@@ -153,13 +159,28 @@ function translateElement(element) {
     }
 }
 
+/**
+ * Checks if the given locale is supported and not English.
+ * @param {string} [locale=null] The locale to check (defaults to the current locale)
+ * @returns {boolean} True if the locale is not English and supported
+ */
+function isSupportedNonEnglish(locale = null) {
+    const lang = locale || localeFile;
+    return lang && lang != 'en' && findLang(lang);
+}
 
 async function getMissingTranslations() {
+    /** @type {Array<{key: string, language: string, value: string}>} */
     const missingData = [];
 
+    if (trackMissingDynamicTranslate) {
+        for (const key of trackMissingDynamicTranslate) {
+            missingData.push({ key, language: localeFile, value: key });
+        }
+    }
+
     // Determine locales to search for untranslated strings
-    const isNotSupported = !findLang(localeFile);
-    const langsToProcess = (isNotSupported || localeFile == 'en') ? langs : [findLang(localeFile)];
+    const langsToProcess = isSupportedNonEnglish() ? [findLang(localeFile)] : langs;
 
     for (const language of langsToProcess) {
         const localeData = await getLocaleData(language.lang);
@@ -170,7 +191,7 @@ async function getMissingTranslations() {
                 if (attributeMatch) { // attribute-tagged key
                     const localizedValue = localeData?.[attributeMatch[2]];
                     if (!localizedValue) {
-                        missingData.push({ key, language: language.lang, value: $(this).attr(attributeMatch[1]) });
+                        missingData.push({ key, language: language.lang, value: String($(this).attr(attributeMatch[1])) });
                     }
                 } else { // No attribute tag, treat as 'text'
                     const localizedValue = localeData?.[key];
@@ -196,14 +217,18 @@ async function getMissingTranslations() {
     // Map to { language: { key: value } }
     let missingDataMap = {};
     for (const { key, value } of uniqueMissingData) {
-        if (!missingDataMap) {
-            missingDataMap = {};
-        }
         missingDataMap[key] = value;
     }
 
+    console.log('Missing Translations:');
     console.table(uniqueMissingData);
+    console.log('Full map of missing data:');
     console.log(missingDataMap);
+
+    if (trackMissingDynamicTranslate) {
+        console.log('Dynamic translations missing:');
+        console.log(trackMissingDynamicTranslate);
+    }
 
     toastr.success(`Found ${uniqueMissingData.length} missing translations. See browser console for details.`);
 }
@@ -266,6 +291,31 @@ export async function initLocales() {
         attributeFilter: ['data-i18n'],
     });
 
-    registerDebugFunction('getMissingTranslations', 'Get missing translations', 'Detects missing localization data in the current locale and dumps the data into the browser console. If the current locale is English, searches all other locales.', getMissingTranslations);
+    if (localStorage.getItem('trackDynamicTranslate') === 'true' && isSupportedNonEnglish()) {
+        trackMissingDynamicTranslate = [];
+    }
+
+    registerDebugFunction('getMissingTranslations', 'Get missing translations',
+        'Detects missing localization data in the current locale and dumps the data into the browser console. ' +
+        'If the current locale is English, searches all other locales.',
+        getMissingTranslations);
+    registerDebugFunction('trackDynamicTranslate', 'Track dynamic translation',
+        'Toggles tracking of dynamic translations, which will be dumped into the missing translations translations too. ' +
+        'This includes things translated via the t`...` function and translate(). It will only track strings translated <b>after</b> this is toggled on, '
+        + 'and when they actually pop up, so refreshing the page and opening popups, etc, is needed. Will only track if the current locale is not English.',
+        () => {
+            const isTracking = localStorage.getItem('trackDynamicTranslate') !== 'true';
+            localStorage.setItem('trackDynamicTranslate', isTracking ? 'true' : 'false');
+            if (isTracking && isSupportedNonEnglish()) {
+                trackMissingDynamicTranslate = [];
+                toastr.success('Dynamic translation tracking enabled.');
+            } else if (isTracking) {
+                trackMissingDynamicTranslate = null;
+                toastr.warning('Dynamic translation tracking enabled, but will not be tracked with locale English.');
+            } else {
+                trackMissingDynamicTranslate = null;
+                toastr.info('Dynamic translation tracking disabled.');
+            }
+        });
     registerDebugFunction('applyLocale', 'Apply locale', 'Reapplies the currently selected locale to the page.', applyLocale);
 }
