@@ -493,7 +493,7 @@ export class ReasoningHandler {
             data = null;
         }
 
-        if (this.type !== ReasoningType.Model) {
+        if (this.type && this.type !== ReasoningType.Model) {
             title += ` [${translate(this.type)}]`;
             title = title.trim();
         }
