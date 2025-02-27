@@ -1,5 +1,6 @@
 import { registerDebugFunction } from './power-user.js';
 import { updateSecretDisplay } from './secrets.js';
+import { accountStorage } from './util/AccountStorage.js';
 
 const storageKey = 'language';
 const overrideLanguage = localStorage.getItem(storageKey);
@@ -291,7 +292,7 @@ export async function initLocales() {
         attributeFilter: ['data-i18n'],
     });
 
-    if (localStorage.getItem('trackDynamicTranslate') === 'true' && isSupportedNonEnglish()) {
+    if (accountStorage.getItem('trackDynamicTranslate') === 'true' && isSupportedNonEnglish()) {
         trackMissingDynamicTranslate = new Set();
     }
 
@@ -304,8 +305,8 @@ export async function initLocales() {
         'This includes things translated via the t`...` function and translate(). It will only track strings translated <b>after</b> this is toggled on, '
         + 'and when they actually pop up, so refreshing the page and opening popups, etc, is needed. Will only track if the current locale is not English.',
         () => {
-            const isTracking = localStorage.getItem('trackDynamicTranslate') !== 'true';
-            localStorage.setItem('trackDynamicTranslate', isTracking ? 'true' : 'false');
+            const isTracking = accountStorage.getItem('trackDynamicTranslate') !== 'true';
+            accountStorage.setItem('trackDynamicTranslate', isTracking ? 'true' : 'false');
             if (isTracking && isSupportedNonEnglish()) {
                 trackMissingDynamicTranslate = new Set();
                 toastr.success('Dynamic translation tracking enabled.');
