@@ -9,7 +9,7 @@ var langs;
 // eslint-disable-next-line prefer-const
 var localeData;
 
-/** @type {Array<string>|null} Array of translations keys if they should be tracked - if not tracked then null */
+/** @type {Set<string>|null} Array of translations keys if they should be tracked - if not tracked then null */
 let trackMissingDynamicTranslate = null;
 
 export const getCurrentLocale = () => localeFile;
@@ -104,8 +104,8 @@ export function translate(text, key = null) {
         console.trace('WARN: No translation key provided');
         return '';
     }
-    if (trackMissingDynamicTranslate && localeData && !Object.hasOwn(localeData, translationKey) && !trackMissingDynamicTranslate.includes(translationKey)) {
-        trackMissingDynamicTranslate.push(translationKey);
+    if (trackMissingDynamicTranslate && localeData && !Object.hasOwn(localeData, translationKey)) {
+        trackMissingDynamicTranslate.add(translationKey);
     }
     return localeData?.[translationKey] || text;
 }
@@ -178,7 +178,7 @@ async function getMissingTranslations() {
     const missingData = [];
 
     if (trackMissingDynamicTranslate) {
-        missingData.push(...trackMissingDynamicTranslate.map(key => ({ key, language: localeFile, value: key })));
+        missingData.push(...Array.from(trackMissingDynamicTranslate).map(key => ({ key, language: localeFile, value: key })));
     }
 
     // Determine locales to search for untranslated strings
@@ -225,7 +225,7 @@ async function getMissingTranslations() {
     console.log(missingDataMap);
 
     if (trackMissingDynamicTranslate) {
-        const trackMissingDynamicTranslateMap = Object.fromEntries(trackMissingDynamicTranslate.map(key => [key, key]));
+        const trackMissingDynamicTranslateMap = Object.fromEntries(Array.from(trackMissingDynamicTranslate).map(key => [key, key]));
         console.log(`Dynamic translations missing (${Object.keys(trackMissingDynamicTranslateMap).length}):`);
         console.log(trackMissingDynamicTranslateMap);
     }
@@ -292,7 +292,7 @@ export async function initLocales() {
     });
 
     if (localStorage.getItem('trackDynamicTranslate') === 'true' && isSupportedNonEnglish()) {
-        trackMissingDynamicTranslate = [];
+        trackMissingDynamicTranslate = new Set();
     }
 
     registerDebugFunction('getMissingTranslations', 'Get missing translations',
@@ -307,7 +307,7 @@ export async function initLocales() {
             const isTracking = localStorage.getItem('trackDynamicTranslate') !== 'true';
             localStorage.setItem('trackDynamicTranslate', isTracking ? 'true' : 'false');
             if (isTracking && isSupportedNonEnglish()) {
-                trackMissingDynamicTranslate = [];
+                trackMissingDynamicTranslate = new Set();
                 toastr.success('Dynamic translation tracking enabled.');
             } else if (isTracking) {
                 trackMissingDynamicTranslate = null;
