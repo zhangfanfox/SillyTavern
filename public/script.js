@@ -6251,6 +6251,8 @@ export function setCharacterId(value) {
             this_chid = !isNaN(parseInt(value)) ? value : undefined;
             break;
         case 'object':
+            this_chid = characters.indexOf(value) !== -1 ? String(characters.indexOf(value)) : undefined;
+            break;
         case 'undefined':
             this_chid = undefined;
             break;
