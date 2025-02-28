@@ -6210,7 +6210,7 @@ export function resetChatState() {
     // replaces deleted charcter name with system user since it will be displayed next.
     name2 = (this_chid === undefined && neutralCharacterName) ? neutralCharacterName : systemUserName;
     //unsets expected chid before reloading (related to getCharacters/printCharacters from using old arrays)
-    this_chid = undefined;
+    setCharacterId(undefined);
     // sets up system user to tell user about having deleted a character
     chat.splice(0, chat.length, ...SAFETY_CHAT);
     // resets chat metadata
@@ -6239,12 +6239,14 @@ export function setExternalAbortController(controller) {
  */
 export function setCharacterId(value) {
     switch (typeof value) {
+        case 'bigint':
         case 'number':
             this_chid = String(value);
             break;
         case 'string':
             this_chid = !isNaN(parseInt(value)) ? value : undefined;
             break;
+        case 'object':
         case 'undefined':
             this_chid = undefined;
             break;
