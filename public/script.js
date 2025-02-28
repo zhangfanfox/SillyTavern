@@ -5309,7 +5309,7 @@ function addChatsSeparator(mesSendString) {
 }
 
 async function duplicateCharacter() {
-    if (!this_chid) {
+    if (this_chid === undefined || !characters[this_chid]) {
         toastr.warning(t`You must first select a character to duplicate!`);
         return '';
     }
@@ -7883,7 +7883,7 @@ function updateFavButtonState(state) {
 }
 
 export async function setScenarioOverride() {
-    if (!selected_group && !this_chid) {
+    if (!selected_group && (this_chid === undefined || !characters[this_chid])) {
         console.warn('setScenarioOverride() -- no selected group or character');
         return;
     }
