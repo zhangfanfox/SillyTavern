@@ -45,6 +45,7 @@ import {
     this_chid,
     updateChatMetadata,
     updateMessageBlock,
+    printMessages,
 } from '../script.js';
 import {
     extension_settings,
@@ -203,6 +204,7 @@ export function getContext() {
         extractMessageFromData,
         getPresetManager,
         getChatCompletionModel,
+        printMessages,
     };
 }
 
