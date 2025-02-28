@@ -7697,6 +7697,7 @@ export function select_selected_character(chid) {
     $('#create_button').attr('value', 'Save');              // what is the use case for this?
     $('#dupe_button').show();
     $('#create_button_label').css('display', 'none');
+    $('#char_connections_button').show();
 
     // Hide the chat scenario button if we're peeking the group member defs
     $('#set_chat_scenario').toggle(!selected_group);
@@ -7781,6 +7782,7 @@ function select_rm_create() {
     $('#create_button_label').css('display', '');
     $('#create_button').attr('value', 'Create');
     $('#dupe_button').hide();
+    $('#char_connections_button').hide();
 
     //create text poles
     $('#rm_button_back').css('display', '');
