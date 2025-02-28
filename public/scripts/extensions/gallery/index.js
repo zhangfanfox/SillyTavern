@@ -171,7 +171,7 @@ async function showCharGallery() {
         let url = selected_group || this_chid;
         if (!selected_group && this_chid !== undefined) {
             const char = characters[this_chid];
-            url = char.avatar.replace('.png', '');
+            url = char.name;
         }
 
         const items = await getGalleryItems(url);
@@ -457,7 +457,7 @@ async function listGalleryCommand(args) {
         let url = args.char ?? (args.group ? groups.find(it => it.name == args.group)?.id : null) ?? (selected_group || this_chid);
         if (!args.char && !args.group && !selected_group && this_chid !== undefined) {
             const char = characters[this_chid];
-            url = char.avatar.replace('.png', '');
+            url = char.name;
         }
 
         const items = await getGalleryItems(url);
