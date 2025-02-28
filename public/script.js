@@ -10283,7 +10283,7 @@ jQuery(async function () {
     $('#form_create').submit(createOrEditCharacter);
 
     $('#delete_button').on('click', async function () {
-        if (!this_chid) {
+        if (this_chid === undefined || !characters[this_chid]) {
             toastr.warning('No character selected.');
             return;
         }
