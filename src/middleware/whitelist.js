@@ -94,7 +94,7 @@ async function resolveHostnames() {
 
             if (isValidHostname(entry)) {
                 const result = await dns.promises.lookup(entry);
-                console.info(`Resolved whitelist hostname ${entry} to IPv${result.family} address ${result.address}`);
+                console.info(`Resolved whitelist hostname ${color.green(entry)} to IPv${result.family} address ${color.green(result.address)}`);
                 whitelist[i] = result.address;
             }
         } catch {
