@@ -7791,8 +7791,8 @@ function select_rm_create() {
     $('#renameCharButton').css('display', 'none');
     $('#name_div').removeClass('displayNone');
     $('#name_div').addClass('displayBlock');
-    $('.open_alternate_greetings').data('chid', undefined);
-    $('#set_character_world').data('chid', undefined);
+    $('.open_alternate_greetings').data('chid', -1);
+    $('#set_character_world').data('chid', -1);
     setWorldInfoButtonClass(undefined, !!create_save.world);
     updateFavButtonState(false);
     checkEmbeddedWorld();
@@ -8248,7 +8248,7 @@ function updateAlternateGreetingsHintVisibility(root) {
 function openCharacterWorldPopup() {
     const chid = $('#set_character_world').data('chid');
 
-    if (menu_type != 'create' && chid == undefined) {
+    if (menu_type != 'create' && chid === undefined) {
         toastr.error('Does not have an Id for this character in world select menu.');
         return;
     }
@@ -8380,7 +8380,7 @@ function openAlternateGreetings() {
         return;
     } else {
         // If the character does not have alternate greetings, create an empty array
-        if (chid && Array.isArray(characters[chid].data.alternate_greetings) == false) {
+        if (characters[chid] && !Array.isArray(characters[chid].data.alternate_greetings)) {
             characters[chid].data.alternate_greetings = [];
         }
     }
@@ -8567,7 +8567,7 @@ async function createOrEditCharacter(e) {
 
             formData.delete('alternate_greetings');
             const chid = $('.open_alternate_greetings').data('chid');
-            if (chid && Array.isArray(characters[chid]?.data?.alternate_greetings)) {
+            if (characters[chid] && Array.isArray(characters[chid]?.data?.alternate_greetings)) {
                 for (const value of characters[chid].data.alternate_greetings) {
                     formData.append('alternate_greetings', value);
                 }
