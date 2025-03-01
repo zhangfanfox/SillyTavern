@@ -3,14 +3,15 @@ import fs from 'node:fs';
 import process from 'node:process';
 import dns from 'node:dns';
 import Handlebars from 'handlebars';
-import ipRegex from 'ip-regex';
 import ipMatching from 'ip-matching';
+import isDocker from 'is-docker';
 
 import { getIpFromRequest } from '../express-common.js';
 import { color, getConfigValue, safeReadFileSync } from '../util.js';
 
 const whitelistPath = path.join(process.cwd(), './whitelist.txt');
-const enableForwardedWhitelist = getConfigValue('enableForwardedWhitelist', false, 'boolean');
+const enableForwardedWhitelist = !!getConfigValue('enableForwardedWhitelist', false, 'boolean');
+const whitelistDockerHosts = !!getConfigValue('whitelistDockerHosts', false, 'boolean');
 /** @type {string[]} */
 let whitelist = getConfigValue('whitelist', []);
 
@@ -49,68 +50,25 @@ function getForwardedIp(req) {
 }
 
 /**
- * Checks if a string is a valid hostname according to RFC 1123
- * @param {string} hostname The string to test
- * @returns {boolean} True if the string is a valid hostname
- */
-function isValidHostname(hostname) {
-    const hostnameRegex = /^(([a-z0-9]|[a-z0-9][a-z0-9-]*[a-z0-9])\.)*([a-z0-9]|[a-z0-9][a-z0-9-]*[a-z0-9])$/i;
-    return hostnameRegex.test(hostname);
-}
-
-/**
- * Checks if a string is an IP address, CIDR notation, or IP wildcard
- * @param {string} entry The string to test
- * @returns {boolean} True if the string matches any IP format
- */
-function isIpFormat(entry) {
-    // Match CIDR notation (e.g. 192.168.0.0/24)
-    if (entry.includes('/')) {
-        return true;
-    }
-
-    // Match exact IP address
-    if (ipRegex({ exact: true }).test(entry)) {
-        return true;
-    }
-
-    // Match IPv4 with wildcards (e.g. 192.168.*.* or 192.168.0.*)
-    const ipWildcardRegex = /^(\d{1,3}|\*)\.(\d{1,3}|\*)\.(\d{1,3}|\*)\.(\d{1,3}|\*)$/;
-    return ipWildcardRegex.test(entry);
-}
-
-/**
  * Resolves hostnames in the whitelist to IP addresses.
  * This function will modify the whitelist array in place.
  */
-async function resolveHostnames() {
-    const resolvedWhitelist = [];
+async function addDockerHostsToWhitelist() {
+    if (!whitelistDockerHosts || !isDocker()) {
+        return;
+    }
 
-    const promises = whitelist.map(async (entry) => {
-        if (!entry || typeof entry !== 'string') {
-            return;
+    const whitelistHosts = ['host.docker.internal', 'gateway.docker.internal'];
+
+    for (const entry of whitelistHosts) {
+        try {
+            const result = await dns.promises.lookup(entry);
+            console.info(`Resolved whitelist hostname ${color.green(entry)} to IPv${result.family} address ${color.green(result.address)}`);
+            whitelist.push(result.address);
+        } catch (e) {
+            console.warn(`Failed to resolve whitelist hostname ${color.red(entry)}: ${e.message}`);
         }
-
-        // Skip if entry appears to be an IP address, CIDR notation, or IP wildcard
-        if (isIpFormat(entry)) {
-            resolvedWhitelist.push(entry);
-            return;
-        }
-
-        if (isValidHostname(entry)) {
-            try {
-                const result = await dns.promises.lookup(entry);
-                console.info(`Resolved whitelist hostname ${color.green(entry)} to IPv${result.family} address ${color.green(result.address)}`);
-                resolvedWhitelist.push(result.address);
-            } catch (e) {
-                console.warn(`Failed to resolve whitelist hostname ${color.red(entry)}: ${e.message}`);
-            }
-        } else {
-            resolvedWhitelist.push(entry);
-        }
-    });
-
-    await Promise.allSettled(promises);
+    }
 }
 
 /**
@@ -126,7 +84,7 @@ export default async function getWhitelistMiddleware() {
         '/favicon.ico',
     ];
 
-    await resolveHostnames();
+    await addDockerHostsToWhitelist();
 
     return function (req, res, next) {
         const clientIp = getIpFromRequest(req);
