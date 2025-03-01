@@ -11,7 +11,7 @@ import { color, getConfigValue, safeReadFileSync } from '../util.js';
 
 const whitelistPath = path.join(process.cwd(), './whitelist.txt');
 const enableForwardedWhitelist = !!getConfigValue('enableForwardedWhitelist', false, 'boolean');
-const whitelistDockerHosts = !!getConfigValue('whitelistDockerHosts', false, 'boolean');
+const whitelistDockerHosts = !!getConfigValue('whitelistDockerHosts', true, 'boolean');
 /** @type {string[]} */
 let whitelist = getConfigValue('whitelist', []);
 
