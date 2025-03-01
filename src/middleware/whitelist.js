@@ -11,6 +11,7 @@ import { color, getConfigValue, safeReadFileSync } from '../util.js';
 
 const whitelistPath = path.join(process.cwd(), './whitelist.txt');
 const enableForwardedWhitelist = getConfigValue('enableForwardedWhitelist', false, 'boolean');
+/** @type {string[]} */
 let whitelist = getConfigValue('whitelist', []);
 
 if (fs.existsSync(whitelistPath)) {
@@ -83,24 +84,33 @@ function isIpFormat(entry) {
  * This function will modify the whitelist array in place.
  */
 async function resolveHostnames() {
-    for (let i = 0; i < whitelist.length; i++) {
-        try {
-            const entry = whitelist[i];
+    const resolvedWhitelist = [];
 
-            // Skip if entry appears to be an IP address, CIDR notation, or IP wildcard
-            if (isIpFormat(entry)) {
-                continue;
-            }
+    const promises = whitelist.map(async (entry) => {
+        if (!entry || typeof entry !== 'string') {
+            return;
+        }
 
-            if (isValidHostname(entry)) {
+        // Skip if entry appears to be an IP address, CIDR notation, or IP wildcard
+        if (isIpFormat(entry)) {
+            resolvedWhitelist.push(entry);
+            return;
+        }
+
+        if (isValidHostname(entry)) {
+            try {
                 const result = await dns.promises.lookup(entry);
                 console.info(`Resolved whitelist hostname ${color.green(entry)} to IPv${result.family} address ${color.green(result.address)}`);
-                whitelist[i] = result.address;
+                resolvedWhitelist.push(result.address);
+            } catch (e) {
+                console.warn(`Failed to resolve whitelist hostname ${color.red(entry)}: ${e.message}`);
             }
-        } catch {
-            // Ignore errors when resolving hostnames
+        } else {
+            resolvedWhitelist.push(entry);
         }
-    }
+    });
+
+    await Promise.allSettled(promises);
 }
 
 /**
