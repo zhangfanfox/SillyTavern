@@ -2011,6 +2011,10 @@ async function loadVladModels() {
 async function loadNovelModels() {
     return [
         {
+            value: 'nai-diffusion-4-full',
+            text: 'NAI Diffusion Anime V4 (Full)',
+        },
+        {
             value: 'nai-diffusion-4-curated-preview',
             text: 'NAI Diffusion Anime V4 (Curated Preview)',
         },
@@ -3227,7 +3231,9 @@ function getNovelParams() {
         extension_settings.sd.scheduler = 'karras';
     }
 
-    if (extension_settings.sd.sampler === 'ddim' || extension_settings.sd.model === 'nai-diffusion-4-curated-preview') {
+    if (extension_settings.sd.sampler === 'ddim' || 
+        extension_settings.sd.model === 'nai-diffusion-4-curated-preview' || 
+        extension_settings.sd.model === 'nai-diffusion-4-full') {
         sm = false;
         sm_dyn = false;
     }
