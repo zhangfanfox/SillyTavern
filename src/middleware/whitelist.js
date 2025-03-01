@@ -50,8 +50,8 @@ function getForwardedIp(req) {
 }
 
 /**
- * Resolves hostnames in the whitelist to IP addresses.
- * This function will modify the whitelist array in place.
+ * Resolves the IP addresses of Docker hostnames and adds them to the whitelist.
+ * @returns {Promise<void>} Promise that resolves when the Docker hostnames are resolved
  */
 async function addDockerHostsToWhitelist() {
     if (!whitelistDockerHosts || !isDocker()) {
