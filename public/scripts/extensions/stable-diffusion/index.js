@@ -2334,19 +2334,12 @@ function processReply(str) {
     }
 
     str = str.replaceAll('"', '');
-    str = str.replaceAll('"', '');
+    str = str.replaceAll('“', '');
     str = str.replaceAll('\n', ', ');
     str = str.normalize('NFD');
     
-    // Check if using NAI Diffusion V4 models and preserve pipe (|) and hash (#) characters
-    if (extension_settings.sd.model === 'nai-diffusion-4-full' || 
-        extension_settings.sd.model === 'nai-diffusion-4-curated-preview') {
-        // Keep pipe and hash characters for NAI Diffusion V4 models
-        str = str.replace(/[^a-zA-Z0-9.,:_(){}<>[\]\-'|#]+/g, ' ');
-    } else {
-        // Original behavior for other models
-        str = str.replace(/[^a-zA-Z0-9.,:_(){}<>[\]\-']+/g, ' ');
-    }
+    // Strip out non-alphanumeric characters barring model syntax exceptions
+    str = str.replace(/[^a-zA-Z0-9.,:_(){}<>[\]\-'|#]+/g, ' ');
     
     str = str.replace(/\s+/g, ' '); // Collapse multiple whitespaces into one
     str = str.trim();
@@ -3242,8 +3235,7 @@ function getNovelParams() {
     }
 
     if (extension_settings.sd.sampler === 'ddim' || 
-        extension_settings.sd.model === 'nai-diffusion-4-curated-preview' || 
-        extension_settings.sd.model === 'nai-diffusion-4-full') {
+        ['nai-diffusion-4-curated-preview', 'nai-diffusion-4-full'].includes(extension_settings.sd.model)) {
         sm = false;
         sm_dyn = false;
     }
