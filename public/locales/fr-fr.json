@@ -1420,7 +1420,6 @@
     "Block Entropy API Key": "Clé API Block Entropy",
     "Select a Model": "Sélectionner un modèle",
     "Example: http://localhost:1234/v1": "Exemple: http://localhost:1234/v1",
-    "at the end of the URL!": "à la fin de l'URL !",
     "(Optional)": "(Optionnel)",
     "Enter a Model ID": "Saisir un ID de modèle",
     "Example: gpt-3.5-turbo": "Exemple: gpt-3.5-turbo",
