@@ -803,8 +803,7 @@ jQuery(function () {
             'dry_penalty_last_n_textgenerationwebui': 0,
             'xtc_threshold_textgenerationwebui': 0.1,
             'xtc_probability_textgenerationwebui': 0,
-            'nsigma_counter_textgenerationwebui': 0,
-            'epsilon_cutoff_counter_textgenerationwebui': 0,
+            'nsigma_textgenerationwebui': 0,
         };
 
         for (const [id, value] of Object.entries(inputs)) {
