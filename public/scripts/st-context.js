@@ -77,6 +77,7 @@ import { accountStorage } from './util/AccountStorage.js';
 import { timestampToMoment, uuidv4 } from './utils.js';
 import { getGlobalVariable, getLocalVariable, setGlobalVariable, setLocalVariable } from './variables.js';
 import { convertCharacterBook, loadWorldInfo, saveWorldInfo, updateWorldInfoList } from './world-info.js';
+import { ChatCompletionService, TextCompletionService } from './custom-request.js';
 
 export function getContext() {
     return {
@@ -207,6 +208,8 @@ export function getContext() {
         getChatCompletionModel,
         printMessages,
         clearChat,
+        ChatCompletionService,
+        TextCompletionService,
     };
 }
 
