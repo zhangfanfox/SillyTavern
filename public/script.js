@@ -3273,7 +3273,13 @@ class StreamingProcessor {
 
             if ((this.type == 'swipe' || this.type === 'continue') && Array.isArray(chat[messageId]['swipes'])) {
                 chat[messageId]['swipes'][chat[messageId]['swipe_id']] = processedText;
-                chat[messageId]['swipe_info'][chat[messageId]['swipe_id']] = { 'send_date': chat[messageId]['send_date'], 'gen_started': chat[messageId]['gen_started'], 'gen_finished': chat[messageId]['gen_finished'], 'extra': JSON.parse(JSON.stringify(chat[messageId]['extra'])) };
+                chat[messageId]['swipe_info'][chat[messageId]['swipe_id']] = {
+                    'send_date': chat[messageId]['send_date'],
+                    'gen_started': chat[messageId]['gen_started'],
+                    'gen_finished': chat[messageId]['gen_finished'],
+                    'time_to_first_token': chat[messageId]['time_to_first_token'],
+                    'extra': JSON.parse(JSON.stringify(chat[messageId]['extra']))
+                };
             }
 
             const formattedText = messageFormatting(
@@ -3364,7 +3370,12 @@ class StreamingProcessor {
         if (this.type !== 'swipe' && this.type !== 'impersonate') {
             if (Array.isArray(chat[messageId]['swipes']) && chat[messageId]['swipes'].length === 1 && chat[messageId]['swipe_id'] === 0) {
                 chat[messageId]['swipes'][0] = chat[messageId]['mes'];
-                chat[messageId]['swipe_info'][0] = { 'send_date': chat[messageId]['send_date'], 'gen_started': chat[messageId]['gen_started'], 'gen_finished': chat[messageId]['gen_finished'], 'extra': JSON.parse(JSON.stringify(chat[messageId]['extra'])) };
+                chat[messageId]['swipe_info'][0] = {
+                    'send_date': chat[messageId]['send_date'],
+                    'gen_started': chat[messageId]['gen_started'],
+                    'gen_finished': chat[messageId]['gen_finished'],
+                    'time_to_first_token': chat[messageId]['time_to_first_token'],
+                    'extra': JSON.parse(JSON.stringify(chat[messageId]['extra'])) };
             }
         }
     }
@@ -6078,6 +6089,7 @@ export async function saveReply(type, getMessage, fromStreaming, title, swipes, 
             send_date: item['send_date'],
             gen_started: item['gen_started'],
             gen_finished: item['gen_finished'],
+            time_to_first_token: item['time_to_first_token'],
             extra: JSON.parse(JSON.stringify(item['extra'])),
         };
     } else {
@@ -6088,6 +6100,7 @@ export async function saveReply(type, getMessage, fromStreaming, title, swipes, 
             send_date: chat[chat.length - 1]['send_date'],
             gen_started: chat[chat.length - 1]['gen_started'],
             gen_finished: chat[chat.length - 1]['gen_finished'],
+            time_to_first_token: chat[chat.length - 1]['time_to_first_token'],
             extra: JSON.parse(JSON.stringify(chat[chat.length - 1]['extra'])),
         };
     }
@@ -8837,7 +8850,13 @@ const swipe_right = () => {
         chat[chat.length - 1]['swipes'] = [];                         // empty the array
         chat[chat.length - 1]['swipe_info'] = [];
         chat[chat.length - 1]['swipes'][0] = chat[chat.length - 1]['mes'];  //assign swipe array with last message from chat
-        chat[chat.length - 1]['swipe_info'][0] = { 'send_date': chat[chat.length - 1]['send_date'], 'gen_started': chat[chat.length - 1]['gen_started'], 'gen_finished': chat[chat.length - 1]['gen_finished'], 'extra': JSON.parse(JSON.stringify(chat[chat.length - 1]['extra'])) };
+        chat[chat.length - 1]['swipe_info'][0] = {
+            'send_date': chat[chat.length - 1]['send_date'],
+            'gen_started': chat[chat.length - 1]['gen_started'],
+            'gen_finished': chat[chat.length - 1]['gen_finished'],
+            'time_to_first_token': chat[chat.length - 1]['time_to_first_token'],
+            'extra': JSON.parse(JSON.stringify(chat[chat.length - 1]['extra']))
+        };
         //assign swipe info array with last message from chat
     }
     if (chat.length === 1 && chat[0]['swipe_id'] !== undefined && chat[0]['swipe_id'] === chat[0]['swipes'].length - 1) {    // if swipe_right is called on the last alternate greeting, loop back around
