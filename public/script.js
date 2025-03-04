@@ -1780,9 +1780,7 @@ export async function getCharacters() {
     const response = await fetch('/api/characters/all', {
         method: 'POST',
         headers: getRequestHeaders(),
-        body: JSON.stringify({
-            shallow: power_user.shallow_characters,
-        }),
+        body: JSON.stringify({}),
     });
     if (response.ok === true) {
         characters.splice(0, characters.length);
@@ -6718,6 +6716,7 @@ export async function unshallowCharacter(characterId) {
         return;
     }
 
+    /** @type {import('./scripts/char-data.js').v1CharData} */
     const character = characters[characterId];
     if (!character) {
         console.warn('Character not found:', characterId);

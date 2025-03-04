@@ -24,11 +24,13 @@ import { importRisuSprites } from './sprites.js';
 const defaultAvatarPath = './public/img/ai4.png';
 
 // KV-store for parsed character data
-const cacheCapacity = Number(getConfigValue('cardsCacheCapacity', 100, 'number')); // MB
+const cacheCapacity = Number(getConfigValue('performance.cardsCacheCapacity', 100, 'number')); // MB
 // With 100 MB limit it would take roughly 3000 characters to reach this limit
 const characterDataCache = new MemoryLimitedMap(1024 * 1024 * cacheCapacity);
 // Some Android devices require tighter memory management
 const isAndroid = process.platform === 'android';
+// Use shallow character data for the character list
+const useShallowCharacters = !!getConfigValue('performance.lazyLoadCharacters', false, 'boolean');
 
 /**
  * Reads the character card from the specified image file.
@@ -207,6 +209,7 @@ const calculateDataSize = (data) => {
  */
 const toShallow = (character) => {
     return {
+        shallow: true,
         name: character.name,
         avatar: character.avatar,
         chat: character.chat,
@@ -225,7 +228,6 @@ const toShallow = (character) => {
                 fav: _.get(character, 'data.extensions.fav', false),
             },
         },
-        shallow: true,
     };
 };
 
@@ -1022,10 +1024,9 @@ router.post('/delete', jsonParser, validateAvatarUrlMiddleware, async function (
  */
 router.post('/all', jsonParser, async function (request, response) {
     try {
-        const shallow = !!request.body.shallow;
         const files = fs.readdirSync(request.user.directories.characters);
         const pngFiles = files.filter(file => file.endsWith('.png'));
-        const processingPromises = pngFiles.map(file => processCharacter(file, request.user.directories, { shallow }));
+        const processingPromises = pngFiles.map(file => processCharacter(file, request.user.directories, { shallow: useShallowCharacters }));
         const data = (await Promise.all(processingPromises)).filter(c => c.name);
         return response.send(data);
     } catch (err) {
