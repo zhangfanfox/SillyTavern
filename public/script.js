@@ -2477,7 +2477,7 @@ export function addOneMessage(mes, { type = 'normal', insertAfter = null, scroll
         timestamp: timestamp,
         extra: mes.extra,
         tokenCount: mes.extra?.token_count ?? 0,
-        ...formatGenerationTimer(mes.gen_started, mes.gen_finished, mes.extra?.token_count, mes.extra?.reasoning_duration),
+        ...formatGenerationTimer(mes.gen_started, mes.gen_finished, mes.extra?.token_count, mes.time_to_first_token, mes.extra?.reasoning_duration),
     };
 
     const renderedMessage = getMessageFromTemplate(params);
@@ -2597,6 +2597,7 @@ export function formatCharacterAvatar(characterAvatar) {
  * @param {Date} gen_started Date when generation was started
  * @param {Date} gen_finished Date when generation was finished
  * @param {number} tokenCount Number of tokens generated (0 if not available)
+ * @param {number} timeToFirstToken Time to first token
  * @param {number?} [reasoningDuration=null] Reasoning duration (null if no reasoning was done)
  * @returns {Object} Object containing the formatted timer value and title
  * @example
@@ -2604,7 +2605,7 @@ export function formatCharacterAvatar(characterAvatar) {
  * console.log(timerValue); // 1.2s
  * console.log(timerTitle); // Generation queued: 12:34:56 7 Jan 2021\nReply received: 12:34:57 7 Jan 2021\nTime to generate: 1.2 seconds\nToken rate: 5 t/s
  */
-function formatGenerationTimer(gen_started, gen_finished, tokenCount, reasoningDuration = null) {
+function formatGenerationTimer(gen_started, gen_finished, tokenCount, timeToFirstToken, reasoningDuration = null) {
     if (!gen_started || !gen_finished) {
         return {};
     }
@@ -2618,6 +2619,7 @@ function formatGenerationTimer(gen_started, gen_finished, tokenCount, reasoningD
         `Generation queued: ${start.format(dateFormat)}`,
         `Reply received: ${finish.format(dateFormat)}`,
         `Time to generate: ${seconds} seconds`,
+        timeToFirstToken > 0 ? `Time to first token: ${(timeToFirstToken / 1000).toFixed(1)} seconds` : '',
         reasoningDuration > 0 ? `Time to think: ${reasoningDuration / 1000} seconds` : '',
         tokenCount > 0 ? `Token rate: ${Number(tokenCount / seconds).toFixed(1)} t/s` : '',
     ].filter(x => x).join('\n').trim();
@@ -3158,6 +3160,8 @@ class StreamingProcessor {
         this.abortController = new AbortController();
         this.firstMessageText = '...';
         this.timeStarted = timeStarted;
+        this.timeToFirstToken = -1;
+        this.createdAt = new Date();
         this.continueMessage = type === 'continue' ? continueMessage : '';
         this.swipes = [];
         /** @type {import('./scripts/logprobs.js').TokenLogprobs[]} */
@@ -3195,6 +3199,8 @@ class StreamingProcessor {
     }
 
     async onStartStreaming(text) {
+        this.timeToFirstToken = Date.now() - this.createdAt.getTime();
+
         if (this.type === 'continue' && this.promptReasoning.prefixReasoning) {
             this.reasoningHandler.initContinue(this.promptReasoning);
         }
@@ -3245,6 +3251,7 @@ class StreamingProcessor {
             const currentTime = new Date();
             chat[messageId]['mes'] = processedText;
             chat[messageId]['gen_started'] = this.timeStarted;
+            chat[messageId]['time_to_first_token'] = this.timeToFirstToken;
             chat[messageId]['gen_finished'] = currentTime;
             if (!chat[messageId]['extra']) {
                 chat[messageId]['extra'] = {};
@@ -3282,7 +3289,7 @@ class StreamingProcessor {
                 this.messageTextDom.innerHTML = formattedText;
             }
 
-            const timePassed = formatGenerationTimer(this.timeStarted, currentTime, currentTokenCount, this.reasoningHandler.getDuration());
+            const timePassed = formatGenerationTimer(this.timeStarted, currentTime, currentTokenCount, this.timeToFirstToken, this.reasoningHandler.getDuration());
             if (this.messageTimerDom instanceof HTMLElement) {
                 this.messageTimerDom.textContent = timePassed.timerValue;
                 this.messageTimerDom.title = timePassed.timerTitle;
