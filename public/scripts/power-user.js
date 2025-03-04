@@ -314,6 +314,7 @@ let power_user = {
     forbid_external_media: true,
     external_media_allowed_overrides: [],
     external_media_forbidden_overrides: [],
+    shallow_characters: false,
 };
 
 let themes = [];
@@ -1595,6 +1596,7 @@ async function loadPowerUserSettings(settings, data) {
     $('#auto-connect-checkbox').prop('checked', power_user.auto_connect);
     $('#auto-load-chat-checkbox').prop('checked', power_user.auto_load_chat);
     $('#forbid_external_media').prop('checked', power_user.forbid_external_media);
+    $('#shallow_characters').prop('checked', power_user.shallow_characters);
 
     for (const theme of themes) {
         const option = document.createElement('option');
@@ -3886,6 +3888,12 @@ $(document).ready(() => {
 
     $('#ui_preset_export_button').on('click', async function () {
         await exportTheme();
+    });
+
+    $('#shallow_characters').on('input', function () {
+        power_user.shallow_characters = !!$(this).prop('checked');
+        saveSettingsDebounced();
+        toastr.info('Reload the page for this setting to take effect');
     });
 
     $(document).on('click', '#debug_table [data-debug-function]', function () {

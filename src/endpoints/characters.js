@@ -201,13 +201,44 @@ const calculateDataSize = (data) => {
 };
 
 /**
+ * Only get fields that are used to display the character list.
+ * @param {object} character Character object
+ * @returns {{shallow: true, [key: string]: any}} Shallow character
+ */
+const toShallow = (character) => {
+    return {
+        name: character.name,
+        avatar: character.avatar,
+        chat: character.chat,
+        fav: character.fav,
+        date_added: character.date_added,
+        create_date: character.create_date,
+        date_last_chat: character.date_last_chat,
+        chat_size: character.chat_size,
+        data_size: character.data_size,
+        data: {
+            name: _.get(character, 'data.name', ''),
+            character_version: _.get(character, 'data.character_version', ''),
+            creator: _.get(character, 'data.creator', ''),
+            creator_notes: _.get(character, 'data.creator_notes', ''),
+            extensions: {
+                fav: _.get(character, 'data.extensions.fav', false),
+            },
+        },
+        shallow: true,
+    };
+};
+
+/**
  * processCharacter - Process a given character, read its data and calculate its statistics.
  *
  * @param  {string} item The name of the character.
  * @param  {import('../users.js').UserDirectoryList} directories User directories
+ * @param  {object} options Options for the character processing
+ * @param  {boolean} options.shallow If true, only return the core character's metadata
  * @return {Promise<object>}     A Promise that resolves when the character processing is done.
  */
-const processCharacter = async (item, directories) => {
+const processCharacter = async (item, directories, { shallow }) => {
     try {
         const imgFile = path.join(directories.characters, item);
         const imgData = await readCharacterData(imgFile);
@@ -226,7 +257,7 @@ const processCharacter = async (item, directories) => {
         character['chat_size'] = chatSize;
         character['date_last_chat'] = dateLastChat;
         character['data_size'] = calculateDataSize(jsonObject?.data);
-        return character;
+        return shallow ? toShallow(character) : character;
     }
     catch (err) {
         console.error(`Could not process character: ${item}`);
@@ -991,9 +1022,10 @@ router.post('/delete', jsonParser, validateAvatarUrlMiddleware, async function (
  */
 router.post('/all', jsonParser, async function (request, response) {
     try {
+        const shallow = !!request.body.shallow;
         const files = fs.readdirSync(request.user.directories.characters);
         const pngFiles = files.filter(file => file.endsWith('.png'));
-        const processingPromises = pngFiles.map(file => processCharacter(file, request.user.directories));
+        const processingPromises = pngFiles.map(file => processCharacter(file, request.user.directories, { shallow }));
         const data = (await Promise.all(processingPromises)).filter(c => c.name);
         return response.send(data);
     } catch (err) {
@@ -1012,7 +1044,7 @@ router.post('/get', jsonParser, validateAvatarUrlMiddleware, async function (req
             return response.sendStatus(404);
         }
 
-        const data = await processCharacter(item, request.user.directories);
+        const data = await processCharacter(item, request.user.directories, { shallow: false });
 
         return response.send(data);
     } catch (err) {
