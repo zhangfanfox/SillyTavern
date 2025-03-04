@@ -2597,7 +2597,7 @@ export function formatCharacterAvatar(characterAvatar) {
  * @param {Date} gen_started Date when generation was started
  * @param {Date} gen_finished Date when generation was finished
  * @param {number} tokenCount Number of tokens generated (0 if not available)
- * @param {number} timeToFirstToken Time to first token
+ * @param {number | null} timeToFirstToken Time to first token
  * @param {number?} [reasoningDuration=null] Reasoning duration (null if no reasoning was done)
  * @returns {Object} Object containing the formatted timer value and title
  * @example
@@ -2619,7 +2619,7 @@ function formatGenerationTimer(gen_started, gen_finished, tokenCount, timeToFirs
         `Generation queued: ${start.format(dateFormat)}`,
         `Reply received: ${finish.format(dateFormat)}`,
         `Time to generate: ${seconds} seconds`,
-        timeToFirstToken > 0 ? `Time to first token: ${(timeToFirstToken / 1000).toFixed(1)} seconds` : '',
+        timeToFirstToken ? `Time to first token: ${(timeToFirstToken / 1000).toFixed(1)} seconds` : '',
         reasoningDuration > 0 ? `Time to think: ${reasoningDuration / 1000} seconds` : '',
         tokenCount > 0 ? `Token rate: ${Number(tokenCount / seconds).toFixed(1)} t/s` : '',
     ].filter(x => x).join('\n').trim();
@@ -3160,7 +3160,10 @@ class StreamingProcessor {
         this.abortController = new AbortController();
         this.firstMessageText = '...';
         this.timeStarted = timeStarted;
-        this.timeToFirstToken = -1;
+        /**
+         * @type {number | null}
+         */
+        this.timeToFirstToken = null;
         this.createdAt = new Date();
         this.continueMessage = type === 'continue' ? continueMessage : '';
         this.swipes = [];
@@ -3199,8 +3202,6 @@ class StreamingProcessor {
     }
 
     async onStartStreaming(text) {
-        this.timeToFirstToken = Date.now() - this.createdAt.getTime();
-
         if (this.type === 'continue' && this.promptReasoning.prefixReasoning) {
             this.reasoningHandler.initContinue(this.promptReasoning);
         }
@@ -3409,7 +3410,11 @@ class StreamingProcessor {
             const sw = new Stopwatch(1000 / power_user.streaming_fps);
             const timestamps = [];
             for await (const { text, swipes, logprobs, toolCalls, state } of this.generator()) {
-                timestamps.push(Date.now());
+                const now = Date.now();
+                timestamps.push(now);
+                if (!this.timeToFirstToken) {
+                    this.timeToFirstToken = now - this.createdAt.getTime();
+                }
                 if (this.isStopped || this.abortController.signal.aborted) {
                     return this.result;
                 }
