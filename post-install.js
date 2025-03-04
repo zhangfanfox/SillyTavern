@@ -98,8 +98,8 @@ const keyMigrationMap = [
     },
     {
         oldKey: 'cardsCacheCapacity',
-        newKey: 'performance.cardsCacheCapacity',
-        migrate: (value) => value,
+        newKey: 'performance.memoryCacheCapacity',
+        migrate: (value) => `${value}mb`,
     },
     // uncomment one release after 1.12.13
     /*

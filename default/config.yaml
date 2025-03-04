@@ -138,8 +138,8 @@ performance:
   # Enables lazy loading of character cards. Improves performances with large card libraries.
   # May have compatibility issues with some extensions.
   lazyLoadCharacters: false
-  # The maximum amount of memory that parsed character cards can use in MB
-  cardsCacheCapacity: 100
+  # The maximum amount of memory that parsed character cards can use. Set to 0 to disable memory caching.
+  memoryCacheCapacity: '100mb'
 
 # Allow secret keys exposure via API
 allowKeysExposure: false

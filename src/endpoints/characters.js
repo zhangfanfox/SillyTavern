@@ -23,10 +23,9 @@ import { invalidateThumbnail } from './thumbnails.js';
 import { importRisuSprites } from './sprites.js';
 const defaultAvatarPath = './public/img/ai4.png';
 
-// KV-store for parsed character data
-const cacheCapacity = Number(getConfigValue('performance.cardsCacheCapacity', 100, 'number')); // MB
 // With 100 MB limit it would take roughly 3000 characters to reach this limit
-const characterDataCache = new MemoryLimitedMap(1024 * 1024 * cacheCapacity);
+const memoryCacheCapacity = getConfigValue('performance.memoryCacheCapacity', '100mb');
+const memoryCache = new MemoryLimitedMap(memoryCacheCapacity);
 // Some Android devices require tighter memory management
 const isAndroid = process.platform === 'android';
 // Use shallow character data for the character list
@@ -41,12 +40,12 @@ const useShallowCharacters = !!getConfigValue('performance.lazyLoadCharacters', 
 async function readCharacterData(inputFile, inputFormat = 'png') {
     const stat = fs.statSync(inputFile);
     const cacheKey = `${inputFile}-${stat.mtimeMs}`;
-    if (characterDataCache.has(cacheKey)) {
-        return characterDataCache.get(cacheKey);
+    if (memoryCache.has(cacheKey)) {
+        return memoryCache.get(cacheKey);
     }
 
     const result = parse(inputFile, inputFormat);
-    !isAndroid && characterDataCache.set(cacheKey, result);
+    !isAndroid && memoryCache.set(cacheKey, result);
     return result;
 }
 
@@ -62,12 +61,12 @@ async function readCharacterData(inputFile, inputFormat = 'png') {
 async function writeCharacterData(inputFile, data, outputFile, request, crop = undefined) {
     try {
         // Reset the cache
-        for (const key of characterDataCache.keys()) {
+        for (const key of memoryCache.keys()) {
             if (Buffer.isBuffer(inputFile)) {
                 break;
             }
             if (key.startsWith(inputFile)) {
-                characterDataCache.delete(key);
+                memoryCache.delete(key);
                 break;
             }
         }
