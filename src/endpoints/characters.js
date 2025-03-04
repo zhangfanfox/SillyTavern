@@ -1054,11 +1054,11 @@ router.post('/get', jsonParser, validateAvatarUrlMiddleware, async function (req
 });
 
 router.post('/chats', jsonParser, validateAvatarUrlMiddleware, async function (request, response) {
-    if (!request.body) return response.sendStatus(400);
-
-    const characterDirectory = (request.body.avatar_url).replace('.png', '');
-
     try {
+        if (!request.body) return response.sendStatus(400);
+
+        const characterDirectory = (request.body.avatar_url).replace('.png', '');
+
         const chatsDirectory = path.join(request.user.directories.chats, characterDirectory);
 
         if (!fs.existsSync(chatsDirectory)) {
