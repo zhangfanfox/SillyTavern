@@ -316,7 +316,7 @@ export async function favsToHotswap() {
     const entities = getEntitiesList({ doFilter: false });
     const container = $('#right-nav-panel .hotswap');
 
-    const favs = entities.filter(x => x.item.fav || x.item.fav == 'true');
+    const favs = entities.filter(x => x.item.fav || x.item.fav == 'true').slice(0, 25);
 
     //helpful instruction message if no characters are favorited
     if (favs.length == 0) {
