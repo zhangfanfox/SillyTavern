@@ -2619,7 +2619,7 @@ function formatGenerationTimer(gen_started, gen_finished, tokenCount, timeToFirs
         `Generation queued: ${start.format(dateFormat)}`,
         `Reply received: ${finish.format(dateFormat)}`,
         `Time to generate: ${seconds} seconds`,
-        timeToFirstToken ? `Time to first token: ${(timeToFirstToken / 1000).toFixed(1)} seconds` : '',
+        timeToFirstToken ? `Time to first token: ${timeToFirstToken / 1000} seconds` : '',
         reasoningDuration > 0 ? `Time to think: ${reasoningDuration / 1000} seconds` : '',
         tokenCount > 0 ? `Token rate: ${Number(tokenCount / seconds).toFixed(1)} t/s` : '',
     ].filter(x => x).join('\n').trim();
