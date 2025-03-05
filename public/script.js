@@ -2621,7 +2621,7 @@ function formatGenerationTimer(gen_started, gen_finished, tokenCount, timeToFirs
         `Time to generate: ${seconds} seconds`,
         timeToFirstToken ? `Time to first token: ${timeToFirstToken / 1000} seconds` : '',
         reasoningDuration > 0 ? `Time to think: ${reasoningDuration / 1000} seconds` : '',
-        tokenCount > 0 ? `Token rate: ${Number(tokenCount / seconds).toFixed(1)} t/s` : '',
+        tokenCount > 0 ? `Token rate: ${Number(tokenCount / seconds).toFixed(3)} t/s` : '',
     ].filter(x => x).join('\n').trim();
 
     if (isNaN(seconds) || seconds < 0) {
