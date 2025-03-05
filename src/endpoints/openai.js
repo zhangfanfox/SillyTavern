@@ -97,8 +97,6 @@ router.post('/caption-image', jsonParser, async (request, response) => {
             excludeKeysByYaml(body, request.body.custom_exclude_body);
         }
 
-        console.debug('Multimodal captioning request', body);
-
         let apiUrl = '';
 
         if (request.body.api === 'openrouter') {
@@ -124,6 +122,9 @@ router.post('/caption-image', jsonParser, async (request, response) => {
 
         if (request.body.api === 'groq') {
             apiUrl = 'https://api.groq.com/openai/v1/chat/completions';
+            if (body.messages?.[0]?.role === 'system') {
+                body.messages[0].role = 'user';
+            }
         }
 
         if (request.body.api === 'mistral') {
@@ -153,6 +154,7 @@ router.post('/caption-image', jsonParser, async (request, response) => {
         }
 
         setAdditionalHeaders(request, { headers }, apiUrl);
+        console.debug('Multimodal captioning request', body);
 
         const result = await fetch(apiUrl, {
             method: 'POST',
