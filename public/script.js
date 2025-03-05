@@ -2477,7 +2477,7 @@ export function addOneMessage(mes, { type = 'normal', insertAfter = null, scroll
         timestamp: timestamp,
         extra: mes.extra,
         tokenCount: mes.extra?.token_count ?? 0,
-        ...formatGenerationTimer(mes.gen_started, mes.gen_finished, mes.extra?.token_count, mes.time_to_first_token, mes.extra?.reasoning_duration),
+        ...formatGenerationTimer(mes.gen_started, mes.gen_finished, mes.extra?.token_count, mes.extra?.time_to_first_token, mes.extra?.reasoning_duration),
     };
 
     const renderedMessage = getMessageFromTemplate(params);
@@ -3252,11 +3252,11 @@ class StreamingProcessor {
             const currentTime = new Date();
             chat[messageId]['mes'] = processedText;
             chat[messageId]['gen_started'] = this.timeStarted;
-            chat[messageId]['time_to_first_token'] = this.timeToFirstToken;
             chat[messageId]['gen_finished'] = currentTime;
             if (!chat[messageId]['extra']) {
                 chat[messageId]['extra'] = {};
             }
+            chat[messageId]['extra']['time_to_first_token'] = this.timeToFirstToken;
 
             // Update reasoning
             await this.reasoningHandler.process(messageId, mesChanged);
@@ -3278,7 +3278,6 @@ class StreamingProcessor {
                     'send_date': chat[messageId]['send_date'],
                     'gen_started': chat[messageId]['gen_started'],
                     'gen_finished': chat[messageId]['gen_finished'],
-                    'time_to_first_token': chat[messageId]['time_to_first_token'],
                     'extra': JSON.parse(JSON.stringify(chat[messageId]['extra']))
                 };
             }
@@ -3375,7 +3374,6 @@ class StreamingProcessor {
                     'send_date': chat[messageId]['send_date'],
                     'gen_started': chat[messageId]['gen_started'],
                     'gen_finished': chat[messageId]['gen_finished'],
-                    'time_to_first_token': chat[messageId]['time_to_first_token'],
                     'extra': JSON.parse(JSON.stringify(chat[messageId]['extra'])) };
             }
         }
@@ -6094,7 +6092,6 @@ export async function saveReply(type, getMessage, fromStreaming, title, swipes, 
             send_date: item['send_date'],
             gen_started: item['gen_started'],
             gen_finished: item['gen_finished'],
-            time_to_first_token: item['time_to_first_token'],
             extra: JSON.parse(JSON.stringify(item['extra'])),
         };
     } else {
@@ -6105,7 +6102,6 @@ export async function saveReply(type, getMessage, fromStreaming, title, swipes, 
             send_date: chat[chat.length - 1]['send_date'],
             gen_started: chat[chat.length - 1]['gen_started'],
             gen_finished: chat[chat.length - 1]['gen_finished'],
-            time_to_first_token: chat[chat.length - 1]['time_to_first_token'],
             extra: JSON.parse(JSON.stringify(chat[chat.length - 1]['extra'])),
         };
     }
@@ -8859,7 +8855,6 @@ const swipe_right = () => {
             'send_date': chat[chat.length - 1]['send_date'],
             'gen_started': chat[chat.length - 1]['gen_started'],
             'gen_finished': chat[chat.length - 1]['gen_finished'],
-            'time_to_first_token': chat[chat.length - 1]['time_to_first_token'],
             'extra': JSON.parse(JSON.stringify(chat[chat.length - 1]['extra']))
         };
         //assign swipe info array with last message from chat
