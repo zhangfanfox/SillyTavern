@@ -2477,7 +2477,7 @@ export function addOneMessage(mes, { type = 'normal', insertAfter = null, scroll
         timestamp: timestamp,
         extra: mes.extra,
         tokenCount: mes.extra?.token_count ?? 0,
-        ...formatGenerationTimer(mes.gen_started, mes.gen_finished, mes.extra?.token_count, mes.extra?.time_to_first_token, mes.extra?.reasoning_duration),
+        ...formatGenerationTimer(mes.gen_started, mes.gen_finished, mes.extra?.token_count, mes.extra?.reasoning_duration, mes.extra?.time_to_first_token),
     };
 
     const renderedMessage = getMessageFromTemplate(params);
@@ -2597,15 +2597,15 @@ export function formatCharacterAvatar(characterAvatar) {
  * @param {Date} gen_started Date when generation was started
  * @param {Date} gen_finished Date when generation was finished
  * @param {number} tokenCount Number of tokens generated (0 if not available)
- * @param {number | null} timeToFirstToken Time to first token
  * @param {number?} [reasoningDuration=null] Reasoning duration (null if no reasoning was done)
+ * @param {number?} [timeToFirstToken=null] Time to first token
  * @returns {Object} Object containing the formatted timer value and title
  * @example
  * const { timerValue, timerTitle } = formatGenerationTimer(gen_started, gen_finished, tokenCount);
  * console.log(timerValue); // 1.2s
  * console.log(timerTitle); // Generation queued: 12:34:56 7 Jan 2021\nReply received: 12:34:57 7 Jan 2021\nTime to generate: 1.2 seconds\nToken rate: 5 t/s
  */
-function formatGenerationTimer(gen_started, gen_finished, tokenCount, timeToFirstToken, reasoningDuration = null) {
+function formatGenerationTimer(gen_started, gen_finished, tokenCount, reasoningDuration = null, timeToFirstToken = null) {
     if (!gen_started || !gen_finished) {
         return {};
     }
@@ -3160,9 +3160,7 @@ class StreamingProcessor {
         this.abortController = new AbortController();
         this.firstMessageText = '...';
         this.timeStarted = timeStarted;
-        /**
-         * @type {number?}
-         */
+        /** @type {number?} */
         this.timeToFirstToken = null;
         this.createdAt = new Date();
         this.continueMessage = type === 'continue' ? continueMessage : '';
@@ -3295,7 +3293,7 @@ class StreamingProcessor {
                 this.messageTextDom.innerHTML = formattedText;
             }
 
-            const timePassed = formatGenerationTimer(this.timeStarted, currentTime, currentTokenCount, this.timeToFirstToken, this.reasoningHandler.getDuration());
+            const timePassed = formatGenerationTimer(this.timeStarted, currentTime, currentTokenCount, this.reasoningHandler.getDuration(), this.timeToFirstToken);
             if (this.messageTimerDom instanceof HTMLElement) {
                 this.messageTimerDom.textContent = timePassed.timerValue;
                 this.messageTimerDom.title = timePassed.timerTitle;
