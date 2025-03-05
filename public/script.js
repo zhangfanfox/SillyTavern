@@ -3374,7 +3374,8 @@ class StreamingProcessor {
                     'send_date': chat[messageId]['send_date'],
                     'gen_started': chat[messageId]['gen_started'],
                     'gen_finished': chat[messageId]['gen_finished'],
-                    'extra': JSON.parse(JSON.stringify(chat[messageId]['extra'])) };
+                    'extra': JSON.parse(JSON.stringify(chat[messageId]['extra'])),
+                };
             }
         }
     }
@@ -8855,7 +8856,7 @@ const swipe_right = () => {
             'send_date': chat[chat.length - 1]['send_date'],
             'gen_started': chat[chat.length - 1]['gen_started'],
             'gen_finished': chat[chat.length - 1]['gen_finished'],
-            'extra': JSON.parse(JSON.stringify(chat[chat.length - 1]['extra']))
+            'extra': JSON.parse(JSON.stringify(chat[chat.length - 1]['extra'])),
         };
         //assign swipe info array with last message from chat
     }
