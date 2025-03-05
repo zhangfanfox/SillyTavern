@@ -3161,7 +3161,7 @@ class StreamingProcessor {
         this.firstMessageText = '...';
         this.timeStarted = timeStarted;
         /**
-         * @type {number | null}
+         * @type {number?}
          */
         this.timeToFirstToken = null;
         this.createdAt = new Date();
