@@ -6,7 +6,6 @@
         "@iconfu/svg-inject": "^1.2.3",
         "@mozilla/readability": "^0.5.0",
         "@popperjs/core": "^2.11.8",
-        "@types/bytes": "^3.1.5",
         "@zeldafan0225/ai_horde": "^5.2.0",
         "archiver": "^7.0.1",
         "bing-translate-api": "^4.0.2",
@@ -114,6 +113,7 @@
     "main": "server.js",
     "devDependencies": {
         "@types/archiver": "^6.0.3",
+        "@types/bytes": "^3.1.5",
         "@types/command-exists": "^1.2.3",
         "@types/compression": "^1.7.5",
         "@types/cookie-parser": "^1.4.8",
