@@ -62,6 +62,10 @@ router.post('/caption-image', jsonParser, async (request, response) => {
             key = readSecret(request.user.directories, SECRET_KEYS.GROQ);
         }
 
+        if (request.body.api === 'cohere') {
+            key = readSecret(request.user.directories, SECRET_KEYS.COHERE);
+        }
+
         if (!key && !request.body.reverse_proxy && ['custom', 'ooba', 'koboldcpp', 'vllm'].includes(request.body.api) === false) {
             console.warn('No key found for API', request.body.api);
             return response.sendStatus(400);
@@ -126,6 +130,10 @@ router.post('/caption-image', jsonParser, async (request, response) => {
             apiUrl = 'https://api.mistral.ai/v1/chat/completions';
         }
 
+        if (request.body.api === 'cohere') {
+            apiUrl = 'https://api.cohere.ai/v2/chat';
+        }
+
         if (request.body.api === 'ooba') {
             apiUrl = `${trimV1(request.body.server_url)}/v1/chat/completions`;
             const imgMessage = body.messages.pop();
@@ -165,7 +173,7 @@ router.post('/caption-image', jsonParser, async (request, response) => {
         /** @type {any} */
         const data = await result.json();
         console.info('Multimodal captioning response', data);
-        const caption = data?.choices[0]?.message?.content;
+        const caption = data?.choices?.[0]?.message?.content ?? data?.message?.content?.[0]?.text;
 
         if (!caption) {
             return response.status(500).send('No caption found');
