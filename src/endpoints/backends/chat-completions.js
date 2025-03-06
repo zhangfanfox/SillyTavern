@@ -332,6 +332,8 @@ async function sendMakerSuiteRequest(request, response) {
         temperature: request.body.temperature,
         topP: request.body.top_p,
         topK: request.body.top_k || undefined,
+        responseMimeType: request.body.responseMimeType,
+        responseSchema: request.body.responseSchema,
     };
 
     function getGeminiBody() {
@@ -365,6 +367,7 @@ async function sendMakerSuiteRequest(request, response) {
             contents: prompt.contents,
             safetySettings: safetySettings,
             generationConfig: generationConfig,
+            tools: request.body.tools,
         };
 
         if (should_use_system_prompt) {
