@@ -99,6 +99,21 @@ function getOpenRouterTransforms(request) {
 }
 
 /**
+ * Gets OpenRouter plugins based on the request.
+ * @param {import('express').Request} request
+ * @returns {any[]} OpenRouter plugins
+ */
+function getOpenRouterPlugins(request) {
+    const plugins = [];
+
+    if (request.body.enable_web_search) {
+        plugins.push({ 'id': 'web' });
+    }
+
+    return plugins;
+}
+
+/**
  * Sends a request to Claude API.
  * @param {express.Request} request Express request
  * @param {express.Response} response Express response
@@ -323,6 +338,7 @@ async function sendMakerSuiteRequest(request, response) {
 
     const model = String(request.body.model);
     const stream = Boolean(request.body.stream);
+    const enableWebSearch = Boolean(request.body.enable_web_search);
     const isThinking = model.includes('thinking');
 
     const generationConfig = {
@@ -348,6 +364,7 @@ async function sendMakerSuiteRequest(request, response) {
             model.startsWith('gemini-exp')
         ) && request.body.use_makersuite_sysprompt;
 
+        const tools = [];
         const prompt = convertGooglePrompt(request.body.messages, model, should_use_system_prompt, getPromptNames(request));
         let safetySettings = GEMINI_SAFETY;
 
@@ -361,6 +378,13 @@ async function sendMakerSuiteRequest(request, response) {
         }
         // Most of the other models allow for setting the threshold of filters, except for HARM_CATEGORY_CIVIC_INTEGRITY, to OFF.
 
+        if (enableWebSearch) {
+            const searchTool = model.includes('1.5') || model.includes('1.0')
+                ? ({ google_search_retrieval: {} })
+                : ({ google_search: {} });
+            tools.push(searchTool);
+        }
+
         let body = {
             contents: prompt.contents,
             safetySettings: safetySettings,
@@ -369,6 +393,10 @@ async function sendMakerSuiteRequest(request, response) {
 
         if (should_use_system_prompt) {
             body.systemInstruction = prompt.system_instruction;
+        }
+
+        if (tools.length) {
+            body.tools = tools;
         }
 
         return body;
@@ -1014,6 +1042,7 @@ router.post('/generate', jsonParser, function (request, response) {
         headers = { ...OPENROUTER_HEADERS };
         bodyParams = {
             'transforms': getOpenRouterTransforms(request),
+            'plugins': getOpenRouterPlugins(request),
             'include_reasoning': Boolean(request.body.include_reasoning),
         };
 
