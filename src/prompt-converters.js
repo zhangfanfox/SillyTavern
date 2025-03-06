@@ -507,7 +507,7 @@ export function convertGooglePrompt(messages, model, useSysPrompt, names) {
                 if (part.text) {
                     contents[contents.length - 1].parts[0].text += '\n\n' + part.text;
                 }
-                if (part.inlineData || part.functionCall) {
+                if (part.inlineData || part.functionCall || part.functionResponse) {
                     contents[contents.length - 1].parts.push(part);
                 }
             });
