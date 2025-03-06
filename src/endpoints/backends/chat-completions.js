@@ -385,6 +385,19 @@ async function sendMakerSuiteRequest(request, response) {
             tools.push(searchTool);
         }
 
+        if (Array.isArray(request.body.tools) && request.body.tools.length > 0) {
+            const functionDeclarations = [];
+            for (const tool of request.body.tools) {
+                if (tool.type === 'function') {
+                    if (tool.function.parameters?.$schema) {
+                        delete tool.function.parameters.$schema;
+                    }
+                    functionDeclarations.push(tool.function);
+                }
+            }
+            tools.push({ function_declarations: functionDeclarations });
+        }
+
         let body = {
             contents: prompt.contents,
             safetySettings: safetySettings,
@@ -454,10 +467,11 @@ async function sendMakerSuiteRequest(request, response) {
             }
 
             const responseContent = candidates[0].content ?? candidates[0].output;
+            const functionCall = (candidates?.[0]?.content?.parts ?? []).some(part => part.functionCall);
             console.warn('Google AI Studio response:', responseContent);
 
             const responseText = typeof responseContent === 'string' ? responseContent : responseContent?.parts?.filter(part => !part.thought)?.map(part => part.text)?.join('\n\n');
-            if (!responseText) {
+            if (!responseText && !functionCall) {
                 let message = 'Google AI Studio Candidate text empty';
                 console.warn(message, generateResponseJson);
                 return response.send({ error: { message } });
