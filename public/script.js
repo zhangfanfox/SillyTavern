@@ -2719,8 +2719,11 @@ export function substituteParams(content, _name1, _name2, _original, _group, _re
         environment.mesExamples = () => {
             const isInstruct = power_user.instruct.enabled && main_api !== 'openai';
             const mesExamplesArray = parseMesExamples(fields.mesExamples, isInstruct);
-            const instructExamples = formatInstructModeExamples(mesExamplesArray, name1, name2);
-            return instructExamples.join('');
+            if (isInstruct) {
+                const instructExamples = formatInstructModeExamples(mesExamplesArray, name1, name2);
+                return instructExamples.join('');
+            }
+            return mesExamplesArray.join('');
         };
         environment.mesExamplesRaw = fields.mesExamples || '';
         environment.charVersion = fields.version || '';
@@ -3303,7 +3306,7 @@ class StreamingProcessor {
                     'send_date': chat[messageId]['send_date'],
                     'gen_started': chat[messageId]['gen_started'],
                     'gen_finished': chat[messageId]['gen_finished'],
-                    'extra': JSON.parse(JSON.stringify(chat[messageId]['extra']))
+                    'extra': JSON.parse(JSON.stringify(chat[messageId]['extra'])),
                 };
             }
 
