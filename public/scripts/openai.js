@@ -2028,7 +2028,8 @@ async function sendOpenAIRequest(type, messages, signal) {
     }
 
     // Remove logit bias/logprobs/stop-strings if not supported by the model
-    if (isOAI && ['gpt','vision'].includes(oai_settings.openai_model) || isOpenRouter && ['gpt','vision'].includes(oai_settings.openrouter_model)) {
+    const isVision = (m) => ['gpt', 'vision'].every(x => m.includes(x));
+    if (isOAI && isVision(oai_settings.openai_model) || isOpenRouter && isVision(oai_settings.openrouter_model)) {
         delete generate_data.logit_bias;
         delete generate_data.stop;
         delete generate_data.logprobs;
