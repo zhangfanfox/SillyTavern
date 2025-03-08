@@ -1104,6 +1104,32 @@ function parseReasoningFromString(str, { strict = true } = {}) {
     }
 }
 
+/**
+ * Parse reasoning in an array of swipe strings if auto-parsing is enabled.
+ * @param {string[]} swipes Array of swipe strings
+ * @param {{extra: {reasoning: string, reasoning_duration: number}}[]} swipeInfoArray Array of swipe info objects
+ * @param {number?} duration Duration of the reasoning
+ */
+export function parseReasoningInSwipes(swipes, swipeInfoArray, duration) {
+    if (!power_user.reasoning.auto_parse) {
+        return;
+    }
+
+    // Something ain't right, don't parse
+    if (!Array.isArray(swipes) || !Array.isArray(swipeInfoArray) || swipes.length !== swipeInfoArray.length) {
+        return;
+    }
+
+    for (let index = 0; index < swipes.length; index++) {
+        const parsedReasoning = parseReasoningFromString(swipes[index]);
+        if (parsedReasoning) {
+            swipes[index] = parsedReasoning.content;
+            swipeInfoArray[index].extra.reasoning = parsedReasoning.reasoning;
+            swipeInfoArray[index].extra.reasoning_duration = duration;
+        }
+    }
+}
+
 function registerReasoningAppEvents() {
     const eventHandler = (/** @type {string} */ type, /** @type {number} */ idx) => {
         if (!power_user.reasoning.auto_parse) {
