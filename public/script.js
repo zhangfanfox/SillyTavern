@@ -3346,11 +3346,15 @@ class StreamingProcessor {
 
         if (Array.isArray(this.swipes) && this.swipes.length > 0) {
             const message = chat[messageId];
+            const swipeInfoExtra = structuredClone(message.extra);
+            delete swipeInfoExtra.token_count;
+            delete swipeInfoExtra.reasoning;
+            delete swipeInfoExtra.reasoning_duration;
             const swipeInfo = {
                 send_date: message.send_date,
                 gen_started: message.gen_started,
                 gen_finished: message.gen_finished,
-                extra: structuredClone(message.extra),
+                extra: swipeInfoExtra,
             };
             const swipeInfoArray = [];
             swipeInfoArray.length = this.swipes.length;
@@ -6118,11 +6122,15 @@ export async function saveReply(type, getMessage, fromStreaming, title, swipes, 
     }
 
     if (Array.isArray(swipes) && swipes.length > 0) {
+        const swipeInfoExtra = structuredClone(item.extra);
+        delete swipeInfoExtra.token_count;
+        delete swipeInfoExtra.reasoning;
+        delete swipeInfoExtra.reasoning_duration;
         const swipeInfo = {
             send_date: item.send_date,
             gen_started: item.gen_started,
             gen_finished: item.gen_finished,
-            extra: structuredClone(item.extra),
+            extra: swipeInfoExtra,
         };
         const swipeInfoArray = [];
         swipeInfoArray.length = swipes.length;
