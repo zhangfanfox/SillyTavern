@@ -520,6 +520,7 @@ async function sendAI21Request(request, response) {
         top_p: request.body.top_p,
         stop: request.body.stop,
         stream: request.body.stream,
+        tools: request.body.tools,
     };
     const options = {
         method: 'POST',
