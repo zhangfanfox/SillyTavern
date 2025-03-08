@@ -644,7 +644,6 @@ async function CreateZenSliders(elmnt) {
     }
     if (sliderID == 'min_temp_textgenerationwebui' ||
         sliderID == 'max_temp_textgenerationwebui' ||
-        sliderID == 'dynatemp_exponent_textgenerationwebui' ||
         sliderID == 'smoothing_curve_textgenerationwebui' ||
         sliderID == 'smoothing_factor_textgenerationwebui' ||
         sliderID == 'dry_multiplier_textgenerationwebui' ||
@@ -1489,6 +1488,8 @@ async function loadPowerUserSettings(settings, data) {
     $('#custom_stopping_strings_macro').prop('checked', power_user.custom_stopping_strings_macro);
     $('#fuzzy_search_checkbox').prop('checked', power_user.fuzzy_search);
     $('#persona_show_notifications').prop('checked', power_user.persona_show_notifications);
+    $('#persona_allow_multi_connections').prop('checked', power_user.persona_allow_multi_connections);
+    $('#persona_auto_lock').prop('checked', power_user.persona_auto_lock);
     $('#encode_tags').prop('checked', power_user.encode_tags);
     $('#example_messages_behavior').val(getExampleMessagesBehavior());
     $(`#example_messages_behavior option[value="${getExampleMessagesBehavior()}"]`).prop('selected', true);
@@ -1556,9 +1557,9 @@ async function loadPowerUserSettings(settings, data) {
     $('#stscript_autocomplete_font_scale_counter').val(power_user.stscript.autocomplete.font.scale ?? defaultStscript.autocomplete.font.scale);
     document.body.style.setProperty('--ac-font-scale', power_user.stscript.autocomplete.font.scale ?? defaultStscript.autocomplete.font.scale.toString());
     $('#stscript_autocomplete_width_left').val(power_user.stscript.autocomplete.width.left ?? AUTOCOMPLETE_WIDTH.CHAT);
-    document.querySelector('#stscript_autocomplete_width_left').dispatchEvent(new Event('input', { bubbles: true }));
+    document.querySelector('#stscript_autocomplete_width_left')?.dispatchEvent(new Event('input', { bubbles: true }));
     $('#stscript_autocomplete_width_right').val(power_user.stscript.autocomplete.width.right ?? AUTOCOMPLETE_WIDTH.CHAT);
-    document.querySelector('#stscript_autocomplete_width_right').dispatchEvent(new Event('input', { bubbles: true }));
+    document.querySelector('#stscript_autocomplete_width_right')?.dispatchEvent(new Event('input', { bubbles: true }));
 
     $('#restore_user_input').prop('checked', power_user.restore_user_input);
 
@@ -1845,14 +1846,15 @@ async function loadContextSettings() {
 
 /**
  * Common function to perform fuzzy search with optional caching
+ * @template T
  * @param {string} type - Type of search from fuzzySearchCategories
- * @param {any[]} data - Data array to search in
- * @param {Array<{name: string, weight: number, getFn?: (obj: any) => string}>} keys - Fuse.js keys configuration
+ * @param {T[]} data - Data array to search in
+ * @param {Array<{name: string, weight: number, getFn?: (obj: T) => string}>} keys - Fuse.js keys configuration
  * @param {string} searchValue - The search term
  * @param {Object.<string, { resultMap: Map<string, any> }>} [fuzzySearchCaches=null] - Optional fuzzy search caches
- * @returns {import('fuse.js').FuseResult<any>[]} Results as items with their score
+ * @returns {import('fuse.js').FuseResult<T>[]} Results as items with their score
  */
-function performFuzzySearch(type, data, keys, searchValue, fuzzySearchCaches = null) {
+export function performFuzzySearch(type, data, keys, searchValue, fuzzySearchCaches = null) {
     // Check cache if provided
     if (fuzzySearchCaches) {
         const cache = fuzzySearchCaches[type];
@@ -3701,6 +3703,16 @@ $(document).ready(() => {
 
     $('#persona_show_notifications').on('input', function () {
         power_user.persona_show_notifications = !!$(this).prop('checked');
+        saveSettingsDebounced();
+    });
+
+    $('#persona_allow_multi_connections').on('input', function () {
+        power_user.persona_allow_multi_connections = !!$(this).prop('checked');
+        saveSettingsDebounced();
+    });
+
+    $('#persona_auto_lock').on('input', function () {
+        power_user.persona_auto_lock = !!$(this).prop('checked');
         saveSettingsDebounced();
     });
 

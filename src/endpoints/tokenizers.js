@@ -56,7 +56,7 @@ export const TEXT_COMPLETION_MODELS = [
 ];
 
 const CHARS_PER_TOKEN = 3.35;
-const IS_DOWNLOAD_ALLOWED = getConfigValue('enableDownloadableTokenizers', true);
+const IS_DOWNLOAD_ALLOWED = getConfigValue('enableDownloadableTokenizers', true, 'boolean');
 
 /**
  * Gets a path to the tokenizer model. Downloads the model if it's a URL.
@@ -398,15 +398,15 @@ function getWebTokenizersChunks(tokenizer, ids) {
  * @returns {string} Tokenizer model to use
  */
 export function getTokenizerModel(requestModel) {
-    if (requestModel.includes('o1-preview') || requestModel.includes('o1-mini') || requestModel.includes('o3-mini')) {
+    if (requestModel === 'o1' || requestModel.includes('o1-preview') || requestModel.includes('o1-mini') || requestModel.includes('o3-mini')) {
+        return 'o1';
+    }
+
+    if (requestModel.includes('gpt-4o') || requestModel.includes('chatgpt-4o-latest')) {
         return 'gpt-4o';
     }
 
-    if (requestModel.includes('gpt-4o')) {
-        return 'gpt-4o';
-    }
-
-    if (requestModel.includes('chatgpt-4o-latest')) {
+    if (requestModel.includes('gpt-4.5-preview')) {
         return 'gpt-4o';
     }
 

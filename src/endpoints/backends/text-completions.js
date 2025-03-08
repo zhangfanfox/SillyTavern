@@ -372,8 +372,8 @@ router.post('/generate', jsonParser, async function (request, response) {
         }
 
         if (request.body.api_type === TEXTGEN_TYPES.OLLAMA) {
-            const keepAlive = getConfigValue('ollama.keepAlive', -1);
-            const numBatch = getConfigValue('ollama.batchSize', -1);
+            const keepAlive = Number(getConfigValue('ollama.keepAlive', -1, 'number'));
+            const numBatch = Number(getConfigValue('ollama.batchSize', -1, 'number'));
             if (numBatch > 0) {
                 request.body['num_batch'] = numBatch;
             }
@@ -438,6 +438,7 @@ ollama.post('/download', jsonParser, async function (request, response) {
 
         const name = request.body.name;
         const url = String(request.body.api_server).replace(/\/$/, '');
+        console.debug('Pulling Ollama model:', name);
 
         const fetchResponse = await fetch(`${url}/api/pull`, {
             method: 'POST',
@@ -453,6 +454,7 @@ ollama.post('/download', jsonParser, async function (request, response) {
             return response.status(fetchResponse.status).send({ error: true });
         }
 
+        console.debug('Ollama pull response:', await fetchResponse.json());
         return response.send({ ok: true });
     } catch (error) {
         console.error(error);
