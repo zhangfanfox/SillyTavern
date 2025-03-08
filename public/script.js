@@ -3287,7 +3287,7 @@ class StreamingProcessor {
             chat[messageId]['extra']['time_to_first_token'] = this.timeToFirstToken;
 
             // Update reasoning
-            await this.reasoningHandler.process(messageId, mesChanged);
+            await this.reasoningHandler.process(messageId, mesChanged, this.promptReasoning);
             processedText = chat[messageId]['mes'];
 
             // Token count update.
@@ -5953,7 +5953,7 @@ export function cleanUpMessage(getMessage, isImpersonate, isContinue, displayInc
         getMessage = trimToEndSentence(getMessage);
     }
 
-    if (power_user.trim_spaces) {
+    if (power_user.trim_spaces && !PromptReasoning.getLatestPrefix()) {
         getMessage = getMessage.trim();
     }
 
@@ -6147,12 +6147,16 @@ export function syncMesToSwipe(messageId = null) {
     }
 
     const targetMessageId = messageId ?? chat.length - 1;
-    if (chat.length > targetMessageId || targetMessageId < 0) {
+    if (targetMessageId >= chat.length || targetMessageId < 0) {
         console.warn(`[syncMesToSwipe] Invalid message ID: ${messageId}`);
         return false;
     }
 
     const targetMessage = chat[targetMessageId];
+
+    if (!targetMessage) {
+        return false;
+    }
 
     // No swipe data there yet, exit out
     if (typeof targetMessage.swipe_id !== 'number') {
