@@ -271,7 +271,7 @@ import { initSettingsSearch } from './scripts/setting-search.js';
 import { initBulkEdit } from './scripts/bulk-edit.js';
 import { deriveTemplatesFromChatTemplate } from './scripts/chat-templates.js';
 import { getContext } from './scripts/st-context.js';
-import { extractReasoningFromData, initReasoning, PromptReasoning, ReasoningHandler, removeReasoningFromString, updateReasoningUI } from './scripts/reasoning.js';
+import { extractReasoningFromData, initReasoning, parseReasoningInSwipes, PromptReasoning, ReasoningHandler, removeReasoningFromString, updateReasoningUI } from './scripts/reasoning.js';
 import { accountStorage } from './scripts/util/AccountStorage.js';
 
 // API OBJECT FOR EXTERNAL WIRING
@@ -3346,7 +3346,7 @@ class StreamingProcessor {
 
         if (Array.isArray(this.swipes) && this.swipes.length > 0) {
             const message = chat[messageId];
-            const swipeInfoExtra = structuredClone(message.extra);
+            const swipeInfoExtra = structuredClone(message.extra ?? {});
             delete swipeInfoExtra.token_count;
             delete swipeInfoExtra.reasoning;
             delete swipeInfoExtra.reasoning_duration;
@@ -3356,9 +3356,8 @@ class StreamingProcessor {
                 gen_finished: message.gen_finished,
                 extra: swipeInfoExtra,
             };
-            const swipeInfoArray = [];
-            swipeInfoArray.length = this.swipes.length;
-            swipeInfoArray.fill(swipeInfo);
+            const swipeInfoArray = Array(this.swipes.length).fill().map(() => structuredClone(swipeInfo));
+            parseReasoningInSwipes(this.swipes, swipeInfoArray, message.extra?.reasoning_duration);
             chat[messageId].swipes.push(...this.swipes);
             chat[messageId].swipe_info.push(...swipeInfoArray);
         }
@@ -6122,7 +6121,7 @@ export async function saveReply(type, getMessage, fromStreaming, title, swipes, 
     }
 
     if (Array.isArray(swipes) && swipes.length > 0) {
-        const swipeInfoExtra = structuredClone(item.extra);
+        const swipeInfoExtra = structuredClone(item.extra ?? {});
         delete swipeInfoExtra.token_count;
         delete swipeInfoExtra.reasoning;
         delete swipeInfoExtra.reasoning_duration;
@@ -6132,9 +6131,8 @@ export async function saveReply(type, getMessage, fromStreaming, title, swipes, 
             gen_finished: item.gen_finished,
             extra: swipeInfoExtra,
         };
-        const swipeInfoArray = [];
-        swipeInfoArray.length = swipes.length;
-        swipeInfoArray.fill(swipeInfo, 0, swipes.length);
+        const swipeInfoArray = Array(swipes.length).fill().map(() => structuredClone(swipeInfo));
+        parseReasoningInSwipes(swipes, swipeInfoArray, item.extra?.reasoning_duration);
         item.swipes.push(...swipes);
         item.swipe_info.push(...swipeInfoArray);
     }
