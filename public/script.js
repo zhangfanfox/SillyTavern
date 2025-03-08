@@ -6148,12 +6148,16 @@ export function syncMesToSwipe(messageId = null) {
     }
 
     const targetMessageId = messageId ?? chat.length - 1;
-    if (chat.length > targetMessageId || targetMessageId < 0) {
+    if (targetMessageId >= chat.length || targetMessageId < 0) {
         console.warn(`[syncMesToSwipe] Invalid message ID: ${messageId}`);
         return false;
     }
 
     const targetMessage = chat[targetMessageId];
+
+    if (!targetMessage) {
+        return false;
+    }
 
     // No swipe data there yet, exit out
     if (typeof targetMessage.swipe_id !== 'number') {
