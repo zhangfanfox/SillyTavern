@@ -8752,7 +8752,6 @@ function formatSwipeCounter(current, total) {
  * @param {object} params Additional parameters.
  * @param {string} [params.source] The source of the swipe event.
  * @param {boolean} [params.repeated] Is the swipe event repeated.
- * @returns
  */
 function swipe_left(_event, { source, repeated } = {}) {      // when we swipe left..but no generation.
     if (chat.length - 1 === Number(this_edit_mes_id)) {
@@ -8765,8 +8764,8 @@ function swipe_left(_event, { source, repeated } = {}) {      // when we swipe l
     // Make sure ad-hoc changes to extras are saved before swiping away
     syncMesToSwipe();
 
+    // If the user is holding down the key and we're at the first swipe, don't do anything
     if (source === 'keyboard' && repeated && chat[chat.length - 1].swipe_id === 0) {
-        // If the user is holding down the key and we're at the first swipe, don't do anything
         return;
     }
 
@@ -8895,8 +8894,14 @@ function swipe_left(_event, { source, repeated } = {}) {      // when we swipe l
     }
 }
 
-// when we click swipe right button
-const swipe_right = () => {
+/**
+ * Handles the swipe to the right event.
+ * @param {JQuery.Event} _event Event.
+ * @param {object} params Additional parameters.
+ * @param {string} [params.source] The source of the swipe event.
+ * @param {boolean} [params.repeated] Is the swipe event repeated.
+ */
+function swipe_right(_event, { source, repeated } = {}) {
     if (chat.length - 1 === Number(this_edit_mes_id)) {
         closeMessageEditor();
     }
@@ -8929,6 +8934,10 @@ const swipe_right = () => {
     if (chat.length === 1 && chat[0]['swipe_id'] !== undefined && chat[0]['swipe_id'] === chat[0]['swipes'].length - 1) {    // if swipe_right is called on the last alternate greeting, loop back around
         chat[0]['swipe_id'] = 0;
     } else {
+        // If the user is holding down the key and we're at the last swipe, don't do anything
+        if (source === 'keyboard' && repeated && chat[chat.length - 1].swipe_id === chat[chat.length - 1].swipes.length - 1) {
+            return;
+        }
         chat[chat.length - 1]['swipe_id']++;                                // make new slot in array
     }
     if (chat[chat.length - 1].extra) {
@@ -9077,7 +9086,7 @@ const swipe_right = () => {
             },
         });
     }
-};
+}
 
 export const CONNECT_API_MAP = {
     // Default APIs not contined inside text gen / chat gen
