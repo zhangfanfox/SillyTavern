@@ -8753,7 +8753,7 @@ function formatSwipeCounter(current, total) {
  * @param {string} [params.source] The source of the swipe event.
  * @param {boolean} [params.repeated] Is the swipe event repeated.
  */
-function swipe_left(_event, { source, repeated } = {}) {      // when we swipe left..but no generation.
+function swipe_left(_event, { source, repeated } = {}) {
     if (chat.length - 1 === Number(this_edit_mes_id)) {
         closeMessageEditor();
     }
