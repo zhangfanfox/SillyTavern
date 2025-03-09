@@ -7,7 +7,7 @@ import { ARGUMENT_TYPE, SlashCommandArgument, SlashCommandNamedArgument } from '
 import { enumIcons } from '../../slash-commands/SlashCommandCommonEnumsProvider.js';
 import { SlashCommandEnumValue, enumTypes } from '../../slash-commands/SlashCommandEnumValue.js';
 import { SlashCommandParser } from '../../slash-commands/SlashCommandParser.js';
-import { download, getFileText, getSortableDelay, regexFromString, uuidv4 } from '../../utils.js';
+import { download, getFileText, getSortableDelay, regexFromString, setInfoBlock, uuidv4 } from '../../utils.js';
 import { regex_placement, runRegexScript, substitute_find_regex } from './engine.js';
 import { t } from '../../i18n.js';
 import { accountStorage } from '../../util/AccountStorage.js';
@@ -313,18 +313,15 @@ async function onRegexEditorOpenClick(existingId, isScoped) {
  * @param {JQuery<HTMLElement>} editorHtml The editor HTML
  */
 function updateInfoBlock(editorHtml) {
-    const infoBlock = editorHtml.find('.info-block');
-    const infoBlockTextSpan = infoBlock.find('.info-block-text');
-    const infoBlockFlagsHint = infoBlock.find('.info-block-flags-hint');
+    const infoBlock = editorHtml.find('.info-block').get(0);
+    const infoBlockFlagsHint = editorHtml.find('#regex_info_block_flags_hint');
     const findRegex = String(editorHtml.find('.find_regex').val());
 
-    infoBlock.removeClass('error hint info warning');
     infoBlockFlagsHint.hide();
 
     // Clear the info block if the find regex is empty
     if (!findRegex) {
-        infoBlock.addClass('info');
-        infoBlockTextSpan.text(t`Find Regex is empty`);
+        setInfoBlock(infoBlock, t`Find Regex is empty`, 'info');
         return;
     }
 
@@ -338,12 +335,10 @@ function updateInfoBlock(editorHtml) {
         flagInfo.push(regex.flags.includes('g') ? t`Applies to all matches` : t`Applies to the first match`);
         flagInfo.push(regex.flags.includes('i') ? t`Case insensitive` : t`Case sensitive`);
 
-        infoBlock.addClass('hint');
-        infoBlockTextSpan.text(flagInfo.join('. '));
+        setInfoBlock(infoBlock, flagInfo.join('. '), 'hint');
         infoBlockFlagsHint.show();
     } catch (error) {
-        infoBlock.addClass('error');
-        infoBlockTextSpan.text(error.message);
+        setInfoBlock(infoBlock, error.message, 'error');
     }
 }
 
