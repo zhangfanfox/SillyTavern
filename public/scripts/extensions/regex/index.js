@@ -335,8 +335,6 @@ function updateInfoBlock(editorHtml) {
         }
 
         const flagInfo = [];
-        // Check flags
-
         flagInfo.push(regex.flags.includes('g') ? t`Applies to all matches` : t`Applies to the first match`);
         flagInfo.push(regex.flags.includes('i') ? t`Case insensitive` : t`Case sensitive`);
 
@@ -346,7 +344,6 @@ function updateInfoBlock(editorHtml) {
     } catch (error) {
         infoBlock.addClass('error');
         infoBlockTextSpan.text(error.message);
-        return;
     }
 }
 
