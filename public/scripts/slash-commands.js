@@ -1287,26 +1287,42 @@ export function initDefaultSlashCommands() {
         callback: inputCallback,
         returns: 'user input',
         namedArgumentList: [
-            new SlashCommandNamedArgument(
-                'default', 'default value of the input field', [ARGUMENT_TYPE.STRING], false, false, '"string"',
-            ),
-            new SlashCommandNamedArgument(
-                'large', 'show large input field', [ARGUMENT_TYPE.BOOLEAN], false, false, 'off', commonEnumProviders.boolean('onOff')(),
-            ),
-            new SlashCommandNamedArgument(
-                'wide', 'show wide input field', [ARGUMENT_TYPE.BOOLEAN], false, false, 'off', commonEnumProviders.boolean('onOff')(),
-            ),
-            new SlashCommandNamedArgument(
-                'okButton', 'text for the ok button', [ARGUMENT_TYPE.STRING], false,
-            ),
-            new SlashCommandNamedArgument(
-                'rows', 'number of rows for the input field', [ARGUMENT_TYPE.NUMBER], false,
-            ),
+            SlashCommandNamedArgument.fromProps({
+                name: 'default',
+                description: 'default value of the input field',
+                typeList: [ARGUMENT_TYPE.STRING],
+            }),
+            SlashCommandNamedArgument.fromProps({
+                name: 'large',
+                description: 'show large input field',
+                typeList: [ARGUMENT_TYPE.BOOLEAN],
+                defaultValue: 'off',
+                enumList: commonEnumProviders.boolean('onOff')(),
+            }),
+            SlashCommandNamedArgument.fromProps({
+                name: 'wide',
+                description: 'show wide input field',
+                typeList: [ARGUMENT_TYPE.BOOLEAN],
+                defaultValue: 'off',
+                enumList: commonEnumProviders.boolean('onOff')(),
+            }),
+            SlashCommandNamedArgument.fromProps({
+                name: 'okButton',
+                description: 'text for the ok button',
+                typeList: [ARGUMENT_TYPE.STRING],
+                defaultValue: 'Ok',
+            }),
+            SlashCommandNamedArgument.fromProps({
+                name: 'rows',
+                description: 'number of rows for the input field',
+                typeList: [ARGUMENT_TYPE.NUMBER],
+            }),
         ],
         unnamedArgumentList: [
-            new SlashCommandArgument(
-                'text to display', [ARGUMENT_TYPE.STRING], false,
-            ),
+            SlashCommandArgument.fromProps({
+                description: 'text to display',
+                typeList: [ARGUMENT_TYPE.STRING],
+            }),
         ],
         helpString: `
         <div>
