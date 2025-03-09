@@ -560,6 +560,7 @@ async function renderDetailsContent(detailsContent) {
         }, {});
         const template = $(await renderExtensionTemplateAsync(MODULE_NAME, 'edit', { name: profile.name, settings }));
         const newName = await callGenericPopup(template, POPUP_TYPE.INPUT, profile.name, {
+            rows: 2,
             customButtons: [{
                 text: t`Save and Update`,
                 classes: ['popup-button-ok'],
