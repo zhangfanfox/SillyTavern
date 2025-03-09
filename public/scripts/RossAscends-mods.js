@@ -1143,7 +1143,7 @@ export function initRossMods() {
                 $('#shadow_select_chat_popup').css('display') === 'none' &&
                 !isInputElementInFocus()
             ) {
-                $('.swipe_left:last').click();
+                $('.swipe_left:last').trigger('click', { source: 'keyboard', repeated: event.repeat });
                 return;
             }
         }

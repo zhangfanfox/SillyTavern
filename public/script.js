@@ -8746,17 +8746,29 @@ function formatSwipeCounter(current, total) {
     return `${current}\u200b/\u200b${total}`;
 }
 
-function swipe_left() {      // when we swipe left..but no generation.
+/**
+ * Handles the swipe to the left event.
+ * @param {JQuery.Event} _event Event.
+ * @param {object} params Additional parameters.
+ * @param {string} [params.source] The source of the swipe event.
+ * @param {boolean} [params.repeated] Is the swipe event repeated.
+ * @returns
+ */
+function swipe_left(_event, { source, repeated } = {}) {      // when we swipe left..but no generation.
     if (chat.length - 1 === Number(this_edit_mes_id)) {
         closeMessageEditor();
     }
-
     if (isStreamingEnabled() && streamingProcessor) {
         streamingProcessor.onStopStreaming();
     }
 
     // Make sure ad-hoc changes to extras are saved before swiping away
     syncMesToSwipe();
+
+    if (source === 'keyboard' && repeated && chat[chat.length - 1].swipe_id === 0) {
+        // If the user is holding down the key and we're at the first swipe, don't do anything
+        return;
+    }
 
     const swipe_duration = 120;
     const swipe_range = '700px';
