@@ -1,17 +1,25 @@
 # Detect and label pull requests that have merge conflicts
+
+# Label Conflicting Pull Requests
+# https://github.com/marketplace/actions/label-conflicting-pull-requests
+
 name: 🏗️ Check Merge Conflicts
 on:
+  # So that PRs touching the same files as the push are updated
   push:
-    branches:
-    - staging
+  # So that the `dirtyLabel` is removed if conflicts are resolve
+  # We recommend `pull_request_target` so that github secrets are available.
+  # In `pull_request` we wouldn't be able to change labels of fork PRs
+  pull_request_target:
+    types: [synchronize]
+
 jobs:
   check-conflicts:
-    if: github.repository == 'SillyTavern/SillyTavern'
     runs-on: ubuntu-latest
     steps:
-      - uses: mschilde/auto-label-merge-conflicts@master
+      - name: Check Merge Conflicts
+        uses: eps1lon/actions-label-merge-conflict@v3
         with:
-          CONFLICT_LABEL_NAME: "🚫 Merge Conflicts"
-          GITHUB_TOKEN: ${{ secrets.BOT_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}
-          MAX_RETRIES: 5
-          WAIT_MS: 5000
+          dirtyLabel: "🚫 Merge Conflicts"
+          repoToken: "${{ secrets.GITHUB_TOKEN }}"
+          commentOnDirty: "This pull request has conflicts. Please resolve them, otherwise it cannot be merged."
