@@ -71,7 +71,7 @@ export {
 export const MAX_CONTEXT_DEFAULT = 8192;
 export const MAX_RESPONSE_DEFAULT = 2048;
 const MAX_CONTEXT_UNLOCKED = 200 * 1024;
-const MAX_RESPONSE_UNLOCKED = 16 * 1024;
+const MAX_RESPONSE_UNLOCKED = 32 * 1024;
 const unlockedMaxContextStep = 512;
 const maxContextMin = 512;
 const maxContextStep = 64;
