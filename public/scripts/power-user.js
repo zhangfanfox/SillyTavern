@@ -492,7 +492,7 @@ function switchSwipeNumAllMessages() {
 
 var originalSliderValues = [];
 
-async function switchLabMode() {
+async function switchLabMode({ noReset = false } = {}) {
 
     /*     if (power_user.enableZenSliders && power_user.enableLabMode) {
             toastr.warning("Can't start Lab Mode while Zen Sliders are active")
@@ -522,12 +522,15 @@ async function switchLabMode() {
         $('#labModeWarning').removeClass('displayNone');
         //$("#advanced-ai-config-block input[type='range']").hide()
 
+        $('#amount_gen_counter').attr('min', '1')
+            .attr('max', '99999')
+            .attr('step', '1');
         $('#amount_gen').attr('min', '1')
             .attr('max', '99999')
             .attr('step', '1');
 
 
-    } else {
+    } else if (!noReset) {
         //re apply the original sliders values to each input
         originalSliderValues.forEach(function (slider) {
             $('#' + slider.id)
@@ -539,9 +542,8 @@ async function switchLabMode() {
         $('#advanced-ai-config-block input[type=\'range\']').show();
         $('#labModeWarning').addClass('displayNone');
 
-        $('#amount_gen').attr('min', '16')
-            .attr('max', '2048')
-            .attr('step', '1');
+        // To set the correct amount_gen back, we just call the function calculating it correctly
+        switchMaxContextSize();
     }
 }
 
@@ -1538,7 +1540,7 @@ async function loadPowerUserSettings(settings, data) {
     $('#prefer_character_prompt').prop('checked', power_user.prefer_character_prompt);
     $('#prefer_character_jailbreak').prop('checked', power_user.prefer_character_jailbreak);
     $('#enableZenSliders').prop('checked', power_user.enableZenSliders).trigger('input');
-    $('#enableLabMode').prop('checked', power_user.enableLabMode).trigger('input');
+    $('#enableLabMode').prop('checked', power_user.enableLabMode).trigger('input', { fromInit: true });
     $(`input[name="avatar_style"][value="${power_user.avatar_style}"]`).prop('checked', true);
     $(`#chat_display option[value=${power_user.chat_display}]`).attr('selected', true).trigger('change');
     $('#chat_width_slider').val(power_user.chat_width);
@@ -3577,7 +3579,7 @@ $(document).ready(() => {
         saveSettingsDebounced();
     });
 
-    $('#enableLabMode').on('input', function () {
+    $('#enableLabMode').on('input', function (event, { fromInit = false } = {}) {
         const value = !!$(this).prop('checked');
         if (power_user.enableZenSliders === true && value === true) {
             //disallow Lab Mode if ZenSliders are active
@@ -3587,7 +3589,7 @@ $(document).ready(() => {
         }
 
         power_user.enableLabMode = value;
-        switchLabMode();
+        switchLabMode({ noReset: fromInit });
         saveSettingsDebounced();
     });
 
