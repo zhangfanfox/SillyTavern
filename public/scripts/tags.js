@@ -1251,7 +1251,7 @@ function onCharacterCreateClick() {
 }
 
 function onGroupCreateClick() {
-    // Nothing to do here at the moment. Tags in group interface get automatically redrawn.
+    $('#groupTagList').empty();
 }
 
 export function applyTagsOnCharacterSelect(chid = null) {
