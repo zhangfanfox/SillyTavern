@@ -1,0 +1,69 @@
+name: 🎯 Pull Request Auto Manager
+
+on:
+  pull_request_target:
+    types: [opened, synchronize, reopened, edited, labeled, unlabeled]
+
+jobs:
+  check-merge-conflicts:
+    name: Check Merge Conflicts
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check Merge Conflicts
+        # Label Conflicting Pull Requests
+        # https://github.com/marketplace/actions/label-conflicting-pull-requests
+        uses: eps1lon/actions-label-merge-conflict@v3
+        with:
+          dirtyLabel: '🚫 Merge Conflicts'
+          repoToken: ${{ secrets.BOT_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}
+          commentOnDirty: "This pull request has conflicts. Please resolve them, otherwise it cannot be merged."
+
+  pr-size-labeler:
+    name: Label PR Size
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Label PR Size
+        # Pull Request Size Labeler
+        # https://github.com/marketplace/actions/pull-request-size-labeler
+        uses: codelytv/pr-size-labeler@v1
+        with:
+          GITHUB_TOKEN: ${{ secrets.BOT_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}
+          xs_label: 'PR - Small'
+          xs_max_size: '1'
+          s_label: 'PR - Small'
+          s_max_size: '100'
+          m_label: 'PR - Medium'
+          m_max_size: '500'
+          l_label: 'PR - Large'
+          l_max_size: '1000'
+          xl_label: 'PR - XL'
+          fail_if_xl: 'false'
+          message_if_xl: >
+            This PR exceeds the recommended size of 1000 lines.
+            Please ensure you are not addressing multiple issues in one PR.
+            Note this PR might be rejected due to its size.
+          github_api_url: 'https://api.github.com'
+          files_to_ignore: |
+            "package-lock.json"
+            "public/lib/*"
+
+  pr-auto-comments:
+    name: Post PR Comments Based on Labels
+    needs: [check-merge-conflicts, pr-size-labeler]
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        # Checkout
+        # https://github.com/marketplace/actions/checkout
+        uses: actions/checkout@v4
+
+      - name: Post PR Comments Based on Labels
+        # Label Commenter for PRs
+        # https://github.com/marketplace/actions/label-commenter
+        uses: peaceiris/actions-label-commenter@v1
+        with:
+          config_file: .github/pr-auto-comments.yml
+          github_token: ${{ secrets.BOT_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}

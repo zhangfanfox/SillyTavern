@@ -11,9 +11,6 @@ labels:
           Hello @{{ issue.user.login }} your ticket has been marked as invalid.
           Please ensure you follow the issue template, provide all requested info,
           and be sure to check the docs + previous issues prior to raising tickets.
-      pr:
-        body: Thank you @{{ pull_request.user.login }} for suggesting this. Please follow the pull request templates.
-        action: close
 
   - name: 👩‍💻 Good First Issue
     labeled:
@@ -38,7 +35,6 @@ labels:
         body: >
           Hello @{{ issue.user.login }}! It looks like all or part of this issue has now been implemented.
 
-  
   - name: ‼️ High Priority
     labeled:
       issue:
@@ -54,9 +50,4 @@ labels:
         lock_reason: spam
         body: >
            This issue has been identified as spam, and is now locked.
-           Users who repeatedly raise spam issues may be blocked or reported.
-          
-  - name: ⛔ Don't Merge
-    labeled:
-      pr:
-        body: This PR has been temporarily blocked from merging.
+           Users who repeatedly

@@ -1,0 +1,33 @@
+name: 🎯 Issues Auto Manager
+
+on:
+  issues:
+    types: [opened, edited, labeled, unlabeled]
+
+jobs:
+  manage-issues:
+    name: Manage Issues
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        # Checkout
+        # https://github.com/marketplace/actions/checkout
+        uses: actions/checkout@v4
+
+      - name: Auto-Label Issues
+        # Issue Labeler
+        # https://github.com/marketplace/actions/regex-issue-labeler
+        uses: github/issue-labeler@v3
+        with:
+          configuration-path: .github/issues-auto-labeler.yml
+          enable-versioned-regex: 0
+          repo-token: ${{ secrets.BOT_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}
+
+      - name: Post Issue Comments Based on Labels
+        # Label Commenter
+        # https://github.com/marketplace/actions/label-commenter
+        uses: peaceiris/actions-label-commenter@v1
+        with:
+          config_file: .github/issues-auto-comments.yml
+          github_token: ${{ secrets.BOT_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}
