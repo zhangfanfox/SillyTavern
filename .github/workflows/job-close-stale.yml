@@ -1,17 +1,18 @@
-name: 🎯 Close Stale Issues/PRs Job
+name: 🎯 Close Stale Issues/PRs Workflow
 
 on:
   workflow_dispatch:
   schedule:
     - cron: '0 0 * * *' # Runs every day at midnight UTC
+  issues:
+    types: [labeled, unlabeled, edited]
 
 jobs:
-  close-stale:
-    name: Close Stale Issues/PRs Job
+  mark-inactivity:
+    name: Mark Issues/PRs without Activity
     runs-on: ubuntu-latest
 
     steps:
-      # Comment on, then close issues that haven't been updated for ages
       - name: Mark Issues/PRs without Activity
         # Close Stale Issues and PRs
         # https://github.com/marketplace/actions/close-stale-issues
@@ -41,8 +42,13 @@ jobs:
           exempt-pr-labels: '📌 Keep Open'
           labels-to-add-when-unstale: '📌 Keep Open'
 
-      # Comment on, then close issues that required a response from the user, but didn't get one
-      - name: Mark Issues with Requested Response
+  await-user-response:
+    name: Mark Issues/PRs Awaiting User Response
+    runs-on: ubuntu-latest
+    needs: mark-inactivity
+
+    steps:
+      - name: Mark Issues/PRs Awaiting User Response
         # Close Stale Issues and PRs
         # https://github.com/marketplace/actions/close-stale-issues
         uses: actions/stale@v9
@@ -55,9 +61,37 @@ jobs:
           stale-issue-message: >
             Hi! Looks like additional info is required for this issue to be addressed.
             Don't forget to provide this within the next few days to keep your ticket open.
-          close-issue-message: 'Issue closed due to no response from user.'
+          close-issue-message: >
+            Issue closed due to no response from user.
           only-labels: '🚏 Awaiting User Response'
           labels-to-remove-when-unstale: '🚏 Awaiting User Response'
           stale-issue-label: '🛑 No Response'
           close-issue-label: '🕸️ Inactive'
+          exempt-issue-labels: '📌 Keep Open,🚧 Alternative Exists'
+
+  alternative-exists:
+    name: Mark Issues with Alternative Exists
+    runs-on: ubuntu-latest
+    needs: await-user-response
+
+    steps:
+      - name: Mark Issues with Alternative Exists
+        # Close Stale Issues and PRs
+        # https://github.com/marketplace/actions/close-stale-issues
+        uses: actions/stale@v9
+        with:
+          repo-token: ${{ secrets.BOT_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}
+          days-before-stale: 7
+          days-before-close: 7
+          operations-per-run: 30
+          remove-stale-when-updated: true
+          stale-issue-message: >
+            This issue was marked as having an alternative solution available. Did this help you out, and this issue can be closed?
+            Please confirm by commenting to keep it open, otherwise it will be closed in 7 days.
+          close-issue-message: >
+            Issue closed automatically due to no confirmation regarding the alternative solution.
+          only-labels: '🚧 Alternative Exists'
+          stale-issue-label: '🚏 Awaiting User Response'
+          close-issue-label: '🕸️ Inactive'
           exempt-issue-labels: '📌 Keep Open'
+          labels-to-add-when-unstale: '📌 Keep Open'
