@@ -1031,7 +1031,9 @@ function activateListOrder(members) {
  * @returns {number[]} List of character ids
  */
 function activatePooledOrder(members, lastMessage) {
-    const activatedMembers = [];
+    /** @type {string} */
+    let activatedMember = null;
+    /** @type {string[]} */
     const spokenSinceUser = [];
 
     for (const message of chat.slice().reverse()) {
@@ -1051,19 +1053,17 @@ function activatePooledOrder(members, lastMessage) {
     const haveNotSpoken = members.filter(x => !spokenSinceUser.includes(x));
 
     if (haveNotSpoken.length) {
-        activatedMembers.push(haveNotSpoken[Math.floor(Math.random() * haveNotSpoken.length)]);
+        activatedMember = haveNotSpoken[Math.floor(Math.random() * haveNotSpoken.length)];
     }
 
-    if (activatedMembers.length === 0) {
+    if (activatedMember === null) {
         const lastMessageAvatar = members.length > 1 && lastMessage && !lastMessage.is_user && lastMessage.original_avatar;
         const randomPool = lastMessageAvatar ? members.filter(x => x !== lastMessage.original_avatar) : members;
-        activatedMembers.push(randomPool[Math.floor(Math.random() * randomPool.length)]);
+        activatedMember = randomPool[Math.floor(Math.random() * randomPool.length)];
     }
 
-    const memberIds = activatedMembers
-        .map((x) => characters.findIndex((y) => y.avatar === x))
-        .filter((x) => x !== -1);
-    return memberIds;
+    const memberId = characters.findIndex(y => y.avatar === activatedMember);
+    return memberId !== -1 ? [memberId] : [];
 }
 
 function activateNaturalOrder(members, input, lastMessage, allowSelfResponses, isUserInput) {
