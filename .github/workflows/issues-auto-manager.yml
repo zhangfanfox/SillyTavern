@@ -15,7 +15,7 @@ jobs:
         # https://github.com/marketplace/actions/checkout
         uses: actions/checkout@v4
 
-      - name: Auto-Label Issues
+      - name: Auto-Label Issues (Based on Issue Content)
         # Issue Labeler
         # https://github.com/marketplace/actions/regex-issue-labeler
         uses: github/issue-labeler@v3

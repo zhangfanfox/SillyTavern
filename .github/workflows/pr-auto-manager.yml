@@ -2,7 +2,7 @@ name: 🎯 Pull Request Auto Manager
 
 on:
   pull_request_target:
-    types: [opened, synchronize, reopened, edited, labeled, unlabeled]
+    types: [opened, synchronize, reopened, edited, labeled, unlabeled, closed]
 
 jobs:
   check-merge-conflicts:
@@ -67,3 +67,40 @@ jobs:
         with:
           config_file: .github/pr-auto-comments.yml
           github_token: ${{ secrets.BOT_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}
+
+  update-linked-issues:
+    name: Update Issues on Staging Merge
+    runs-on: ubuntu-latest
+    if: github.event.pull_request.merged == true && github.event.pull_request.base.ref == 'staging'
+
+    steps:
+      - name: Extract Linked Issues
+        id: extract_issues
+        run: |
+            ISSUES=$(jq -r '.pull_request.body' "$GITHUB_EVENT_PATH" | grep -oiE '(close|closes|closed|fix|fixes|fixed|resolve|resolves|resolved) #([0-9]+)' | awk '{print $2}' | tr -d '#' | jq -R -s -c 'split("\n")[:-1]')
+            echo "issues=$ISSUES" >> $GITHUB_ENV
+
+      - name: Fetch Directly Linked Issues
+        id: fetch_linked_issues
+        run: |
+          PR_NUMBER=${{ github.event.pull_request.number }}
+          REPO=${{ github.repository }}
+          API_URL="https://api.github.com/repos/$REPO/pulls/$PR_NUMBER/issues"
+          ISSUES=$(curl -s -H "Authorization: token ${{ secrets.BOT_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}" "$API_URL" | jq -r '.[].number' | jq -R -s -c 'split("\n")[:-1]')
+          echo "linked_issues=$ISSUES" >> $GITHUB_ENV
+
+      - name: Merge Issue Lists
+        id: merge_issues
+        run: |
+          ISSUES=$(jq -c -n --argjson a "$issues" --argjson b "$linked_issues" '$a + $b | unique')
+          echo "final_issues=$ISSUES" >> $GITHUB_ENV
+
+      - name: Comment and Label Issues
+        env:
+          GH_TOKEN: ${{ secrets.BOT_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}
+        run: |
+          for ISSUE in $(echo $final_issues | jq -r '.[]'); do
+            echo "Updating issue #$ISSUE"
+            gh issue edit $ISSUE -R ${{ github.repository }} --add-label "✅ Done (staging)"
+            gh issue comment $ISSUE -R ${{ github.repository }} -b "This issue is now available in the \`staging\` branch for testing. Please verify and let us know any feedback!"
+          done
