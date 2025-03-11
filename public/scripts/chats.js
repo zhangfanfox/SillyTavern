@@ -1525,12 +1525,7 @@ jQuery(function () {
         textarea.value = String(contentEditable ? bro[0].innerText : bro.val());
         textarea.classList.add('height100p', 'wide100p', 'maximized_textarea');
         bro.hasClass('monospace') && textarea.classList.add('monospace');
-        if (power_user.enable_md_hotkeys && bro.hasClass('mdHotkeys')) {
-            textarea.classList.add('mdHotkeys');
-            const mdIcon = document.createElement('i');
-            mdIcon.classList.add('fa-brands', 'fa-markdown', 'mdhotkey_icon', 'alignSelfStart');
-            wrapper.appendChild(mdIcon);
-        }
+        bro.hasClass('mdHotkeys') && textarea.classList.add('mdHotkeys');
         textarea.addEventListener('input', function () {
             if (contentEditable) {
                 bro[0].innerText = textarea.value;
