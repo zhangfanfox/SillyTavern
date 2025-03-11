@@ -1506,7 +1506,7 @@ jQuery(function () {
         embedMessageFile(messageId, messageBlock);
     });
 
-    $(document).on('click', '.editor_maximize', function () {
+    $(document).on('click', '.editor_maximize', async function () {
         const broId = $(this).attr('data-for');
         const bro = $(`#${broId}`);
         const contentEditable = bro.is('[contenteditable]');
@@ -1525,6 +1525,12 @@ jQuery(function () {
         textarea.value = String(contentEditable ? bro[0].innerText : bro.val());
         textarea.classList.add('height100p', 'wide100p', 'maximized_textarea');
         bro.hasClass('monospace') && textarea.classList.add('monospace');
+        if (power_user.enable_md_hotkeys && bro.hasClass('mdHotkeys')) {
+            textarea.classList.add('mdHotkeys');
+            const mdIcon = document.createElement('i');
+            mdIcon.classList.add('fa-brands', 'fa-markdown', 'mdhotkey_icon', 'alignSelfStart');
+            wrapper.appendChild(mdIcon);
+        }
         textarea.addEventListener('input', function () {
             if (contentEditable) {
                 bro[0].innerText = textarea.value;
@@ -1565,7 +1571,7 @@ jQuery(function () {
             });
         }
 
-        callGenericPopup(wrapper, POPUP_TYPE.TEXT, '', { wide: true, large: true });
+        await callGenericPopup(wrapper, POPUP_TYPE.TEXT, '', { wide: true, large: true });
     });
 
     $(document).on('click', 'body.documentstyle .mes .mes_text', function () {
