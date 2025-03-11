@@ -1,13 +1,16 @@
-name: 🎯 Issues Close Handler
+name: 🎯 Issues/PRs On Close Handler
+
 on:
   issues:
     types: [closed]
   pull_request_target:
     types: [closed]
+
 jobs:
   remove-labels:
     name: Remove Pending Labels on Close
     runs-on: ubuntu-latest
+
     steps:
       - name: Remove Pending Labels on Close
         # 🤖 Issues Helper

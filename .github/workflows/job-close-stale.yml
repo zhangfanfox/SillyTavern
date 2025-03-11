@@ -1,4 +1,4 @@
-name: 🎯 Close Stale Issues
+name: 🎯 Close Stale Issues/PRs Job
 
 on:
   workflow_dispatch:
@@ -7,12 +7,12 @@ on:
 
 jobs:
   close-stale:
-    name: Close Stale Issues
+    name: Close Stale Issues/PRs Job
     runs-on: ubuntu-latest
 
     steps:
       # Comment on, then close issues that haven't been updated for ages
-      - name: Mark Issues without Activity
+      - name: Mark Issues/PRs without Activity
         # Close Stale Issues and PRs
         # https://github.com/marketplace/actions/close-stale-issues
         uses: actions/stale@v9
@@ -61,4 +61,3 @@ jobs:
           stale-issue-label: '🛑 No Response'
           close-issue-label: '🕸️ Inactive'
           exempt-issue-labels: '📌 Keep Open'
-          exempt-pr-labels: '📌 Keep Open'
