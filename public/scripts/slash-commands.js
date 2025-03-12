@@ -3055,10 +3055,6 @@ async function askCharacter(args, text) {
 }
 
 async function hideMessageCallback(args, value) {
-    if (!value) {
-        console.log('No range provided. Hiding the last message.');
-    }
-
     const range = value ? stringToRange(value, 0, chat.length - 1) : { start: chat.length - 1, end: chat.length - 1 };
 
     if (!range) {
@@ -3072,10 +3068,6 @@ async function hideMessageCallback(args, value) {
 }
 
 async function unhideMessageCallback(args, value) {
-    if (!value) {
-        console.log('No range provided. Unhiding the last message');
-    }
-
     const range = value ? stringToRange(value, 0, chat.length - 1) : { start: chat.length - 1, end: chat.length - 1 };
 
     if (!range) {

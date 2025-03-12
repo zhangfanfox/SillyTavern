@@ -3,7 +3,7 @@ import { extension_settings } from '../extensions.js';
 import { getGroupMembers, groups } from '../group-chats.js';
 import { power_user } from '../power-user.js';
 import { searchCharByName, getTagsList, tags, tag_map } from '../tags.js';
-import { onlyUnique } from '../utils.js';
+import { onlyUniqueJson, sortIgnoreCaseAndAccents } from '../utils.js';
 import { world_names } from '../world-info.js';
 import { SlashCommandClosure } from './SlashCommandClosure.js';
 import { SlashCommandEnumValue, enumTypes } from './SlashCommandEnumValue.js';
@@ -266,7 +266,14 @@ export const commonEnumProviders = {
      *
      * @returns {SlashCommandEnumValue[]}
      */
-    messageNames: () => chat.map((message) => message.name).filter(onlyUnique).sort(Intl.Collator().compare).map(name => new SlashCommandEnumValue(name)),
+    messageNames: () => chat
+        .map(message => ({
+            name: message.name,
+            icon: message.is_user ? enumIcons.user : enumIcons.assistant,
+        }))
+        .filter(onlyUniqueJson)
+        .sort((a, b) => sortIgnoreCaseAndAccents(a.name, b.name))
+        .map(name => new SlashCommandEnumValue(name.name, null, null, name.icon)),
 
     /**
      * All existing worlds / lorebooks
