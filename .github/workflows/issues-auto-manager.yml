@@ -5,16 +5,11 @@ on:
     types: [opened, edited, labeled, unlabeled]
 
 jobs:
-  manage-issues:
-    name: Manage Issues
+  issue-label-on-content:
+    name: Auto-Label Issues (Based on Issue Content)
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout Repository
-        # Checkout
-        # https://github.com/marketplace/actions/checkout
-        uses: actions/checkout@v4
-
       - name: Auto-Label Issues (Based on Issue Content)
         # Issue Labeler
         # https://github.com/marketplace/actions/regex-issue-labeler
@@ -23,6 +18,49 @@ jobs:
           configuration-path: .github/issues-auto-labels.yml
           enable-versioned-regex: 0
           repo-token: ${{ secrets.BOT_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}
+
+  issue-label-on-labels:
+    name: Auto-Label Issues (Based on Issue Labels)
+    runs-on: ubuntu-latest
+
+    steps:
+      # ✅ Auto-Add "👍 Approved / Nice-to-Have" when specific labels are added
+      - name: Add "👍 Approved / Nice-to-Have" for relevant labels
+        if: contains(fromJSON('["👩‍💻 Good First Issue", "🙏 Help Wanted", "🪲 Confirmed", "⚠️ High Priority", "❕ Medium Priority", "💤 Low Priority"]'), github.event.label.name)
+        uses: actions-cool/issues-helper@v3
+        with:
+          actions: 'add-labels'
+          token: ${{ secrets.BOT_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}
+          labels: '👍 Approved / Nice-to-Have'
+
+      # ❌ Remove "🧑‍💻 In Progress" when specific labels are added
+      - name: Remove "🧑‍💻 In Progress" when PR is marked done or stale
+        if: contains(fromJSON('["✅ Done", "✅ Done (staging)", "⚰️ Stale", "❌ wontfix"]'), github.event.label.name)
+        uses: actions-cool/issues-helper@v3
+        with:
+          actions: 'remove-labels'
+          token: ${{ secrets.BOT_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}
+          labels: '🧑‍💻 In Progress'
+
+      # ❌ Remove "🤔 Unsure" and "🤔 Under Consideration" when "❌ wontfix" is added
+      - name: Remove "🤔 Unsure" and "🤔 Under Consideration" when "❌ wontfix" is added
+        if: github.event.label.name == '❌ wontfix'
+        uses: actions-cool/issues-helper@v3
+        with:
+          actions: 'remove-labels'
+          token: ${{ secrets.BOT_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}
+          labels: '🤔 Unsure,🤔 Under Consideration'
+
+  issue-auto-comments:
+    name: Post Issue Comments Based on Labels
+    needs: [issue-label-on-content, issue-label-on-labels]
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        # Checkout
+        # https://github.com/marketplace/actions/checkout
+        uses: actions/checkout@v4
 
       - name: Post Issue Comments Based on Labels
         # Label Commenter
