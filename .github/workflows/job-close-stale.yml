@@ -4,8 +4,9 @@ on:
   workflow_dispatch:
   schedule:
     - cron: '0 0 * * *' # Runs every day at midnight UTC
-  issues:
-    types: [labeled, unlabeled, edited]
+  issue_comment:
+    types: [created]
+
 
 jobs:
   mark-inactivity:
