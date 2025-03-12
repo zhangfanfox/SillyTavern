@@ -1015,6 +1015,10 @@ export function splitRecursive(input, length, delimiters = ['\n\n', '\n', ' ', '
     return result;
 }
 
+export function splitSentences(input, length) {
+    var pattRegex = new RegExp(`^[\\s\\S]{${Math.floor(length / 2)},${length}}[.!?,]{1}|^[\\s\\S]{1,${length}}$|^[\\s\\S]{1,${length}}`);
+}
+
 /**
  * Checks if a string is a valid data URL.
  * @param {string} str The string to check.
