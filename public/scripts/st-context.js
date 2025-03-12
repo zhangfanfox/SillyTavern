@@ -79,7 +79,7 @@ import { timestampToMoment, uuidv4 } from './utils.js';
 import { getGlobalVariable, getLocalVariable, setGlobalVariable, setLocalVariable } from './variables.js';
 import { convertCharacterBook, loadWorldInfo, saveWorldInfo, updateWorldInfoList } from './world-info.js';
 import { ChatCompletionService, TextCompletionService } from './custom-request.js';
-import { updateReasoningUI } from './reasoning.js';
+import { updateReasoningUI, parseReasoningFromString } from './reasoning.js';
 
 export function getContext() {
     return {
@@ -213,6 +213,7 @@ export function getContext() {
         ChatCompletionService,
         TextCompletionService,
         updateReasoningUI,
+        parseReasoningFromString,
         unshallowCharacter,
         unshallowGroupMembers,
     };
