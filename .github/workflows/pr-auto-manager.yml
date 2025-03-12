@@ -20,7 +20,7 @@ jobs:
           commentOnDirty: "This pull request has conflicts. Please resolve them, otherwise it cannot be merged."
 
   pr-size-labeler:
-    name: Label PR Size
+    name: Apply Label for PR Size
     runs-on: ubuntu-latest
 
     steps:
@@ -48,6 +48,30 @@ jobs:
           files_to_ignore: |
             "package-lock.json"
             "public/lib/*"
+
+  label-release-prs:
+    name: Label PRs Targeting Release Branch
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Label PRs Targeting Release Branch
+        if: github.base_ref == 'release'
+        run: |
+          gh pr edit ${{ github.event.pull_request.number }} --add-label "❗ Against Release Branch"
+        env:
+          GITHUB_TOKEN: ${{ secrets.BOT_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}
+
+  apply-file-based-labels:
+    name: Apply Labels Based on Changed Files
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Apply Labels Based on Changed Files
+        # Pull Request Labeler
+        # https://github.com/marketplace/actions/labeler
+        uses: actions/labeler@v5
+        with:
+          repo-token: ${{ secrets.BOT_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}
 
   pr-auto-comments:
     name: Post PR Comments Based on Labels

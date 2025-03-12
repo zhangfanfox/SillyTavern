@@ -20,7 +20,7 @@ jobs:
         # https://github.com/marketplace/actions/regex-issue-labeler
         uses: github/issue-labeler@v3
         with:
-          configuration-path: .github/issues-auto-labeler.yml
+          configuration-path: .github/issues-auto-labels.yml
           enable-versioned-regex: 0
           repo-token: ${{ secrets.BOT_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}
 
