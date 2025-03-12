@@ -1,5 +1,5 @@
 comment:
-  footer: |
+  footer: >
     ---
     > I am a bot, and this is an automated message 🤖
 labels:
@@ -8,7 +8,7 @@ labels:
       issue:
         action: close
         body: >
-          Hello @{{ issue.user.login }} your ticket has been marked as invalid.
+          Hello @{{ issue.user.login }}. Your ticket has been marked as invalid.
           Please ensure you follow the issue template, provide all requested info,
           and be sure to check the docs + previous issues prior to raising tickets.
 
@@ -16,31 +16,42 @@ labels:
     labeled:
       issue:
         body: >
-          This issue has been marked as a good first issue for first-time contributors to implement!
-          This is a great way to support the project, while also improving your skills, you'll also be credited as a contributor once your PR is merged.
-          If you're new to SillyTavern [here are a collection of resources](https://docs.sillytavern.app/)
-          If you need any support at all, feel free to reach out via [Discord](https://discord.gg/sillytavern).
+          This issue has been marked as a good first issue for contributors to implement!
+          This is a great way to support the project. While also improving your skills, you'll also be credited as a contributor once your PR is merged.
+          If you're new to SillyTavern [here is the official documentation](https://docs.sillytavern.app/). The official contribution guide can be found [here](https://github.com/SillyTavern/SillyTavern/blob/release/CONTRIBUTING.md).
+          If you need any support at all, feel free to reach out via [Discord](https://discord.gg/sillytavern), or let us know in this issue or via [discussions](https://github.com/SillyTavern/SillyTavern/discussions).
 
   - name: ❌ wontfix
     labeled:
       issue:
         action: close
         body: >
-          This ticked has been marked as 'wontfix', which usually means it is out-of-scope, or not feasible at this time.
-          You can still fork the project and make the changes yourself.
+          This ticket has been marked as 'wontfix', which usually means it is out-of-scope, or not feasible at this time.
+          IF you have any questions about this, feel free to reach out.
 
-  - name: ✅ Fixed
+  - name: ✅ Done (staging)
     labeled:
       issue:
         body: >
-          Hello @{{ issue.user.login }}! It looks like all or part of this issue has now been implemented.
+          It looks like all or part of this issue has now been implemented as part of the `staging` branch.
+          If you currently are on the `release` branch, you can switch to `staging` to test this right away.
+
+          Note that `staging` is considered less stable than the official releases. To switch, follow existing instructions,
+          or simply enter the following command: `git switch staging`
+
+  - name: ✅ Done
+    labeled:
+      issue:
+        body: >
+          It looks like all or part of this issue has now been implemented as part of the `latest` release.
 
   - name: ‼️ High Priority
     labeled:
       issue:
         body: >
-          This ticket has been marked as high priority, and has been bumped to the top of the priority list.
-          You should expect an implementation to be pushed out soon. Thank you for your patience.
+            This issue has been marked as high priority, indicating that it is important to the maintainers and the community.
+            While we cannot guarantee an immediate fix or provide an exact timeline, please rest assured that it is on our radar and will be addressed whenever possible.
+            Thank you for your patience and understanding.
 
   - name: 💀 Spam
     labeled:
@@ -49,5 +60,5 @@ labels:
         locking: lock
         lock_reason: spam
         body: >
-           This issue has been identified as spam, and is now locked.
-           Users who repeatedly
+          This issue has been identified as spam, and is now locked.
+          Please refrain from posting spam in the future, as it disrupts the community and wastes valuable time.

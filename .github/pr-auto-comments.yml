@@ -1,15 +1,39 @@
 comment:
-  footer: |
+  footer: >
     ---
     > I am a bot, and this is an automated message 🤖
 labels:
   - name: ✖️ Invalid
     labeled:
       pr:
-        body: Thank you @{{ pull_request.user.login }} for suggesting this. Please follow the pull request templates.
         action: close
+        body: >
+          Thank you @{{ pull_request.user.login }} for contributing to this repository.
+          Your Pull Request has been marked as invalid.
+
+          Please ensure you follow the pull request template, provide all relevant info,
+          and target the correct branch. `staging` is the default target branch, `release` should only be targeted for important hotfixes.
+
+          If you have any questions, feel free to reach out.
 
   - name: ⛔ Don't Merge
     labeled:
       pr:
-        body: This PR has been temporarily blocked from merging.
+        body: >
+          This PR has been temporarily blocked from merging.
+
+  - name: 💥💣 Breaking Changes
+    labeled:
+      pr:
+        body: >
+          This PR is marked as containing one or more breaking changes.
+
+          Please make sure that those are documented accordingly and steps to inform users at release are prepared.
+
+  - name: ⛔ Waiting For External/Upstream
+    labeled:
+      pr:
+        body: >
+            This PR is awaiting external or upstream changes or approval.
+            It can only be merged once those changes have been implemented and approved.
+            Please inform us of any progress on the upstream changes or approval.
