@@ -149,9 +149,7 @@ export function getContext() {
         unregisterFunctionTool: ToolManager.unregisterFunctionTool.bind(ToolManager),
         isToolCallingSupported: ToolManager.isToolCallingSupported.bind(ToolManager),
         canPerformToolCalls: ToolManager.canPerformToolCalls.bind(ToolManager),
-        registerFunctionToolsOpenAI: ToolManager.registerFunctionToolsOpenAI.bind(ToolManager),
-        invokeFunctionTools: ToolManager.invokeFunctionTools.bind(ToolManager),
-        saveFunctionToolInvocations: ToolManager.saveFunctionToolInvocations.bind(ToolManager),
+        ToolManager,
         registerDebugFunction,
         /** @deprecated Use renderExtensionTemplateAsync instead. */
         renderExtensionTemplate,
