@@ -57,6 +57,7 @@ import {
     getSortableDelay,
     getStringHash,
     isDataURL,
+    isValidUrl,
     parseJsonFile,
     resetScrollHeight,
     stringFormat,
@@ -3487,6 +3488,12 @@ async function getStatusOpen() {
     if (noValidateSources.includes(oai_settings.chat_completion_source)) {
         let status = t`Key saved; press \"Test Message\" to verify.`;
         setOnlineStatus(status);
+        return resultCheckStatus();
+    }
+
+    if (oai_settings.chat_completion_source === chat_completion_sources.CUSTOM && !isValidUrl(oai_settings.custom_url)) {
+        console.debug('Invalid endpoint URL of Custom OpenAI API:', oai_settings.custom_url);
+        setOnlineStatus('no_connection');
         return resultCheckStatus();
     }
 
