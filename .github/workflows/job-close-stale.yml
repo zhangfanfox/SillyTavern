@@ -121,4 +121,5 @@ jobs:
         with:
           actions: 'remove-labels'
           token: ${{ secrets.BOT_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}
+          issue-number: ${{ github.event.issue.number || github.event.pull_request.number }}
           labels: '⚰️ Stale,🕸️ Inactive,🚏 Awaiting User Response,🛑 No Response'
