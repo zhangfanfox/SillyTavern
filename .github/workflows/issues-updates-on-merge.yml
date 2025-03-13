@@ -29,11 +29,13 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.BOT_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}
         run: |
-          for ISSUE in $(echo $issues | jq -r '.[]'); do
-            echo "Updating issue #$ISSUE"
+            for ISSUE in $(echo $issues | jq -r '.[]'); do
             if [ "${{ github.ref }}" == "refs/heads/staging" ]; then
-              gh issue edit $ISSUE -R ${{ github.repository }} --add-label "✅ Done (staging)"
+              LABEL="✅ Done (staging)"
+              gh issue edit $ISSUE -R ${{ github.repository }} --add-label "$LABEL"
             elif [ "${{ github.ref }}" == "refs/heads/release" ]; then
-              gh issue edit $ISSUE -R ${{ github.repository }} --add-label "✅ Done"
+              LABEL="✅ Done"
+              gh issue edit $ISSUE -R ${{ github.repository }} --add-label "$LABEL"
             fi
-          done
+            echo "Added label '$LABEL' to issue #$ISSUE"
+            done

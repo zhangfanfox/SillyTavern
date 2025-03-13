@@ -177,6 +177,6 @@ jobs:
           GH_TOKEN: ${{ secrets.BOT_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}
         run: |
           for ISSUE in $(echo $final_issues | jq -r '.[]'); do
-            echo "Updating issue #$ISSUE"
             gh issue edit $ISSUE -R ${{ github.repository }} --add-label "✅ Done (staging)"
+            echo "Added label '✅ Done (staging)' to issue #$ISSUE"
           done
