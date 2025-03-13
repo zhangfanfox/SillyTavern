@@ -40,13 +40,17 @@ jobs:
     if: github.event.action == 'opened' || (github.event.action == 'synchronize' && (github.event.changes.base || github.event.changes.head))
 
     steps:
+      - name: Checkout Repository
+        # Checkout
+        # https://github.com/marketplace/actions/checkout
+        uses: actions/checkout@v4
+
       - name: Apply Labels Based on Branch Name and Target Branch
         # Pull Request Labeler
         # https://github.com/marketplace/actions/labeler
         uses: actions/labeler@v5
         with:
           configuration-path: .github/pr-auto-labels-by-branch.yml
-          sync-labels: true # Remove labels when they are not relevant anymore
           repo-token: ${{ secrets.BOT_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}
 
   label-by-files:
@@ -54,13 +58,17 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      - name: Checkout Repository
+        # Checkout
+        # https://github.com/marketplace/actions/checkout
+        uses: actions/checkout@v4
+
       - name: Apply Labels Based on Changed Files
         # Pull Request Labeler
         # https://github.com/marketplace/actions/labeler
         uses: actions/labeler@v5
         with:
           configuration-path: .github/pr-auto-labels-by-files.yml
-          sync-labels: true # Remove labels when they are not relevant anymore
           repo-token: ${{ secrets.BOT_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}
 
   remove-stale-label:

@@ -13,6 +13,11 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      - name: Checkout Repository
+        # Checkout
+        # https://github.com/marketplace/actions/checkout
+        uses: actions/checkout@v4
+
       - name: Auto-Label Issues (Based on Issue Content)
         # only auto label based on issue content once, on open (to prevent re-labeling removed labels)
         if: github.event.action == 'opened'
