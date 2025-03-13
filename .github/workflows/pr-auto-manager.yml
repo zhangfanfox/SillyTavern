@@ -17,7 +17,8 @@ jobs:
         with:
           dirtyLabel: '🚫 Merge Conflicts'
           repoToken: ${{ secrets.BOT_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}
-          commentOnDirty: "This pull request has conflicts. Please resolve them, otherwise it cannot be merged."
+          commentOnDirty: >
+            ⚠️ This PR has conflicts that need to be resolved before it can be merged.
 
   pr-size-labeler:
     name: Apply Label for PR Size
@@ -41,9 +42,9 @@ jobs:
           xl_label: 'PR - XL'
           fail_if_xl: 'false'
           message_if_xl: >
-            This PR exceeds the recommended size of 1000 lines.
-            Please ensure you are not addressing multiple issues in one PR.
-            Note this PR might be rejected due to its size.
+            ⚠️ This PR is over 1000 lines, which is larger than recommended.
+
+            Please make sure that it only addresses a single issue - PRs this large are hard to test and may be rejected.
           github_api_url: 'https://api.github.com'
           files_to_ignore: |
             "package-lock.json"
@@ -168,5 +169,4 @@ jobs:
           for ISSUE in $(echo $final_issues | jq -r '.[]'); do
             echo "Updating issue #$ISSUE"
             gh issue edit $ISSUE -R ${{ github.repository }} --add-label "✅ Done (staging)"
-            gh issue comment $ISSUE -R ${{ github.repository }} -b "This issue is now available in the \`staging\` branch for testing. Please verify and let us know any feedback!"
           done

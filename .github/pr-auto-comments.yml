@@ -1,39 +1,43 @@
-comment:
-  footer: >
-    ---
-    > I am a bot, and this is an automated message 🤖
 labels:
   - name: ✖️ Invalid
     labeled:
       pr:
         action: close
         body: >
-          Thank you @{{ pull_request.user.login }} for contributing to this repository.
-          Your Pull Request has been marked as invalid.
+          Hey @{{ pull_request.user.login }}, thanks for your contribution!
+          Unfortunately, this PR has been marked as invalid.
 
-          Please ensure you follow the pull request template, provide all relevant info,
-          and target the correct branch. `staging` is the default target branch, `release` should only be targeted for important hotfixes.
+          Please check that you've followed the PR template, included all relevant details, and are targeting the correct branch (`staging` for regular contributions, `release` only for hotfixes).
 
-          If you have any questions, feel free to reach out.
+          If you need help, feel free to ask!
 
   - name: ⛔ Don't Merge
     labeled:
       pr:
         body: >
-          This PR has been temporarily blocked from merging.
+          🚨 This PR has been temporarily blocked from merging.
 
   - name: 💥💣 Breaking Changes
     labeled:
       pr:
         body: >
-          This PR is marked as containing one or more breaking changes.
+          ⚠️ Heads up! This PR introduces breaking changes.
 
-          Please make sure that those are documented accordingly and steps to inform users at release are prepared.
+          Make sure these changes are well-documented and that users will be properly informed when this is released.
 
   - name: ⛔ Waiting For External/Upstream
     labeled:
       pr:
         body: >
-            This PR is awaiting external or upstream changes or approval.
+            ⛔ This PR is awaiting external or upstream changes or approval.
             It can only be merged once those changes have been implemented and approved.
+
             Please inform us of any progress on the upstream changes or approval.
+
+  - name: 🔬 Needs Testing
+    labeled:
+      pr:
+        body: >
+          🔬 This PR needs testing!
+          Any contributor can test and leave reviews, so feel free to help us out!
+
