@@ -20,7 +20,7 @@ jobs:
           commentOnDirty: >
             ⚠️ This PR has conflicts that need to be resolved before it can be merged.
 
-  pr-size-labeler:
+  label-by-size:
     name: Apply Label for PR Size
     runs-on: ubuntu-latest
 
@@ -50,19 +50,22 @@ jobs:
             "package-lock.json"
             "public/lib/*"
 
-  label-release-prs:
-    name: Label PRs Targeting Release Branch
+  label-by-branches:
+    name: Apply Labels Based on Branch Name and Target Branch
     runs-on: ubuntu-latest
+    # Only label once when PR is created or branches are changed, to allow manual label removal
+    if: github.event.action == 'opened' || (github.event.action == 'synchronize' && (github.event.changes.base || github.event.changes.head))
 
     steps:
-      - name: Label PRs Targeting Release Branch
-        if: github.base_ref == 'release'
-        run: |
-          gh pr edit ${{ github.event.pull_request.number }} --add-label "❗ Against Release Branch"
-        env:
-          GITHUB_TOKEN: ${{ secrets.BOT_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}
+      - name: Apply Labels Based on Branch Name and Target Branch
+        # Pull Request Labeler
+        # https://github.com/marketplace/actions/labeler
+        uses: actions/labeler@v5
+        with:
+          configuration-path: .github/pr-auto-labels-by-branch.yml
+          repo-token: ${{ secrets.BOT_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}
 
-  apply-file-based-labels:
+  label-by-files:
     name: Apply Labels Based on Changed Files
     runs-on: ubuntu-latest
 
@@ -72,11 +75,12 @@ jobs:
         # https://github.com/marketplace/actions/labeler
         uses: actions/labeler@v5
         with:
+          configuration-path: .github/pr-auto-labels-by-files.yml
           repo-token: ${{ secrets.BOT_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}
 
   check-merge-blocking-labels:
     name: Check Merge Blocking Labels
-    needs: [check-merge-conflicts, pr-size-labeler, label-release-prs, apply-file-based-labels]
+    needs: [check-merge-conflicts, label-by-size, label-by-branches, label-by-files]
     runs-on: ubuntu-latest
 
     steps:
@@ -89,6 +93,7 @@ jobs:
           script: |
             const prLabels = context.payload.pull_request.labels.map(label => label.name);
             const blockingLabels = [
+              "🚫 Merge Conflicts",
               "⛔ Don't Merge",
               "🔨 Needs Work",
               "🔬 Needs Testing",
@@ -116,9 +121,9 @@ jobs:
               console.log("No merge-blocking labels found.");
             }
 
-  pr-auto-comments:
+  write-auto-comments:
     name: Post PR Comments Based on Labels
-    needs: [check-merge-conflicts, pr-size-labeler, label-release-prs, apply-file-based-labels]
+    needs: [check-merge-conflicts, label-by-size, label-by-branches, label-by-files]
     runs-on: ubuntu-latest
 
     steps:
@@ -162,7 +167,8 @@ jobs:
           ISSUES=$(jq -c -n --argjson a "$issues" --argjson b "$linked_issues" '$a + $b | unique')
           echo "final_issues=$ISSUES" >> $GITHUB_ENV
 
-      - name: Comment and Label Issues
+      - name: Label Linked Issues
+        id: label_linked_issues
         env:
           GH_TOKEN: ${{ secrets.BOT_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}
         run: |
