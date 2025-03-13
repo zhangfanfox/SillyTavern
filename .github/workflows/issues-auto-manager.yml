@@ -11,6 +11,9 @@ jobs:
 
     steps:
       - name: Auto-Label Issues (Based on Issue Content)
+        # only auto label based on issue content once, on open (to prevent re-labeling removed labels)
+        if: github.event.action == 'opened'
+
         # Issue Labeler
         # https://github.com/marketplace/actions/regex-issue-labeler
         uses: github/issue-labeler@v3

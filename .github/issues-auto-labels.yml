@@ -12,3 +12,9 @@
 
 🐧 Linux:
     - '(🐧 Linux)'
+
+🦊 Firefox:
+    - '(firefox|mozilla)'
+
+📱 Mobile:
+    - '(iphone|ios|android|📱 Termux)'
