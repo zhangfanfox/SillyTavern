@@ -33,7 +33,7 @@ jobs:
 
             if (maintainers.includes(username)) {
               core.info(`User ${username} is a maintainer. Adding "Maintainer" label to issue/PR #${issue_number}`);
-              await github.issues.addLabels({
+              await github.rest.issues.addLabels({
                 owner,
                 repo,
                 issue_number,
