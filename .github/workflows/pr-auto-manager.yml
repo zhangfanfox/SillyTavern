@@ -43,10 +43,6 @@ jobs:
           l_max_size: '1000'
           xl_label: '🟥 ⬤⬤⬤⬤⬤'
           fail_if_xl: 'false'
-          message_if_xl: >
-            ⚠️ This PR is over 1000 lines, which is larger than recommended.
-
-            Please make sure that it only addresses a single issue - PRs this large are hard to test and may be rejected.
           github_api_url: 'https://api.github.com'
           files_to_ignore: |
             "package-lock.json"
