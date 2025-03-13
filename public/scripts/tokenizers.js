@@ -637,7 +637,7 @@ export function getTokenizerModel() {
             return qwen2Tokenizer;
         }
         else if (model?.architecture?.tokenizer === 'Cohere') {
-            if (oai_settings.openrouter_model.includes('command-a')) {
+            if (model?.id && model?.id.includes('command-a')) {
                 return commandATokenizer;
             }
             return commandRTokenizer;
