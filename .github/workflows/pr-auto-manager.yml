@@ -46,6 +46,7 @@ jobs:
         uses: actions/labeler@v5
         with:
           configuration-path: .github/pr-auto-labels-by-branch.yml
+          sync-labels: true # Remove labels when they are not relevant anymore
           repo-token: ${{ secrets.BOT_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}
 
   label-by-files:
@@ -59,6 +60,7 @@ jobs:
         uses: actions/labeler@v5
         with:
           configuration-path: .github/pr-auto-labels-by-files.yml
+          sync-labels: true # Remove labels when they are not relevant anymore
           repo-token: ${{ secrets.BOT_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}
 
   remove-stale-label:
