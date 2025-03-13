@@ -1,17 +1,24 @@
 name: 🎯 Close Stale Issues/PRs Workflow
 
 on:
+  # Run the workflow every day
   workflow_dispatch:
   schedule:
     - cron: '0 0 * * *' # Runs every day at midnight UTC
+  # Re also listen to comment created events or new PR pushes, to remove stale labels right away
   issue_comment:
     types: [created]
-
+  pull_request_review_comment:
+    types: [created]
+  pull_request:
+    types: [synchronize]
 
 jobs:
   mark-inactivity:
     name: Mark Issues/PRs without Activity
     runs-on: ubuntu-latest
+    # Only run this on the actual scheduled workflow
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
 
     steps:
       - name: Mark Issues/PRs without Activity
@@ -41,12 +48,13 @@ jobs:
           close-pr-label: '🕸️ Inactive'
           exempt-issue-labels: '📌 Keep Open'
           exempt-pr-labels: '📌 Keep Open'
-          labels-to-add-when-unstale: '📌 Keep Open'
 
   await-user-response:
     name: Mark Issues/PRs Awaiting User Response
     runs-on: ubuntu-latest
     needs: mark-inactivity
+    # Only run this on the actual scheduled workflow
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
 
     steps:
       - name: Mark Issues/PRs Awaiting User Response
@@ -74,6 +82,8 @@ jobs:
     name: Mark Issues with Alternative Exists
     runs-on: ubuntu-latest
     needs: await-user-response
+    # Only run this on the actual scheduled workflow
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
 
     steps:
       - name: Mark Issues with Alternative Exists
@@ -96,4 +106,19 @@ jobs:
           stale-issue-label: '🚏 Awaiting User Response'
           close-issue-label: '🕸️ Inactive'
           exempt-issue-labels: '📌 Keep Open'
-          labels-to-add-when-unstale: '📌 Keep Open'
+
+  remove-stale-label:
+    name: Remove Stale Label on Comment
+    runs-on: ubuntu-latest
+    # Only run this on new comments or PR commits, to automatically remove the stale label
+    if: (github.event_name == 'issue_comment' || github.event_name == 'pull_request_review_comment' || github.event_name == 'pull_request') && github.actor != 'github-actions[bot]'
+
+    steps:
+      - name: Remove Stale Label
+        # 🤖 Issues Helper
+        # https://github.com/marketplace/actions/issues-helper
+        uses: actions-cool/issues-helper@v3
+        with:
+          actions: 'remove-labels'
+          token: ${{ secrets.BOT_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}
+          labels: '⚰️ Stale,🕸️ Inactive,🚏 Awaiting User Response,🛑 No Response'
