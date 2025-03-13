@@ -31,15 +31,15 @@ jobs:
         uses: codelytv/pr-size-labeler@v1
         with:
           GITHUB_TOKEN: ${{ secrets.BOT_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}
-          xs_label: 'PR - Small'
-          xs_max_size: '1'
-          s_label: 'PR - Small'
+          xs_label: '🟩 ⬤○○○○'
+          xs_max_size: '20'
+          s_label: '🟩 ⬤⬤○○○'
           s_max_size: '100'
-          m_label: 'PR - Medium'
+          m_label: '🟨 ⬤⬤⬤○○'
           m_max_size: '500'
-          l_label: 'PR - Large'
+          l_label: '🟧 ⬤⬤⬤⬤○'
           l_max_size: '1000'
-          xl_label: 'PR - XL'
+          xl_label: '🟥 ⬤⬤⬤⬤⬤'
           fail_if_xl: 'false'
           message_if_xl: >
             ⚠️ This PR is over 1000 lines, which is larger than recommended.

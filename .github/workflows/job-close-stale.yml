@@ -76,7 +76,7 @@ jobs:
           labels-to-remove-when-unstale: '🚏 Awaiting User Response'
           stale-issue-label: '🛑 No Response'
           close-issue-label: '🕸️ Inactive'
-          exempt-issue-labels: '📌 Keep Open,🚧 Alternative Exists'
+          exempt-issue-labels: '🚧 Alternative Exists'
 
   alternative-exists:
     name: Mark Issues with Alternative Exists

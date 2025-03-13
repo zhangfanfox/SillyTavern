@@ -5,6 +5,7 @@
 - changed-files:
   - any-glob-to-any-file:
     - "src/**"
+    - "default/config.yaml"
     - "server.js"
     - "plugins.js"
     - "recover.js"
@@ -13,6 +14,11 @@
     - "start.sh"
     - "UpdateAndStart.bat"
     - "UpdateForkAndStart.bat"
+
+⚙️ config.yaml:
+- changed-files:
+  - any-glob-to-any-file:
+    - "default/config.yaml"
 
 🛠️ Build Changes:
 - changed-files:
