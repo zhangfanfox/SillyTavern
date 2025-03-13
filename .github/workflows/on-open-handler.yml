@@ -10,35 +10,15 @@ jobs:
   label-maintainer:
     name: Label if Author is a Repo Maintainer
     runs-on: ubuntu-latest
+    if: contains(fromJson('["Cohee1207", "RossAscends", "Wolfsblvt"]'), github.actor)
 
     steps:
       - name: Label if Author is a Repo Maintainer
-        # GitHub Script
-        # https://github.com/marketplace/actions/github-script
-        uses: actions/github-script@v7
+        # 🤖 Issues Helper
+        # https://github.com/marketplace/actions/issues-helper
+        uses: actions-cool/issues-helper@v3
         with:
-          script: |
-            const github = require('@actions/github');
-            const core = require('@actions/core');
-
-            // Hard-coded list of maintainer usernames
-            const maintainers = ['Cohee1207', 'RossAscends', 'Wolfsblvt'];
-
-            // Get event details (works for issues and pull requests)
-            const { owner, repo } = github.context.repo;
-            const payload = github.context.payload;
-            const eventData = payload.issue || payload.pull_request;
-            const username = eventData.user.login;
-            const issue_number = eventData.number;
-
-            if (maintainers.includes(username)) {
-              core.info(`User ${username} is a maintainer. Adding "Maintainer" label to issue/PR #${issue_number}`);
-              await github.rest.issues.addLabels({
-                owner,
-                repo,
-                issue_number,
-                labels: ['👷 Maintainer'],
-              });
-            } else {
-              core.info(`User ${username} is not on the maintainer list.`);
-            }
+          actions: 'add-labels'
+          token: ${{ secrets.BOT_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}
+          issue-number: ${{ github.event.issue.number || github.event.pull_request.number }}
+          labels: '👷 Maintainer'
