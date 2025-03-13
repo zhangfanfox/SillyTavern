@@ -43,7 +43,7 @@ jobs:
                 owner,
                 repo,
                 issue_number,
-                labels: ['Maintainer'],
+                labels: ['👷 Maintainer'],
               });
             } else {
               console.log(`User ${username} is not a repo maintainer.`);
