@@ -1,4 +1,4 @@
-name: 🎯 Issues/PRs Open Handler
+name: 📨 Issues/PRs Open Handler
 
 on:
   issues:
@@ -8,7 +8,7 @@ on:
 
 jobs:
   label-maintainer:
-    name: Label if Author is a Repo Maintainer
+    name: 🏷️ Label if Author is a Repo Maintainer
     runs-on: ubuntu-latest
     if: contains(fromJson('["Cohee1207", "RossAscends", "Wolfsblvt"]'), github.actor)
 

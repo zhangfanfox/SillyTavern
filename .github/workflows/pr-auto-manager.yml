@@ -1,4 +1,4 @@
-name: 🎯 Pull Request Manager
+name: 🔀 Pull Request Manager
 
 on:
   pull_request_target:
@@ -8,7 +8,7 @@ on:
 
 jobs:
   label-by-size:
-    name: Apply Label for PR Size
+    name: 🏷️ Label PR by Size
     runs-on: ubuntu-latest
 
     steps:
@@ -34,7 +34,7 @@ jobs:
             "public/lib/*"
 
   label-by-branches:
-    name: Apply Labels Based on Branch Name and Target Branch
+    name: 🏷️ Label PR by Branches
     runs-on: ubuntu-latest
     # Only label once when PR is created or branches are changed, to allow manual label removal
     if: github.event.action == 'opened' || (github.event.action == 'synchronize' && (github.event.changes.base || github.event.changes.head))
@@ -54,7 +54,7 @@ jobs:
           repo-token: ${{ secrets.BOT_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}
 
   label-by-files:
-    name: Apply Labels Based on Changed Files
+    name: 🏷️ Label PR by Files
     runs-on: ubuntu-latest
 
     steps:
@@ -72,7 +72,7 @@ jobs:
           repo-token: ${{ secrets.BOT_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}
 
   remove-stale-label:
-    name: Remove Stale Label on Comment
+    name: 🗑️ Remove Stale Label on Comment
     runs-on: ubuntu-latest
     # Only runs when this is not done by the github actions bot
     if: github.actor != 'github-actions[bot]'
@@ -89,7 +89,7 @@ jobs:
           labels: '⚰️ Stale'
 
   check-merge-blocking-labels:
-    name: Check Merge Blocking Labels
+    name: 🚫 Check Merge Blocking Labels
     needs: [label-by-branches, label-by-files]
     runs-on: ubuntu-latest
     # Run, even if the previous jobs were skipped/failed
@@ -133,7 +133,7 @@ jobs:
             }
 
   write-auto-comments:
-    name: Post PR Comments Based on Labels
+    name: 💬 Post PR Comments Based on Labels
     needs: [label-by-size, label-by-branches, label-by-files]
     runs-on: ubuntu-latest
     # Run, even if the previous jobs were skipped/failed
@@ -155,7 +155,7 @@ jobs:
 
   # This runs on merged PRs to staging, reading the PR body and directly linked issues. Check `issues-updates-on-merge.yml`:`update-linked-issues` for commit-based updates.
   update-linked-issues:
-    name: Update Issues on Staging Merge
+    name: 🔗 Mark Linked Issues Done on Staging Merge
     runs-on: ubuntu-latest
     if: github.event.pull_request.merged == true && github.event.pull_request.base.ref == 'staging'
 
