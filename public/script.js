@@ -9289,7 +9289,7 @@ async function connectAPISlash(args, text) {
 
     try {
         if (connectionRequired) {
-            await waitUntilCondition(() => online_status !== 'no_connection', 5000, 500);
+            await waitUntilCondition(() => online_status !== 'no_connection', 5000, 100);
         }
         console.log('Connection successful');
     } catch {
