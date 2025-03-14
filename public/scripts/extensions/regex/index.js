@@ -413,13 +413,14 @@ function runRegexCallback(args, value) {
 
 /**
  * /regex-toggle slash command callback
- * @param {{state: string}} args Named arguments
+ * @param {{state: string, quiet: string}} args Named arguments
  * @param {string} scriptName The name of the script to toggle
- * @returns {Promise<string>} The regexed string
+ * @returns {Promise<string>} The name of the script
  */
 async function toggleRegexCallback(args, scriptName) {
     if (typeof scriptName !== 'string') throw new Error('Script name must be a string.');
 
+    const quiet = isTrueBoolean(args?.quiet);
     const action = isTrueBoolean(args?.state) ? 'enable' :
         isFalseBoolean(args?.state) ? 'disable' :
             'toggle';
@@ -429,19 +430,29 @@ async function toggleRegexCallback(args, scriptName) {
 
     if (!script) {
         toastr.warning(t`Regex script '${scriptName}' not found.`);
-        return;
+        return '';
     }
 
-    script.disabled = action === 'enable' ? false : action === 'disable' ? true : !script.disabled;
+    switch (action) {
+        case 'enable':
+            script.disabled = false;
+            break;
+        case 'disable':
+            script.disabled = true;
+            break;
+        default:
+            script.disabled = !script.disabled;
+            break;
+    }
 
     const isScoped = characters[this_chid]?.data?.extensions?.regex_scripts?.some(s => s.id === script.id);
     const index = isScoped ? characters[this_chid]?.data?.extensions?.regex_scripts?.indexOf(script) : scripts.indexOf(script);
 
     await saveRegexScript(script, index, isScoped);
     if (script.disabled) {
-        toastr.success(t`Regex script '${scriptName}' has been disabled.`);
+        !quiet && toastr.success(t`Regex script '${scriptName}' has been disabled.`);
     } else {
-        toastr.success(t`Regex script '${scriptName}' has been enabled.`);
+        !quiet && toastr.success(t`Regex script '${scriptName}' has been enabled.`);
     }
 
     return script.scriptName || '';
@@ -676,8 +687,16 @@ jQuery(async () => {
         namedArgumentList: [
             SlashCommandNamedArgument.fromProps({
                 name: 'state',
-                description: 'Explicitly set the state of the script (true to enable, false to disable). If not provided, the state will be toggled to the opposite of the current state.',
+                description: 'Explicitly set the state of the script (\'on\' to enable, \'off\' to disable). If not provided, the state will be toggled to the opposite of the current state.',
                 typeList: [ARGUMENT_TYPE.BOOLEAN],
+                defaultValue: 'toggle',
+                enumList: commonEnumProviders.boolean('onOffToggle')(),
+            }),
+            SlashCommandNamedArgument.fromProps({
+                name: 'quiet',
+                description: 'Suppress the toast message script toggled',
+                typeList: [ARGUMENT_TYPE.BOOLEAN],
+                defaultValue: 'false',
                 enumList: commonEnumProviders.boolean('trueFalse')(),
             }),
         ],
