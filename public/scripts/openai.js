@@ -3493,7 +3493,7 @@ async function getStatusOpen() {
 
     if (oai_settings.chat_completion_source === chat_completion_sources.CUSTOM && !isValidUrl(oai_settings.custom_url)) {
         console.debug('Invalid endpoint URL of Custom OpenAI API:', oai_settings.custom_url);
-        setOnlineStatus('no_connection');
+        setOnlineStatus(t`Invalid endpoint URL. Requests may fail.`);
         return resultCheckStatus();
     }
 
@@ -4756,11 +4756,6 @@ async function onConnectButtonClick(e) {
 
         if (api_key_custom.length) {
             await writeSecret(SECRET_KEYS.CUSTOM, api_key_custom);
-        }
-
-        if (!oai_settings.custom_url) {
-            console.log('No API URL saved for Custom');
-            return;
         }
     }
 

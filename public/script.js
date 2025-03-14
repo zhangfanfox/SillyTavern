@@ -9288,10 +9288,12 @@ async function connectAPISlash(args, text) {
     const toast = quiet ? jQuery() : toastr.info(t`API set to ${text}, trying to connect..`);
 
     try {
-        await waitUntilCondition(() => online_status !== 'no_connection', 10000, 100);
+        if (connectionRequired) {
+            await waitUntilCondition(() => online_status !== 'no_connection', 5000, 500);
+        }
         console.log('Connection successful');
     } catch {
-        console.log('Could not connect after 10 seconds, skipping.');
+        console.log('Could not connect after 5 seconds, skipping.');
     }
 
     toastr.clear(toast);
