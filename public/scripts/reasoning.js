@@ -1075,7 +1075,7 @@ export function removeReasoningFromString(str) {
  * @param {boolean} [options.strict=true] Whether the reasoning block **has** to be at the beginning of the provided string (excluding whitespaces), or can be anywhere in it
  * @returns {ParsedReasoning|null} Parsed reasoning block and message content
  */
-function parseReasoningFromString(str, { strict = true } = {}) {
+export function parseReasoningFromString(str, { strict = true } = {}) {
     // Both prefix and suffix must be defined
     if (!power_user.reasoning.prefix || !power_user.reasoning.suffix) {
         return null;
@@ -1107,8 +1107,12 @@ function parseReasoningFromString(str, { strict = true } = {}) {
 /**
  * Parse reasoning in an array of swipe strings if auto-parsing is enabled.
  * @param {string[]} swipes Array of swipe strings
- * @param {{extra: {reasoning: string, reasoning_duration: number}}[]} swipeInfoArray Array of swipe info objects
+ * @param {{extra: ReasoningMessageExtra}[]} swipeInfoArray Array of swipe info objects
  * @param {number?} duration Duration of the reasoning
+ * @typedef {object} ReasoningMessageExtra Extra reasoning data
+ * @property {string} reasoning Reasoning block
+ * @property {number} reasoning_duration Duration of the reasoning block
+ * @property {string} reasoning_type Type of reasoning block
  */
 export function parseReasoningInSwipes(swipes, swipeInfoArray, duration) {
     if (!power_user.reasoning.auto_parse) {
@@ -1123,9 +1127,10 @@ export function parseReasoningInSwipes(swipes, swipeInfoArray, duration) {
     for (let index = 0; index < swipes.length; index++) {
         const parsedReasoning = parseReasoningFromString(swipes[index]);
         if (parsedReasoning) {
-            swipes[index] = parsedReasoning.content;
+            swipes[index] = getRegexedString(parsedReasoning.content, regex_placement.REASONING);
             swipeInfoArray[index].extra.reasoning = parsedReasoning.reasoning;
             swipeInfoArray[index].extra.reasoning_duration = duration;
+            swipeInfoArray[index].extra.reasoning_type = ReasoningType.Parsed;
         }
     }
 }
