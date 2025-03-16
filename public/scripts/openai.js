@@ -2048,7 +2048,7 @@ async function sendOpenAIRequest(type, messages, signal) {
         delete generate_data.stop;
         delete generate_data.logprobs;
     }
-    if (isOAI && oai_settings.openai_model.includes('gpt-4.5-preview') || isOpenRouter && oai_settings.openrouter_model.includes('gpt-4.5-preview')) {
+    if (isOAI && oai_settings.openai_model.includes('gpt-4.5') || isOpenRouter && oai_settings.openrouter_model.includes('gpt-4.5')) {
         delete generate_data.logprobs;
     }
 
