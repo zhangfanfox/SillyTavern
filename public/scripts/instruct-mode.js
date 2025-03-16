@@ -406,7 +406,7 @@ export function formatInstructModeSystemPrompt(systemPrompt, customInstruct = nu
         return '';
     }
 
-    const instruct = customInstruct ?? power_user.instruct;
+    const instruct = structuredClone(customInstruct ?? power_user.instruct);
 
     const separator = instruct.wrap ? '\n' : '';
 
