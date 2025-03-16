@@ -756,7 +756,7 @@ export const worldInfoCache = new StructuredCloneMap({ cloneOnGet: true, cloneOn
  * @param {string[]} chat The chat messages to scan, in reverse order.
  * @param {number} maxContext The maximum context size of the generation.
  * @param {boolean} isDryRun If true, the function will not emit any events.
- * @typedef {{worldInfoString: string, worldInfoBefore: string, worldInfoAfter: string, worldInfoExamples: any[], worldInfoDepth: any[]}} WIPromptResult
+ * @typedef {{worldInfoString: string, worldInfoBefore: string, worldInfoAfter: string, worldInfoExamples: any[], worldInfoDepth: any[], anBefore: any[], anAfter: any[]}} WIPromptResult
  * @returns {Promise<WIPromptResult>} The world info string and depth.
  */
 export async function getWorldInfoPrompt(chat, maxContext, isDryRun) {
@@ -778,6 +778,8 @@ export async function getWorldInfoPrompt(chat, maxContext, isDryRun) {
         worldInfoAfter,
         worldInfoExamples: activatedWorldInfo.EMEntries ?? [],
         worldInfoDepth: activatedWorldInfo.WIDepthEntries ?? [],
+        anBefore: activatedWorldInfo.ANBeforeEntries ?? [],
+        anAfter: activatedWorldInfo.ANAfterEntries ?? [],
     };
 }
 
@@ -3862,7 +3864,7 @@ function parseDecorators(content) {
  * @param {string[]} chat The chat messages to scan, in reverse order.
  * @param {number} maxContext The maximum context size of the generation.
  * @param {boolean} isDryRun Whether to perform a dry run.
- * @typedef {{ worldInfoBefore: string, worldInfoAfter: string, EMEntries: any[], WIDepthEntries: any[], allActivatedEntries: Set<any> }} WIActivated
+ * @typedef {{ worldInfoBefore: string, worldInfoAfter: string, EMEntries: any[], WIDepthEntries: any[], ANBeforeEntries: any[], ANAfterEntries: any[], allActivatedEntries: Set<any> }} WIActivated
  * @returns {Promise<WIActivated>} The world info activated.
  */
 export async function checkWorldInfo(chat, maxContext, isDryRun) {
@@ -3906,7 +3908,7 @@ export async function checkWorldInfo(chat, maxContext, isDryRun) {
     timedEffects.checkTimedEffects();
 
     if (sortedEntries.length === 0) {
-        return { worldInfoBefore: '', worldInfoAfter: '', WIDepthEntries: [], EMEntries: [], allActivatedEntries: new Set() };
+        return { worldInfoBefore: '', worldInfoAfter: '', WIDepthEntries: [], EMEntries: [], ANBeforeEntries: [], ANAfterEntries: [], allActivatedEntries: new Set() };
     }
 
     /** @type {number[]} Represents the delay levels for entries that are delayed until recursion */
@@ -4355,7 +4357,7 @@ export async function checkWorldInfo(chat, maxContext, isDryRun) {
     console.log(`[WI] ${isDryRun ? 'Hypothetically adding' : 'Adding'} ${allActivatedEntries.size} entries to prompt`, Array.from(allActivatedEntries.values()));
     console.debug(`[WI] --- DONE${isDryRun ? ' (DRY RUN)' : ''} ---`);
 
-    return { worldInfoBefore, worldInfoAfter, EMEntries, WIDepthEntries, allActivatedEntries: new Set(allActivatedEntries.values()) };
+    return { worldInfoBefore, worldInfoAfter, EMEntries, WIDepthEntries, ANBeforeEntries: ANTopEntries, ANAfterEntries: ANBottomEntries, allActivatedEntries: new Set(allActivatedEntries.values()) };
 }
 
 /**
