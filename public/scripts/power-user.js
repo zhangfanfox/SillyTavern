@@ -1992,7 +1992,7 @@ export function fuzzySearchGroups(searchValue, fuzzySearchCaches = null) {
  */
 export function renderStoryString(params, { customStoryString = null, customInstructSettings = null } = {}) {
     try {
-        const storyString = customStoryString ?? power_user.context.story_string;
+        const storyString = structuredClone(customStoryString ?? power_user.context.story_string);
         const instructSettings = customInstructSettings ?? power_user.instruct;
 
         // Validate and log possible warnings/errors

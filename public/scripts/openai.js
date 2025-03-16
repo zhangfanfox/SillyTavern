@@ -710,7 +710,7 @@ export function formatWorldInfo(value, { wiFormat = null } = {}) {
         return '';
     }
 
-    const format = wiFormat || oai_settings.wi_format;
+    const format = wiFormat ?? oai_settings.wi_format;
 
     if (!format.trim()) {
         return value;
