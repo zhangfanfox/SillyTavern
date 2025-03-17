@@ -398,23 +398,26 @@ export function formatInstructModeChat(name, mes, isUser, isNarrator, forceAvata
 /**
  * Formats instruct mode system prompt.
  * @param {string} systemPrompt System prompt string.
+ * @param {InstructSettings} customInstruct Custom instruct mode settings.
  * @returns {string} Formatted instruct mode system prompt.
  */
-export function formatInstructModeSystemPrompt(systemPrompt) {
+export function formatInstructModeSystemPrompt(systemPrompt, customInstruct = null) {
     if (!systemPrompt) {
         return '';
     }
 
-    const separator = power_user.instruct.wrap ? '\n' : '';
+    const instruct = structuredClone(customInstruct ?? power_user.instruct);
 
-    if (power_user.instruct.system_sequence_prefix) {
+    const separator = instruct.wrap ? '\n' : '';
+
+    if (instruct.system_sequence_prefix) {
         // TODO: Replace with a proper 'System' prompt entity name input
-        const prefix = power_user.instruct.system_sequence_prefix.replace(/{{name}}/gi, 'System');
+        const prefix = instruct.system_sequence_prefix.replace(/{{name}}/gi, 'System');
         systemPrompt = prefix + separator + systemPrompt;
     }
 
-    if (power_user.instruct.system_sequence_suffix) {
-        systemPrompt = systemPrompt + separator + power_user.instruct.system_sequence_suffix;
+    if (instruct.system_sequence_suffix) {
+        systemPrompt = systemPrompt + separator + instruct.system_sequence_suffix;
     }
 
     return systemPrompt;

@@ -1957,7 +1957,7 @@
                                             <span data-i18n="Enable web search">Enable web search</span>
                                         </label>
                                         <div class="flexBasis100p toggle-description justifyLeft">
-                                            <span>
+                                            <span data-i18n="Use search capabilities provided by the backend.">
                                                 Use search capabilities provided by the backend.
                                             </span>
                                         </div>
@@ -2188,7 +2188,7 @@
                                     <input id="horde_trusted_workers_only" type="checkbox" />
                                     <span data-i18n="Trusted workers only">Trusted workers only</span>
                                 </label>
-                                <small id="adjustedHordeParams">Context: --, Response: --</small>
+                                <small id="adjustedHordeParams"><span data-i18n="Context">Context</span>: --, <span data-i18n="Response">Response</span>: --</small>
                                 <h4 data-i18n="API key">API key</h4>
                                 <small>
                                     <span data-i18n="Get it here:">Get it here: </span> <a target="_blank" href="https://aihorde.net/register" data-i18n="Register">Register</a> (<a id="horde_kudos" href="javascript:void(0);" data-i18n="View my Kudos">View my Kudos</a>)<br>
@@ -3917,6 +3917,19 @@
                                     <summary data-i18n="Reasoning Formatting">
                                         Reasoning Formatting
                                     </summary>
+                                    <div class="flex-container" title="Select your current Reasoning Template" data-i18n="[title]Select your current Reasoning Template">
+                                        <select id="reasoning_select" data-preset-manager-for="reasoning" class="flex1 text_pole"></select>
+                                        <div class="flex-container margin0 justifyCenter gap3px">
+                                            <input type="file" hidden data-preset-manager-file="reasoning" accept=".json, .settings">
+                                            <i data-preset-manager-update="reasoning" class="menu_button fa-solid fa-save" title="Update current template" data-i18n="[title]Update current template"></i>
+                                            <i data-preset-manager-rename="reasoning" class="menu_button fa-pencil fa-solid" title="Rename current template" data-i18n="[title]Rename current template"></i>
+                                            <i data-preset-manager-new="reasoning" class="menu_button fa-solid fa-file-circle-plus" title="Save template as" data-i18n="[title]Save template as"></i>
+                                            <i data-preset-manager-import="reasoning" class="displayNone menu_button fa-solid fa-file-import" title="Import template" data-i18n="[title]Import template"></i>
+                                            <i data-preset-manager-export="reasoning" class="displayNone menu_button fa-solid fa-file-export" title="Export template" data-i18n="[title]Export template"></i>
+                                            <i data-preset-manager-restore="reasoning" class="menu_button fa-solid fa-recycle" title="Restore current template" data-i18n="[title]Restore current template"></i>
+                                            <i data-preset-manager-delete="reasoning" class="menu_button fa-solid fa-trash-can" title="Delete template" data-i18n="[title]Delete template"></i>
+                                        </div>
+                                    </div>
                                     <div class="flex-container">
                                         <div class="flex1" title="Inserted before the reasoning content." data-i18n="[title]reasoning_prefix">
                                             <small data-i18n="Prefix">Prefix</small>
@@ -6563,7 +6576,7 @@
                         <div class="ch_name"></div>
                         <small class="ch_additional_info group_select_counter"></small>
                     </div>
-                    <small class="character_name_block_sub_line">in this group</small>
+                    <small class="character_name_block_sub_line" data-i18n="in this group">in this group</small>
                     <i class='group_fav_icon fa-solid fa-star'></i>
                     <input class="ch_fav" value="" hidden />
                     <div class="group_select_block_list ch_description"></div>
