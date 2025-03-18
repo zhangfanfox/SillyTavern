@@ -3612,7 +3612,8 @@ export async function generateRaw(prompt, api, instructOverride, quietToLoud, sy
             throw new Error(data.response);
         }
 
-        const message = cleanUpMessage(extractMessageFromData(data), false, false, true);
+        // format result, exclude user prompt bias
+        const message = cleanUpMessage(extractMessageFromData(data), false, false, true, null, false);
 
         if (!message) {
             throw new Error('No message generated');
@@ -5884,13 +5885,14 @@ function extractMultiSwipes(data, type) {
     return swipes;
 }
 
-export function cleanUpMessage(getMessage, isImpersonate, isContinue, displayIncompleteSentences = false, stoppingStrings = null) {
+export function cleanUpMessage(getMessage, isImpersonate, isContinue, displayIncompleteSentences = false, stoppingStrings = null, includeUserPromptBias = true) {
     if (!getMessage) {
         return '';
     }
 
     // Add the prompt bias before anything else
     if (
+        includeUserPromptBias &&
         power_user.user_prompt_bias &&
         !isImpersonate &&
         !isContinue &&
