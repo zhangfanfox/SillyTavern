@@ -172,6 +172,7 @@ import {
     copyText,
     escapeHtml,
     saveBase64AsFile,
+    uuidv4,
 } from './scripts/utils.js';
 import { debounce_timeout } from './scripts/constants.js';
 
@@ -494,6 +495,8 @@ export const event_types = {
     GENERATE_AFTER_COMBINE_PROMPTS: 'generate_after_combine_prompts',
     GENERATE_AFTER_DATA: 'generate_after_data',
     GROUP_MEMBER_DRAFTED: 'group_member_drafted',
+    GROUP_WRAPPER_STARTED: 'group_wrapper_started',
+    GROUP_WRAPPER_FINISHED: 'group_wrapper_finished',
     WORLD_INFO_ACTIVATED: 'world_info_activated',
     TEXT_COMPLETION_SETTINGS_READY: 'text_completion_settings_ready',
     CHAT_COMPLETION_SETTINGS_READY: 'chat_completion_settings_ready',
@@ -514,6 +517,9 @@ export const event_types = {
     ONLINE_STATUS_CHANGED: 'online_status_changed',
     IMAGE_SWIPED: 'image_swiped',
     CONNECTION_PROFILE_LOADED: 'connection_profile_loaded',
+    CONNECTION_PROFILE_CREATED: 'connection_profile_created',
+    CONNECTION_PROFILE_DELETED: 'connection_profile_deleted',
+    CONNECTION_PROFILE_UPDATED: 'connection_profile_updated',
     TOOL_CALLS_PERFORMED: 'tool_calls_performed',
     TOOL_CALLS_RENDERED: 'tool_calls_rendered',
 };
@@ -589,7 +595,7 @@ let is_delete_mode = false;
 let fav_ch_checked = false;
 let scrollLock = false;
 export let abortStatusCheck = new AbortController();
-let charDragDropHandler = null;
+export let charDragDropHandler = null;
 
 /** @type {debounce_timeout} The debounce timeout used for chat/settings save. debounce_timeout.long: 1.000 ms */
 export const DEFAULT_SAVE_EDIT_TIMEOUT = debounce_timeout.relaxed;
@@ -1140,7 +1146,7 @@ export async function clearItemizedPrompts() {
 async function getStatusHorde() {
     try {
         const hordeStatus = await checkHordeStatus();
-        setOnlineStatus(hordeStatus ? 'Connected' : 'no_connection');
+        setOnlineStatus(hordeStatus ? t`Connected` : 'no_connection');
     }
     catch {
         setOnlineStatus('no_connection');
@@ -1207,7 +1213,7 @@ async function getStatusTextgen() {
     }
 
     if ([textgen_types.GENERIC, textgen_types.OOBA].includes(textgen_settings.type) && textgen_settings.bypass_status_check) {
-        setOnlineStatus('Status check bypassed');
+        setOnlineStatus(t`Status check bypassed`);
         return resultCheckStatus();
     }
 
@@ -1232,7 +1238,7 @@ async function getStatusTextgen() {
             setOnlineStatus(textgen_settings.togetherai_model);
         } else if (textgen_settings.type === textgen_types.OLLAMA) {
             loadOllamaModels(data?.data);
-            setOnlineStatus(textgen_settings.ollama_model || 'Connected');
+            setOnlineStatus(textgen_settings.ollama_model || t`Connected`);
         } else if (textgen_settings.type === textgen_types.INFERMATICAI) {
             loadInfermaticAIModels(data?.data);
             setOnlineStatus(textgen_settings.infermaticai_model);
@@ -1256,7 +1262,7 @@ async function getStatusTextgen() {
             setOnlineStatus(textgen_settings.tabby_model || data?.result);
         } else if (textgen_settings.type === textgen_types.GENERIC) {
             loadGenericModels(data?.data);
-            setOnlineStatus(textgen_settings.generic_model || data?.result || 'Connected');
+            setOnlineStatus(textgen_settings.generic_model || data?.result || t`Connected`);
         } else {
             setOnlineStatus(data?.result);
         }
@@ -1370,8 +1376,11 @@ export function resultCheckStatus() {
  * If the character ID doesn't exist, if the chat is being saved, or if a group is being generated, this function does nothing.
  * If the character is different from the currently selected one, it will clear the chat and reset any selected character or group.
  * @param {number} id The ID of the character to switch to.
+ * @param {object} [options] Options for the switch.
+ * @param {boolean} [options.switchMenu=true] Whether to switch the right menu to the character edit menu if the character is already selected.
+ * @returns {Promise<void>} A promise that resolves when the character is switched.
  */
-export async function selectCharacterById(id) {
+export async function selectCharacterById(id, { switchMenu = true } = {}) {
     if (characters[id] === undefined) {
         return;
     }
@@ -1400,9 +1409,9 @@ export async function selectCharacterById(id) {
         }
     } else {
         //if clicked on character that was already selected
-        selected_button = 'character_edit';
+        switchMenu && (selected_button = 'character_edit');
         await unshallowCharacter(this_chid);
-        select_selected_character(this_chid);
+        select_selected_character(this_chid, { switchMenu });
     }
 }
 
@@ -1787,6 +1796,7 @@ export async function getCharacters() {
         body: JSON.stringify({}),
     });
     if (response.ok === true) {
+        const previousAvatar = this_chid !== undefined ? characters[this_chid]?.avatar : null;
         characters.splice(0, characters.length);
         const getData = await response.json();
         for (let i = 0; i < getData.length; i++) {
@@ -1800,8 +1810,16 @@ export async function getCharacters() {
 
             characters[i]['chat'] = String(characters[i]['chat']);
         }
-        if (this_chid !== undefined) {
-            $('#avatar_url_pole').val(characters[this_chid].avatar);
+
+        if (previousAvatar) {
+            const newCharacterId = characters.findIndex(x => x.avatar === previousAvatar);
+            if (newCharacterId >= 0) {
+                setCharacterId(newCharacterId);
+                await selectCharacterById(newCharacterId, { switchMenu: false });
+            } else {
+                await Popup.show.text(t`ERROR: The active character is no longer available.`, t`The page will be refreshed to prevent data loss. Press "OK" to continue.`);
+                return location.reload();
+            }
         }
 
         await getGroups();
@@ -2730,6 +2748,7 @@ export function substituteParams(content, _name1, _name2, _original, _group, _re
         environment.mesExamplesRaw = fields.mesExamples || '';
         environment.charVersion = fields.version || '';
         environment.char_version = fields.version || '';
+        environment.charDepthPrompt = fields.charDepthPrompt || '';
     }
 
     // Must be substituted last so that they're replaced inside {{description}}
@@ -3081,13 +3100,38 @@ export function baseChatReplace(value, name1, name2) {
 
 /**
  * Returns the character card fields for the current character.
- * @returns {{system: string, mesExamples: string, description: string, personality: string, persona: string, scenario: string, jailbreak: string, version: string}}
+ * @param {object} [options]
+ * @param {number} [options.chid] Optional character index
+ *
+ * @typedef {object} CharacterCardFields
+ * @property {string} system System prompt
+ * @property {string} mesExamples Message examples
+ * @property {string} description Description
+ * @property {string} personality Personality
+ * @property {string} persona Persona
+ * @property {string} scenario Scenario
+ * @property {string} jailbreak Jailbreak instructions
+ * @property {string} version Character version
+ * @property {string} charDepthPrompt Character depth note
+ * @returns {CharacterCardFields} Character card fields
  */
-export function getCharacterCardFields() {
-    const result = { system: '', mesExamples: '', description: '', personality: '', persona: '', scenario: '', jailbreak: '', version: '' };
+export function getCharacterCardFields({ chid = null } = {}) {
+    const currentChid = chid ?? this_chid;
+
+    const result = {
+        system: '',
+        mesExamples: '',
+        description: '',
+        personality: '',
+        persona: '',
+        scenario: '',
+        jailbreak: '',
+        version: '',
+        charDepthPrompt: '',
+    };
     result.persona = baseChatReplace(power_user.persona_description?.trim(), name1, name2);
 
-    const character = characters[this_chid];
+    const character = characters[currentChid];
 
     if (!character) {
         return result;
@@ -3101,9 +3145,10 @@ export function getCharacterCardFields() {
     result.system = power_user.prefer_character_prompt ? baseChatReplace(character.data?.system_prompt?.trim(), name1, name2) : '';
     result.jailbreak = power_user.prefer_character_jailbreak ? baseChatReplace(character.data?.post_history_instructions?.trim(), name1, name2) : '';
     result.version = character.data?.character_version ?? '';
+    result.charDepthPrompt = baseChatReplace(character.data?.extensions?.depth_prompt?.prompt?.trim(), name1, name2);
 
     if (selected_group) {
-        const groupCards = getGroupCharacterCards(selected_group, Number(this_chid));
+        const groupCards = getGroupCharacterCards(selected_group, Number(currentChid));
 
         if (groupCards) {
             result.description = groupCards.description;
@@ -3596,7 +3641,8 @@ export async function generateRaw(prompt, api, instructOverride, quietToLoud, sy
             throw new Error(data.response);
         }
 
-        const message = cleanUpMessage(extractMessageFromData(data), false, false, true);
+        // format result, exclude user prompt bias
+        const message = cleanUpMessage(extractMessageFromData(data), false, false, true, null, false);
 
         if (!message) {
             throw new Error('No message generated');
@@ -3905,6 +3951,7 @@ export async function Generate(type, { automatic_trigger, force_name2, quiet_pro
         mesExamples,
         system,
         jailbreak,
+        charDepthPrompt,
     } = getCharacterCardFields();
 
     if (main_api !== 'openai') {
@@ -3927,7 +3974,7 @@ export async function Generate(type, { automatic_trigger, force_name2, quiet_pro
             setExtensionPrompt('DEPTH_PROMPT_' + index, value.text, extension_prompt_types.IN_CHAT, value.depth, extension_settings.note.allowWIScan, role);
         });
     } else {
-        const depthPromptText = baseChatReplace(characters[this_chid]?.data?.extensions?.depth_prompt?.prompt?.trim(), name1, name2) || '';
+        const depthPromptText = charDepthPrompt || '';
         const depthPromptDepth = characters[this_chid]?.data?.extensions?.depth_prompt?.depth ?? depth_prompt_depth_default;
         const depthPromptRole = getExtensionPromptRoleByName(characters[this_chid]?.data?.extensions?.depth_prompt?.role ?? depth_prompt_role_default);
         setExtensionPrompt('DEPTH_PROMPT', depthPromptText, extension_prompt_types.IN_CHAT, depthPromptDepth, extension_settings.note.allowWIScan, depthPromptRole);
@@ -5868,13 +5915,14 @@ function extractMultiSwipes(data, type) {
     return swipes;
 }
 
-export function cleanUpMessage(getMessage, isImpersonate, isContinue, displayIncompleteSentences = false, stoppingStrings = null) {
+export function cleanUpMessage(getMessage, isImpersonate, isContinue, displayIncompleteSentences = false, stoppingStrings = null, includeUserPromptBias = true) {
     if (!getMessage) {
         return '';
     }
 
     // Add the prompt bias before anything else
     if (
+        includeUserPromptBias &&
         power_user.user_prompt_bias &&
         !isImpersonate &&
         !isContinue &&
@@ -6261,7 +6309,6 @@ export function syncMesToSwipe(messageId = null) {
     }
 
     const targetMessage = chat[targetMessageId];
-
     if (!targetMessage) {
         return false;
     }
@@ -6290,6 +6337,68 @@ export function syncMesToSwipe(messageId = null) {
     targetSwipeInfo.gen_started = targetMessage.gen_started;
     targetSwipeInfo.gen_finished = targetMessage.gen_finished;
     targetSwipeInfo.extra = structuredClone(targetMessage.extra);
+
+    return true;
+}
+
+/**
+ * Syncs swipe data back to the message data at the given message ID (or the last message if no ID is given).
+ * If the swipe ID is not provided, the current swipe ID in the message object is used.
+ *
+ * If the swipe data is invalid in some way, this function will exit out without doing anything.
+ * @param {number?} [messageId=null] - The ID of the message to sync with the swipe data. If no ID is given, the last message is used.
+ * @param {number?} [swipeId=null] - The ID of the swipe to sync. If no ID is given, the current swipe ID in the message object is used.
+ * @returns {boolean} Whether the swipe data was successfully synced to the message
+ */
+export function syncSwipeToMes(messageId = null, swipeId = null) {
+    if (!chat.length) {
+        return false;
+    }
+
+    const targetMessageId = messageId ?? chat.length - 1;
+    if (targetMessageId >= chat.length || targetMessageId < 0) {
+        console.warn(`[syncSwipeToMes] Invalid message ID: ${messageId}`);
+        return false;
+    }
+
+    const targetMessage = chat[targetMessageId];
+    if (!targetMessage) {
+        return false;
+    }
+
+    if (swipeId !== null) {
+        if (isNaN(swipeId) || swipeId < 0) {
+            console.warn(`[syncSwipeToMes] Invalid swipe ID: ${swipeId}`);
+            return false;
+        }
+        targetMessage.swipe_id = swipeId;
+    }
+
+    // No swipe data there yet, exit out
+    if (typeof targetMessage.swipe_id !== 'number') {
+        return false;
+    }
+    // If swipes structure is invalid, exit out
+    if (!Array.isArray(targetMessage.swipe_info) || !Array.isArray(targetMessage.swipes)) {
+        return false;
+    }
+
+    const targetSwipeId = targetMessage.swipe_id;
+    if (!targetMessage.swipes[targetSwipeId] || !targetMessage.swipe_info[targetSwipeId]) {
+        console.warn(`[syncSwipeToMes] Invalid swipe ID: ${targetSwipeId}`);
+        return false;
+    }
+
+    const targetSwipeInfo = targetMessage.swipe_info[targetSwipeId];
+    if (typeof targetSwipeInfo !== 'object') {
+        return false;
+    }
+
+    targetMessage.mes = targetMessage.swipes[targetSwipeId];
+    targetMessage.send_date = targetSwipeInfo.send_date;
+    targetMessage.gen_started = targetSwipeInfo.gen_started;
+    targetMessage.gen_finished = targetSwipeInfo.gen_finished;
+    targetMessage.extra = structuredClone(targetSwipeInfo.extra);
 
     return true;
 }
@@ -6527,6 +6636,8 @@ export async function renameCharacter(name = null, { silent = false, renameChats
 
             await eventSource.emit(event_types.CHARACTER_RENAMED, oldAvatar, newAvatar);
 
+            // Unload current character
+            setCharacterId(undefined);
             // Reload characters list
             await getCharacters();
 
@@ -6535,7 +6646,6 @@ export async function renameCharacter(name = null, { silent = false, renameChats
 
             if (newChId !== -1) {
                 // Select the character after the renaming
-                setCharacterId(undefined);
                 await selectCharacterById(newChId);
 
                 // Async delay to update UI
@@ -6668,7 +6778,22 @@ export function saveChatDebounced() {
     }, DEFAULT_SAVE_EDIT_TIMEOUT);
 }
 
-export async function saveChat(chatName, withMetadata, mesId) {
+/**
+ * Saves the chat to the server.
+ * @param {object} [options] - Additional options.
+ * @param {string} [options.chatName] The name of the chat file to save to
+ * @param {object} [options.withMetadata] Additional metadata to save with the chat
+ * @param {number} [options.mesId] The message ID to save the chat up to
+ * @param {boolean} [options.force] Force the saving despire the integrity check result
+ *
+ * @returns {Promise<void>}
+ */
+export async function saveChat({ chatName, withMetadata, mesId, force = false } = {}) {
+    if (arguments.length > 0 && typeof arguments[0] !== 'object') {
+        console.trace('saveChat called with positional arguments. Please use an object instead.');
+        [chatName, withMetadata, mesId, force] = arguments;
+    }
+
     const metadata = { ...chat_metadata, ...(withMetadata || {}) };
     const fileName = chatName ?? characters[this_chid]?.chat;
 
@@ -6688,53 +6813,59 @@ export async function saveChat(chatName, withMetadata, mesId) {
             toastr.error(t`Trying to save group chat with regular saveChat function. Aborting to prevent corruption.`);
             throw new Error('Group chat saved from saveChat');
         }
-        /*
-        if (item.is_user) {
-            //var str = item.mes.replace(`${name1}:`, `${name1}:`);
-            //chat[i].mes = str;
-            //chat[i].name = name1;
-        } else if (i !== chat.length - 1 && chat[i].swipe_id !== undefined) {
-            //  delete chat[i].swipes;
-            //  delete chat[i].swipe_id;
-        }
-        */
     });
 
-    const trimmed_chat = (mesId !== undefined && mesId >= 0 && mesId < chat.length)
-        ? chat.slice(0, parseInt(mesId) + 1)
-        : chat;
+    const trimmedChat = (mesId !== undefined && mesId >= 0 && mesId < chat.length)
+        ? chat.slice(0, Number(mesId) + 1)
+        : chat.slice();
 
-    var save_chat = [
+    const chatToSave = [
         {
             user_name: name1,
             character_name: name2,
             create_date: chat_create_date,
             chat_metadata: metadata,
         },
-        ...trimmed_chat,
+        ...trimmedChat,
     ];
-    return jQuery.ajax({
-        type: 'POST',
-        url: '/api/chats/save',
-        data: JSON.stringify({
-            ch_name: characters[this_chid].name,
-            file_name: fileName,
-            chat: save_chat,
-            avatar_url: characters[this_chid].avatar,
-        }),
-        beforeSend: function () {
 
-        },
-        cache: false,
-        dataType: 'json',
-        contentType: 'application/json',
-        success: function (data) { },
-        error: function (jqXHR, exception) {
-            toastr.error(t`Check the server connection and reload the page to prevent data loss.`, t`Chat could not be saved`);
-            console.log(exception);
-            console.log(jqXHR);
-        },
-    });
+    try {
+        const result = await fetch('/api/chats/save', {
+            method: 'POST',
+            cache: 'no-cache',
+            headers: getRequestHeaders(),
+            body: JSON.stringify({
+                ch_name: characters[this_chid].name,
+                file_name: fileName,
+                chat: chatToSave,
+                avatar_url: characters[this_chid].avatar,
+                force: force,
+            }),
+        });
+
+        if (result.ok) {
+            return;
+        }
+
+        const errorData = await result.json();
+        const isIntegrityError = errorData?.error === 'integrity' && !force;
+        if (!isIntegrityError) {
+            throw new Error(result.statusText);
+        }
+
+        const forceSaveConfirmed = await Popup.show.confirm(
+            t`ERROR: Chat integrity check failed.`,
+            t`Continuing the operation may result in data loss. Would you like to overwrite the chat file anyway? Pressing "NO" will cancel the save operation.`,
+            { okButton: t`Yes, overwrite`, cancelButton: t`No, cancel` },
+        ) === POPUP_RESULT.AFFIRMATIVE;
+
+        if (forceSaveConfirmed) {
+            await saveChat({ chatName, withMetadata, mesId, force: true });
+        }
+    } catch (error) {
+        console.error(error);
+        toastr.error(t`Check the server connection and reload the page to prevent data loss.`, t`Chat could not be saved`);
+    }
 }
 
 async function read_avatar_load(input) {
@@ -6861,14 +6992,14 @@ export function buildAvatarList(block, entities, { templateId = 'inline_avatar_t
  */
 export async function unshallowCharacter(characterId) {
     if (characterId === undefined) {
-        console.warn('Undefined character cannot be unshallowed');
+        console.debug('Undefined character cannot be unshallowed');
         return;
     }
 
     /** @type {import('./scripts/char-data.js').v1CharData} */
     const character = characters[characterId];
     if (!character) {
-        console.warn('Character not found:', characterId);
+        console.debug('Character not found:', characterId);
         return;
     }
 
@@ -6879,7 +7010,7 @@ export async function unshallowCharacter(characterId) {
 
     const avatar = character.avatar;
     if (!avatar) {
-        console.warn('Character has no avatar field:', characterId);
+        console.debug('Character has no avatar field:', characterId);
         return;
     }
 
@@ -6910,6 +7041,9 @@ export async function getChat() {
             chat.shift();
         } else {
             chat_create_date = humanizedDateTime();
+        }
+        if (!chat_metadata['integrity']) {
+            chat_metadata['integrity'] = uuidv4();
         }
         await getChatResult();
         eventSource.emit('chatLoaded', { detail: { id: this_chid, character: characters[this_chid] } });
@@ -7882,14 +8016,19 @@ export function select_rm_info(type, charId, previousCharId = null) {
     }
 }
 
-export function select_selected_character(chid) {
+/**
+ * Selects the right menu for displaying the character editor.
+ * @param {number|string} chid Character array index
+ * @param {object} [param1] Options for the switch
+ * @param {boolean} [param1.switchMenu=true] Whether to switch the menu
+ */
+export function select_selected_character(chid, { switchMenu = true } = {}) {
     //character select
     //console.log('select_selected_character() -- starting with input of -- ' + chid + ' (name:' + characters[chid].name + ')');
-    select_rm_create();
-    setMenuType('character_edit');
+    select_rm_create({ switchMenu });
+    switchMenu && setMenuType('character_edit');
     $('#delete_button').css('display', 'flex');
     $('#export_button').css('display', 'flex');
-    var display_name = characters[chid].name;
 
     //create text poles
     $('#rm_button_back').css('display', 'none');
@@ -7904,7 +8043,7 @@ export function select_selected_character(chid) {
 
     // Don't update the navbar name if we're peeking the group member defs
     if (!selected_group) {
-        $('#rm_button_selected_ch').children('h2').text(display_name);
+        $('#rm_button_selected_ch').children('h2').text(characters[chid].name);
     }
 
     $('#add_avatar_button').val('');
@@ -7935,21 +8074,19 @@ export function select_selected_character(chid) {
     $('#chat_import_avatar_url').val(characters[chid].avatar);
     $('#chat_import_character_name').val(characters[chid].name);
     $('#character_json_data').val(characters[chid].json_data);
-    let this_avatar = default_avatar;
-    if (characters[chid].avatar != 'none') {
-        this_avatar = getThumbnailUrl('avatar', characters[chid].avatar);
-    }
 
     updateFavButtonState(characters[chid].fav || characters[chid].fav == 'true');
 
-    $('#avatar_load_preview').attr('src', this_avatar);
-    $('#name_div').removeClass('displayBlock');
-    $('#name_div').addClass('displayNone');
-    $('#renameCharButton').css('display', '');
+    const avatarUrl = characters[chid].avatar != 'none' ? getThumbnailUrl('avatar', characters[chid].avatar) : default_avatar;
+    $('#avatar_load_preview').attr('src', avatarUrl);
     $('.open_alternate_greetings').data('chid', chid);
     $('#set_character_world').data('chid', chid);
     setWorldInfoButtonClass(chid);
     checkEmbeddedWorld(chid);
+
+    $('#name_div').removeClass('displayBlock');
+    $('#name_div').addClass('displayNone');
+    $('#renameCharButton').css('display', '');
 
     $('#form_create').attr('actiontype', 'editcharacter');
     $('.form_create_bottom_buttons_block .chat_lorebook_button').show();
@@ -7962,8 +8099,13 @@ export function select_selected_character(chid) {
     saveSettingsDebounced();
 }
 
-function select_rm_create() {
-    setMenuType('create');
+/**
+ * Selects the right menu for creating a new character.
+ * @param {object} [options] Options for the switch
+ * @param {boolean} [options.switchMenu=true] Whether to switch the menu
+ */
+function select_rm_create({ switchMenu = true } = {}) {
+    switchMenu && setMenuType('create');
 
     //console.log('select_rm_Create() -- selected button: '+selected_button);
     if (selected_button == 'create') {
@@ -7973,7 +8115,7 @@ function select_rm_create() {
         }
     }
 
-    selectRightMenuWithAnimation('rm_ch_create_block');
+    switchMenu && selectRightMenuWithAnimation('rm_ch_create_block');
 
     $('#set_chat_scenario').hide();
     $('#delete_button_div').css('display', 'none');
@@ -8293,10 +8435,9 @@ export async function deleteSwipe(swipeId = null) {
         lastMessage.swipe_info.splice(swipeId, 1);
     }
 
-    // Select the next swip, or the one before if it was the last one
+    // Select the next swipe, or the one before if it was the last one
     const newSwipeId = Math.min(swipeId, lastMessage.swipes.length - 1);
-    lastMessage.swipe_id = newSwipeId;
-    lastMessage.mes = lastMessage.swipes[newSwipeId];
+    syncSwipeToMes(null, newSwipeId);
 
     await saveChatConditional();
     await reloadCurrentChat();
@@ -9196,6 +9337,17 @@ function swipe_right(_event, { source, repeated } = {}) {
     }
 }
 
+/**
+ * @typedef {object} ConnectAPIMap
+ * @property {string} selected - API name (e.g. "textgenerationwebui", "openai")
+ * @property {string?} [button] - CSS selector for the API button
+ * @property {string?} [type] - API type, mostly used by text completion. (e.g. "openrouter")
+ * @property {string?} [source] - API source, mostly used by chat completion. (e.g. "openai")
+ */
+
+/**
+ * @type {Record<string, ConnectAPIMap>}
+ */
 export const CONNECT_API_MAP = {
     // Default APIs not contined inside text gen / chat gen
     'kobold': {
@@ -10417,7 +10569,7 @@ jQuery(async function () {
         e.stopPropagation();
         chat_file_for_del = $(this).attr('file_name');
         console.debug('detected cross click for' + chat_file_for_del);
-        callPopup('<h3>Delete the Chat File?</h3>', 'del_chat');
+        callPopup('<h3>' + t`Delete the Chat File?` + '</h3>', 'del_chat');
     });
 
     $('#advanced_div').click(function () {

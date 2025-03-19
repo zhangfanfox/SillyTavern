@@ -705,16 +705,18 @@ export function parseExampleIntoIndividual(messageExampleString, appendNamesForG
     return result;
 }
 
-function formatWorldInfo(value) {
+export function formatWorldInfo(value, { wiFormat = null } = {}) {
     if (!value) {
         return '';
     }
 
-    if (!oai_settings.wi_format.trim()) {
+    const format = wiFormat ?? oai_settings.wi_format;
+
+    if (!format.trim()) {
         return value;
     }
 
-    return stringFormat(oai_settings.wi_format, value);
+    return stringFormat(format, value);
 }
 
 /**
@@ -952,7 +954,7 @@ async function populateDialogueExamples(prompts, chatCompletion, messageExamples
  * @param {number} position - Prompt position in the extensions object.
  * @returns {string|false} - The prompt position for prompt collection.
  */
-function getPromptPosition(position) {
+export function getPromptPosition(position) {
     if (position == extension_prompt_types.BEFORE_PROMPT) {
         return 'start';
     }
@@ -969,7 +971,7 @@ function getPromptPosition(position) {
  * @param {number} role Role of the prompt.
  * @returns {string} Mapped role.
  */
-function getPromptRole(role) {
+export function getPromptRole(role) {
     switch (role) {
         case extension_prompt_roles.SYSTEM:
             return 'system';
@@ -2018,6 +2020,7 @@ async function sendOpenAIRequest(type, messages, signal) {
         'reasoning_effort': String(oai_settings.reasoning_effort),
         'enable_web_search': Boolean(oai_settings.enable_web_search),
         'request_images': Boolean(oai_settings.request_images),
+        'custom_prompt_post_processing': oai_settings.custom_prompt_post_processing,
     };
 
     if (!canMultiSwipe && ToolManager.canPerformToolCalls(type)) {
@@ -2048,7 +2051,7 @@ async function sendOpenAIRequest(type, messages, signal) {
         delete generate_data.stop;
         delete generate_data.logprobs;
     }
-    if (isOAI && oai_settings.openai_model.includes('gpt-4.5-preview') || isOpenRouter && oai_settings.openrouter_model.includes('gpt-4.5-preview')) {
+    if (isOAI && oai_settings.openai_model.includes('gpt-4.5') || isOpenRouter && oai_settings.openrouter_model.includes('gpt-4.5')) {
         delete generate_data.logprobs;
     }
 
@@ -2098,7 +2101,6 @@ async function sendOpenAIRequest(type, messages, signal) {
         generate_data['custom_include_body'] = oai_settings.custom_include_body;
         generate_data['custom_exclude_body'] = oai_settings.custom_exclude_body;
         generate_data['custom_include_headers'] = oai_settings.custom_include_headers;
-        generate_data['custom_prompt_post_processing'] = oai_settings.custom_prompt_post_processing;
     }
 
     if (isCohere) {
@@ -3476,7 +3478,7 @@ async function getStatusOpen() {
         let status;
 
         if ('ai' in window) {
-            status = 'Valid';
+            status = t`Valid`;
         }
         else {
             showWindowExtensionError();
@@ -3525,7 +3527,7 @@ async function getStatusOpen() {
 
     const canBypass = (oai_settings.chat_completion_source === chat_completion_sources.OPENAI && oai_settings.bypass_status_check) || oai_settings.chat_completion_source === chat_completion_sources.CUSTOM;
     if (canBypass) {
-        setOnlineStatus('Status check bypassed');
+        setOnlineStatus(t`Status check bypassed`);
     }
 
     try {
@@ -3547,7 +3549,7 @@ async function getStatusOpen() {
             saveModelList(responseData.data);
         }
         if (!('error' in responseData)) {
-            setOnlineStatus('Valid');
+            setOnlineStatus(t`Valid`);
         }
     } catch (error) {
         console.error(error);
@@ -4435,9 +4437,9 @@ async function onModelChange() {
     if (oai_settings.chat_completion_source === chat_completion_sources.MISTRALAI) {
         if (oai_settings.max_context_unlocked) {
             $('#openai_max_context').attr('max', unlocked_max);
-        } else if (oai_settings.mistralai_model.includes('codestral-mamba')) {
+        } else if (['codestral-latest', 'codestral-mamba-2407', 'codestral-2411-rc5', 'codestral-2412', 'codestral-2501'].includes(oai_settings.mistralai_model)) {
             $('#openai_max_context').attr('max', max_256k);
-        } else if (['mistral-large-2407', 'mistral-large-2411', 'mistral-large-latest'].includes(oai_settings.mistralai_model)) {
+        } else if (['mistral-large-2407', 'mistral-large-2411', 'mistral-large-pixtral-2411', 'mistral-large-latest'].includes(oai_settings.mistralai_model)) {
             $('#openai_max_context').attr('max', max_128k);
         } else if (oai_settings.mistralai_model.includes('mistral-nemo')) {
             $('#openai_max_context').attr('max', max_128k);
