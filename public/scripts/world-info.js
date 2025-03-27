@@ -5419,9 +5419,9 @@ export async function moveWorldInfoEntry(sourceName, targetName, uid) {
         console.debug(`[WI Move] Removed entry UID ${entryUidString} from source '${sourceName}'.`);
 
 
-        await saveWorldInfo(targetName, targetData);
+        await saveWorldInfo(targetName, targetData, true);
         console.debug(`[WI Move] Saved target lorebook '${targetName}'.`);
-        await saveWorldInfo(sourceName, sourceData);
+        await saveWorldInfo(sourceName, sourceData, true);
         console.debug(`[WI Move] Saved source lorebook '${sourceName}'.`);
 
 
