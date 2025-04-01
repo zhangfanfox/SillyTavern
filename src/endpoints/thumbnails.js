@@ -8,7 +8,6 @@ import sanitize from 'sanitize-filename';
 import jimp from 'jimp';
 import { sync as writeFileAtomicSync } from 'write-file-atomic';
 
-import { getAllUserHandles, getUserDirectories } from '../users.js';
 import { getConfigValue } from '../util.js';
 
 const thumbnailsEnabled = !!getConfigValue('thumbnails.enabled', true, 'boolean');
