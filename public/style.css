@@ -4990,6 +4990,10 @@ a:hover {
     padding: 0.5rem;
 }
 
+.mes_img.img_inline {
+    cursor: pointer;
+}
+
 .mes_img {
     border-radius: 10px;
     max-width: 100%;
