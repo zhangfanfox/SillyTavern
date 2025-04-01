@@ -1608,7 +1608,7 @@ jQuery(function () {
         reloadCurrentChat();
     });
 
-    $(document).on('click', '.mes_img.img_inline', expandMessageImage);
+    $(document).on('click', '.mes_img', expandMessageImage);
     $(document).on('click', '.mes_img_enlarge', expandAndZoomMessageImage);
     $(document).on('click', '.mes_img_delete', deleteMessageImage);
 
