@@ -5,7 +5,7 @@ import path from 'node:path';
 import mime from 'mime-types';
 import express from 'express';
 import sanitize from 'sanitize-filename';
-import jimp from 'jimp';
+import { Jimp, JimpMime } from '../jimp.js';
 import { sync as writeFileAtomicSync } from 'write-file-atomic';
 
 import { getConfigValue } from '../util.js';
@@ -122,14 +122,16 @@ async function generateThumbnail(directories, type, file) {
 
         try {
             const size = dimensions[type];
-            const image = await jimp.read(pathToOriginalFile);
-            const imgType = type == 'avatar' && pngFormat ? 'image/png' : 'image/jpeg';
+            const image = await Jimp.read(pathToOriginalFile);
             const width = !isNaN(size?.[0]) && size?.[0] > 0 ? size[0] : image.bitmap.width;
             const height = !isNaN(size?.[1]) && size?.[1] > 0 ? size[1] : image.bitmap.height;
-            buffer = await image.cover(width, height).quality(quality).getBufferAsync(imgType);
+            image.cover({ w: width, h: height });
+            buffer = pngFormat
+                ? await image.getBuffer(JimpMime.png)
+                : await image.getBuffer(JimpMime.jpeg, { quality: quality, jpegColorSpace: 'ycbcr' });
         }
         catch (inner) {
-            console.warn(`Thumbnailer can not process the image: ${pathToOriginalFile}. Using original size`);
+            console.warn(`Thumbnailer can not process the image: ${pathToOriginalFile}. Using original size`, inner);
             buffer = fs.readFileSync(pathToOriginalFile);
         }
 
