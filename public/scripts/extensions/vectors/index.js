@@ -63,6 +63,7 @@ const settings = {
     ollama_keep: false,
     vllm_model: '',
     webllm_model: '',
+    google_model: 'text-embedding-004',
     summarize: false,
     summarize_sent: false,
     summary_source: 'main',
@@ -789,6 +790,9 @@ function getVectorsRequestBody(args = {}) {
         case 'webllm':
             body.model = extension_settings.vectors.webllm_model;
             break;
+        case 'palm':
+            body.model = extension_settings.vectors.google_model;
+            break;
         default:
             break;
     }
@@ -1082,6 +1086,7 @@ function toggleSettings() {
     $('#nomicai_apiKey').toggle(settings.source === 'nomicai');
     $('#webllm_vectorsModel').toggle(settings.source === 'webllm');
     $('#koboldcpp_vectorsModel').toggle(settings.source === 'koboldcpp');
+    $('#google_vectorsModel').toggle(settings.source === 'palm');
     if (settings.source === 'webllm') {
         loadWebLlmModels();
     }
@@ -1736,6 +1741,12 @@ jQuery(async () => {
         if (!settings.webllm_model) return;
         await webllmProvider.loadModel(settings.webllm_model);
         toastr.success('WebLLM model loaded');
+    });
+
+    $('#vectors_google_model').val(settings.google_model).on('input', () => {
+        settings.google_model = String($('#vectors_google_model').val());
+        Object.assign(extension_settings.vectors, settings);
+        saveSettingsDebounced();
     });
 
     $('#api_key_nomicai').toggleClass('success', !!secret_state[SECRET_KEYS.NOMICAI]);

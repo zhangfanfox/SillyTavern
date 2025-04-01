@@ -179,8 +179,7 @@ function getSourceSettings(source, request) {
             };
         case 'palm':
             return {
-                // TODO: Add support for multiple models
-                model: 'text-embedding-004',
+                model: String(request.body.model || 'text-embedding-004'),
             };
         case 'mistral':
             return {

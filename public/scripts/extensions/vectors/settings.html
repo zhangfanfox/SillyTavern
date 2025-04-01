@@ -120,7 +120,16 @@
                     Hint: Set the URL in the API connection settings.
                 </i>
             </div>
-
+            <div class="flex-container flexFlowColumn" id="google_vectorsModel">
+                <label for="vectors_google_model" data-i18n="Vectorization Model">
+                    Vectorization Model
+                </label>
+                <select id="vectors_google_model" class="text_pole">
+                    <option value="gemini-embedding-exp-03-07">gemini-embedding-exp-03-07</option>
+                    <option value="text-embedding-004">text-embedding-004</option>
+                    <option value="embedding-001">embedding-001</option>
+                </select>
+            </div>
             <div class="flex-container alignItemsCenter" id="nomicai_apiKey">
                 <label for="api_key_nomicai" class="flex1">
                     <span data-i18n="NomicAI API Key">NomicAI API Key</span>
