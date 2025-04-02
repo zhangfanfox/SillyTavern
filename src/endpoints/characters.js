@@ -1437,9 +1437,10 @@ router.post('/export', validateAvatarUrlMiddleware, async function (request, res
             }
             case 'json': {
                 try {
-                    let json = await readCharacterData(filename);
+                    const json = await readCharacterData(filename);
                     if (json === undefined) return response.sendStatus(400);
-                    let jsonObject = getCharaCardV2(JSON.parse(json), request.user.directories);
+                    const jsonObject = getCharaCardV2(JSON.parse(json), request.user.directories);
+                    unsetPrivateFields(jsonObject);
                     return response.type('json').send(JSON.stringify(jsonObject, null, 4));
                 }
                 catch {
