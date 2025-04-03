@@ -1,7 +1,7 @@
 import { Fuse } from '../lib.js';
 
 import { callPopup, chat_metadata, eventSource, event_types, generateQuietPrompt, getCurrentChatId, getRequestHeaders, getThumbnailUrl, saveSettingsDebounced } from '../script.js';
-import { saveMetadataDebounced } from './extensions.js';
+import { openThirdPartyExtensionMenu, saveMetadataDebounced } from './extensions.js';
 import { SlashCommand } from './slash-commands/SlashCommand.js';
 import { SlashCommandParser } from './slash-commands/SlashCommandParser.js';
 import { flashHighlight, stringFormat } from './utils.js';
@@ -77,7 +77,7 @@ function getChatBackgroundsList() {
 }
 
 function getBackgroundPath(fileUrl) {
-    return `backgrounds/${fileUrl}`;
+    return `backgrounds/${encodeURIComponent(fileUrl)}`;
 }
 
 function highlightLockedBackground() {
@@ -438,7 +438,7 @@ async function delBackground(bg) {
     });
 }
 
-function onBackgroundUploadSelected() {
+async function onBackgroundUploadSelected() {
     const form = $('#form_bg_download').get(0);
 
     if (!(form instanceof HTMLFormElement)) {
@@ -447,8 +447,47 @@ function onBackgroundUploadSelected() {
     }
 
     const formData = new FormData(form);
+    await convertFileIfVideo(formData);
     uploadBackground(formData);
     form.reset();
+}
+
+/**
+ * Converts a video file to an animated webp format if the file is a video.
+ * @param {FormData} formData
+ * @returns {Promise<void>}
+ */
+async function convertFileIfVideo(formData) {
+    const file = formData.get('avatar');
+    if (!(file instanceof File)) {
+        return;
+    }
+    if (!file.type.startsWith('video/')) {
+        return;
+    }
+    if (typeof globalThis.convertVideoToAnimatedWebp !== 'function') {
+        toastr.warning('Click here to install the Video Background Loader extension', 'Video background uploads require a downloadable add-on', {
+            timeOut: 0,
+            extendedTimeOut: 0,
+            onclick: () => openThirdPartyExtensionMenu('https://github.com/SillyTavern/Extension-VideoBackgroundLoader'),
+        });
+        return;
+    }
+
+    let toastMessage = jQuery();
+    try {
+        toastMessage = toastr.info('Preparing video for upload...', 'Please wait', { timeOut: 0, extendedTimeOut: 0 });
+        const sourceBuffer = await file.arrayBuffer();
+        const convertedBuffer = await globalThis.convertVideoToAnimatedWebp({ buffer: new Uint8Array(sourceBuffer), name: file.name });
+        const convertedFileName = file.name.replace(/\.[^/.]+$/, '.webp');
+        const convertedFile = new File([convertedBuffer], convertedFileName, { type: 'image/webp' });
+        formData.set('avatar', convertedFile);
+        toastMessage.remove();
+    } catch (error) {
+        toastMessage.remove();
+        console.error('Error converting video to animated webp:', error);
+        toastr.error('Error converting video to animated webp');
+    }
 }
 
 /**
