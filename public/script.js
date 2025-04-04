@@ -12209,4 +12209,11 @@ jQuery(async function () {
     });
 
     initCustomSelectedSamplers();
+
+    window.addEventListener('beforeunload', (e) => {
+        if (isChatSaving) {
+            e.preventDefault();
+            e.returnValue = true;
+        }
+    });
 });
