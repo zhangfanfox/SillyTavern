@@ -1,7 +1,7 @@
 import { CONNECT_API_MAP, getRequestHeaders } from '../../script.js';
 import { extension_settings, openThirdPartyExtensionMenu } from '../extensions.js';
 import { t } from '../i18n.js';
-import { oai_settings } from '../openai.js';
+import { oai_settings, proxies } from '../openai.js';
 import { SECRET_KEYS, secret_state } from '../secrets.js';
 import { textgen_types, textgenerationwebui_settings } from '../textgen-settings.js';
 import { getTokenCountAsync } from '../tokenizers.js';
@@ -326,6 +326,8 @@ export class ConnectionManagerRequestService {
                         throw new Error(`API type ${selectedApiMap.selected} does not support chat completions`);
                     }
 
+                    const proxyPreset = proxies.find((p) => p.name === profile.proxy);
+
                     const messages = Array.isArray(prompt) ? prompt : [{ role: 'user', content: prompt }];
                     return await context.ChatCompletionService.processRequest({
                         stream,
@@ -334,6 +336,8 @@ export class ConnectionManagerRequestService {
                         model: profile.model,
                         chat_completion_source: selectedApiMap.source,
                         custom_url: profile['api-url'],
+                        reverse_proxy: proxyPreset?.url,
+                        proxy_password: proxyPreset?.password,
                     }, {
                         presetName: includePreset ? profile.preset : undefined,
                     }, extractData, signal);

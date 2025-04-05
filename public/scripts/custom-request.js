@@ -43,10 +43,12 @@ import EventSourceStream from './sse-stream.js';
  * @property {boolean?} [stream=false] - Whether to stream the response
  * @property {ChatCompletionMessage[]} messages - Array of chat messages
  * @property {string} [model] - Optional model name to use for completion
- * @property {string} chat_completion_source - Source provider for chat completion
+ * @property {string} chat_completion_source - Source provider
  * @property {number} max_tokens - Maximum number of tokens to generate
  * @property {number} [temperature] - Optional temperature parameter for response randomness
- * @property {string} [custom_url] - Optional custom URL for chat completion
+ * @property {string} [custom_url] - Optional custom URL
+ * @property {string} [reverse_proxy] - Optional reverse proxy URL
+ * @property {string} [proxy_password] - Optional proxy password
  */
 
 /** @typedef {Record<string, any> & ChatCompletionPayloadBase} ChatCompletionPayload */
@@ -387,7 +389,7 @@ export class ChatCompletionService {
      * @param {ChatCompletionPayload} custom
      * @returns {ChatCompletionPayload}
      */
-    static createRequestData({ stream = false, messages, model, chat_completion_source, max_tokens, temperature, custom_url, ...props }) {
+    static createRequestData({ stream = false, messages, model, chat_completion_source, max_tokens, temperature, custom_url, reverse_proxy, proxy_password, ...props }) {
         const payload = {
             ...props,
             stream,
@@ -397,6 +399,8 @@ export class ChatCompletionService {
             max_tokens,
             temperature,
             custom_url,
+            reverse_proxy,
+            proxy_password,
         };
 
         // Remove undefined values to avoid API errors
