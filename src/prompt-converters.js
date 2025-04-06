@@ -412,7 +412,7 @@ export function convertGooglePrompt(messages, model, useSysPrompt, names) {
         }
     }
 
-    const system_instruction = { parts: { text: sys_prompt.trim() } };
+    const system_instruction = { parts: [{ text: sys_prompt.trim() }]};
     const toolNameMap = {};
 
     const contents = [];
