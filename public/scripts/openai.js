@@ -4193,6 +4193,9 @@ function getGroqMaxContext(model, isUnlocked) {
         'qwen-2.5-32b': max_128k,
         'deepseek-r1-distill-qwen-32b': max_128k,
         'deepseek-r1-distill-llama-70b-specdec': max_128k,
+        'mistral-saba-24b': max_32k,
+        'meta-llama/llama-4-scout-17b-16e-instruct': max_128k,
+        'meta-llama/llama-4-maverick-17b-128e-instruct': max_128k,
     };
 
     // Return context size if model found, otherwise default to 128k
