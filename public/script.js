@@ -9879,8 +9879,12 @@ export async function renameChat(oldFileName, newName) {
         renamed_file: `${newName.trim()}.jsonl`,
     };
 
+    if (body.original_file === body.renamed_file) {
+        console.debug('Chat rename cancelled, old and new names are the same');
+        return;
+    }
     if (equalsIgnoreCaseAndAccents(body.original_file, body.renamed_file)) {
-        console.warn('Chat name is the same (ignoring case and accents)');
+        toastr.warning('Name not accepted, as it is the same as before (ignoring case and accents).', 'Rename Chat');
         return;
     }
 
