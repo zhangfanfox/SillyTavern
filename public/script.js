@@ -173,6 +173,7 @@ import {
     escapeHtml,
     saveBase64AsFile,
     uuidv4,
+    equalsIgnoreCaseAndAccents,
 } from './scripts/utils.js';
 import { debounce_timeout, IGNORE_SYMBOL } from './scripts/constants.js';
 
@@ -9877,6 +9878,11 @@ export async function renameChat(oldFileName, newName) {
         original_file: `${oldFileName}.jsonl`,
         renamed_file: `${newName.trim()}.jsonl`,
     };
+
+    if (equalsIgnoreCaseAndAccents(body.original_file, body.renamed_file)) {
+        console.warn('Chat name is the same (ignoring case and accents)');
+        return;
+    }
 
     try {
         showLoader();
