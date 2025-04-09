@@ -466,7 +466,7 @@ async function convertFileIfVideo(formData) {
         return;
     }
     if (typeof globalThis.convertVideoToAnimatedWebp !== 'function') {
-        toastr.warning('Click here to install the Video Background Loader extension', 'Video background uploads require a downloadable add-on', {
+        toastr.warning(t`Click here to install the Video Background Loader extension`, t`Video background uploads require a downloadable add-on`, {
             timeOut: 0,
             extendedTimeOut: 0,
             onclick: () => openThirdPartyExtensionMenu('https://github.com/SillyTavern/Extension-VideoBackgroundLoader'),
@@ -476,7 +476,7 @@ async function convertFileIfVideo(formData) {
 
     let toastMessage = jQuery();
     try {
-        toastMessage = toastr.info('Preparing video for upload...', 'Please wait', { timeOut: 0, extendedTimeOut: 0 });
+        toastMessage = toastr.info(t`Preparing video for upload. This may take several minutes.`, t`Please wait`, { timeOut: 0, extendedTimeOut: 0 });
         const sourceBuffer = await file.arrayBuffer();
         const convertedBuffer = await globalThis.convertVideoToAnimatedWebp({ buffer: new Uint8Array(sourceBuffer), name: file.name });
         const convertedFileName = file.name.replace(/\.[^/.]+$/, '.webp');
@@ -487,7 +487,7 @@ async function convertFileIfVideo(formData) {
         formData.delete('avatar');
         toastMessage.remove();
         console.error('Error converting video to animated webp:', error);
-        toastr.error('Error converting video to animated webp');
+        toastr.error(t`Error converting video to animated webp`);
     }
 }
 
