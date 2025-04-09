@@ -217,7 +217,7 @@ async function onCopyToSystemBackgroundClick(e) {
     const formData = new FormData();
     formData.set('avatar', file);
 
-    uploadBackground(formData);
+    await uploadBackground(formData);
 
     const list = chat_metadata[LIST_METADATA_KEY] || [];
     const index = list.indexOf(bgNames.oldBg);
@@ -448,7 +448,7 @@ async function onBackgroundUploadSelected() {
 
     const formData = new FormData(form);
     await convertFileIfVideo(formData);
-    uploadBackground(formData);
+    await uploadBackground(formData);
     form.reset();
 }
 
@@ -484,6 +484,7 @@ async function convertFileIfVideo(formData) {
         formData.set('avatar', convertedFile);
         toastMessage.remove();
     } catch (error) {
+        formData.delete('avatar');
         toastMessage.remove();
         console.error('Error converting video to animated webp:', error);
         toastr.error('Error converting video to animated webp');
@@ -494,26 +495,34 @@ async function convertFileIfVideo(formData) {
  * Uploads a background to the server
  * @param {FormData} formData
  */
-function uploadBackground(formData) {
-    jQuery.ajax({
-        type: 'POST',
-        url: '/api/backgrounds/upload',
-        data: formData,
-        beforeSend: function () {
-        },
-        cache: false,
-        contentType: false,
-        processData: false,
-        success: async function (bg) {
-            setBackground(bg, generateUrlParameter(bg, false));
-            await getBackgrounds();
-            highlightNewBackground(bg);
-        },
-        error: function (jqXHR, exception) {
-            console.log(exception);
-            console.log(jqXHR);
-        },
-    });
+async function uploadBackground(formData) {
+    try {
+        if (!formData.has('avatar')) {
+            console.log('No file provided. Background upload cancelled.');
+            return;
+        }
+
+        const headers = getRequestHeaders();
+        delete headers['Content-Type'];
+
+        const response = await fetch('/api/backgrounds/upload', {
+            method: 'POST',
+            headers: getRequestHeaders(),
+            body: formData,
+            cache: 'no-cache',
+        });
+
+        if (!response.ok) {
+            throw new Error('Failed to upload background');
+        }
+
+        const bg = await response.text();
+        setBackground(bg, generateUrlParameter(bg, false));
+        await getBackgrounds();
+        highlightNewBackground(bg);
+    } catch (error) {
+        console.error('Error uploading background:', error);
+    }
 }
 
 /**
