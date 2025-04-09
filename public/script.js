@@ -173,6 +173,7 @@ import {
     escapeHtml,
     saveBase64AsFile,
     uuidv4,
+    equalsIgnoreCaseAndAccents,
 } from './scripts/utils.js';
 import { debounce_timeout, IGNORE_SYMBOL } from './scripts/constants.js';
 
@@ -2133,7 +2134,7 @@ export function messageFormatting(mes, ch_name, isSystem, isUser, messageId, san
         }
 
         mes = mes.replace(
-            /```[\s\S]*?```|~~~[\s\S]*?~~~|``[\s\S]*?``|`[\s\S]*?`|(".*?")|(\u201C.*?\u201D)|(\u00AB.*?\u00BB)|(\u300C.*?\u300D)|(\u300E.*?\u300F)|(\uFF02.*?\uFF02)/gm,
+            /<style>[\s\S]*?<\/style>|```[\s\S]*?```|~~~[\s\S]*?~~~|``[\s\S]*?``|`[\s\S]*?`|(".*?")|(\u201C.*?\u201D)|(\u00AB.*?\u00BB)|(\u300C.*?\u300D)|(\u300E.*?\u300F)|(\uFF02.*?\uFF02)/gim,
             function (match, p1, p2, p3, p4, p5, p6) {
                 if (p1) {
                     // English double quotes
@@ -9878,6 +9879,15 @@ export async function renameChat(oldFileName, newName) {
         renamed_file: `${newName.trim()}.jsonl`,
     };
 
+    if (body.original_file === body.renamed_file) {
+        console.debug('Chat rename cancelled, old and new names are the same');
+        return;
+    }
+    if (equalsIgnoreCaseAndAccents(body.original_file, body.renamed_file)) {
+        toastr.warning(t`Name not accepted, as it is the same as before (ignoring case and accents).`, t`Rename Chat`);
+        return;
+    }
+
     try {
         showLoader();
         const response = await fetch('/api/chats/rename', {
@@ -12209,4 +12219,11 @@ jQuery(async function () {
     });
 
     initCustomSelectedSamplers();
+
+    window.addEventListener('beforeunload', (e) => {
+        if (isChatSaving) {
+            e.preventDefault();
+            e.returnValue = true;
+        }
+    });
 });

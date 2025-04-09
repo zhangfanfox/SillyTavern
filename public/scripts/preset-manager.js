@@ -36,7 +36,7 @@ import {
     textgenerationwebui_presets,
     textgenerationwebui_settings as textgen_settings,
 } from './textgen-settings.js';
-import { download, parseJsonFile, waitUntilCondition } from './utils.js';
+import { download, equalsIgnoreCaseAndAccents, parseJsonFile, waitUntilCondition } from './utils.js';
 import { t } from './i18n.js';
 import { reasoning_templates } from './reasoning.js';
 
@@ -454,6 +454,9 @@ class PresetManager {
 
     async renamePreset(newName) {
         const oldName = this.getSelectedPresetName();
+        if (equalsIgnoreCaseAndAccents(oldName, newName)) {
+            throw new Error('New name must be different from old name');
+        }
         try {
             await this.savePreset(newName);
             await this.deletePreset(oldName);
@@ -890,6 +893,10 @@ export async function initPresetManager() {
         const newName = await Popup.show.input(popupHeader, t`Enter a new name:`, oldName);
         if (!newName || oldName === newName) {
             console.debug(!presetManager.isAdvancedFormatting() ? 'Preset rename cancelled' : 'Template rename cancelled');
+            return;
+        }
+        if (equalsIgnoreCaseAndAccents(oldName, newName)) {
+            toastr.warning(t`Name not accepted, as it is the same as before (ignoring case and accents).`, t`Rename Preset`);
             return;
         }
 
