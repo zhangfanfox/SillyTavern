@@ -507,7 +507,7 @@ async function uploadBackground(formData) {
 
         const response = await fetch('/api/backgrounds/upload', {
             method: 'POST',
-            headers: getRequestHeaders(),
+            headers: headers,
             body: formData,
             cache: 'no-cache',
         });
