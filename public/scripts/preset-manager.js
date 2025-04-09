@@ -902,6 +902,12 @@ export async function initPresetManager() {
 
         await presetManager.renamePreset(newName);
 
+        if (apiId === 'openai') {
+            // This is a horrible mess, but prevents the renamed preset from being corrupted.
+            $('#update_oai_preset').trigger('click');
+            return;
+        }
+
         const successToast = !presetManager.isAdvancedFormatting() ? t`Preset renamed` : t`Template renamed`;
         toastr.success(successToast);
     });
