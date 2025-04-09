@@ -896,7 +896,7 @@ export async function initPresetManager() {
             return;
         }
         if (equalsIgnoreCaseAndAccents(oldName, newName)) {
-            toastr.warning('Name not accepted, as it is the same as before (ignoring case and accents).', 'Rename Preset');
+            toastr.warning(t`Name not accepted, as it is the same as before (ignoring case and accents).`, t`Rename Preset`);
             return;
         }
 

@@ -3587,7 +3587,7 @@ async function renameWorldInfo(name, data) {
         return;
     }
     if (equalsIgnoreCaseAndAccents(oldName, newName)) {
-        toastr.warning('Name not accepted, as it is the same as before (ignoring case and accents).', 'Rename World Info');
+        toastr.warning(t`Name not accepted, as it is the same as before (ignoring case and accents).`, t`Rename World Info`);
         return;
     }
 

@@ -9884,7 +9884,7 @@ export async function renameChat(oldFileName, newName) {
         return;
     }
     if (equalsIgnoreCaseAndAccents(body.original_file, body.renamed_file)) {
-        toastr.warning('Name not accepted, as it is the same as before (ignoring case and accents).', 'Rename Chat');
+        toastr.warning(t`Name not accepted, as it is the same as before (ignoring case and accents).`, t`Rename Chat`);
         return;
     }
 
