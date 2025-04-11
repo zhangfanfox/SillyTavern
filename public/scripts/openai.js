@@ -2159,6 +2159,13 @@ async function sendOpenAIRequest(type, messages, signal) {
         }
     }
 
+    if (isXAI) {
+        if (generate_data.model.includes('grok-3-mini')) {
+            delete generate_data.presence_penalty;
+            delete generate_data.frequency_penalty;
+        }
+    }
+
     if ((isOAI || isOpenRouter || isMistral || isCustom || isCohere || isNano || isXAI) && oai_settings.seed >= 0) {
         generate_data['seed'] = oai_settings.seed;
     }
