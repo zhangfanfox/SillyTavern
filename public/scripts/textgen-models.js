@@ -82,7 +82,7 @@ const OPENROUTER_PROVIDERS = [
     'Hyperbolic 2',
     'Lynn 2',
     'Lynn',
-    'Reflection'
+    'Reflection',
 ];
 
 export async function loadOllamaModels(data) {
