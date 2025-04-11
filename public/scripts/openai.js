@@ -4436,7 +4436,6 @@ async function onModelChange() {
             $('#openai_max_context').attr('max', 131072);
         } else if (["open-mixtral-8x22b", "open-mixtral-8x22b-2404"].includes(oai_settings.mistralai_model)) {
             $('#openai_max_context').attr('max', 65536);
-        } else if (oai_settings.mistralai_model.includes('ministral')) {
         } else if (["codestral-2405", "mistral-embed", "mistral-large-2402", "mistral-medium", "mistral-medium-2312", "mistral-medium-latest", "mistral-moderation-2411", "mistral-moderation-latest", "mistral-ocr-2503", "mistral-ocr-latest", "mistral-saba-2502", "mistral-saba-latest", "mistral-small", "mistral-small-2312", "mistral-small-2402", "mistral-small-2409", "mistral-small-2501", "mistral-small-2503", "mistral-small-latest", "mistral-tiny", "mistral-tiny-2312", "open-mistral-7b", "open-mixtral-8x7b"].includes(oai_settings.mistralai_model)) {
             $('#openai_max_context').attr('max', 32768);
         } else {
