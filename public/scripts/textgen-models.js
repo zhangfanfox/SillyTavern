@@ -23,7 +23,6 @@ export let openRouterModels = [];
  * @type {string[]}
  */
 const OPENROUTER_PROVIDERS = [
-
     "OpenAI",
     "Anthropic",
     "Google",
