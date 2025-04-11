@@ -627,8 +627,8 @@ together.post('/models', async (request, response) => {
         }
 
         const models = data
-            .filter(x => x.display_type === 'image')
-            .map(x => ({ value: x.name, text: x.display_name }));
+            .filter(x => x.type === 'image')
+            .map(x => ({ value: x.id, text: x.display_name }));
 
         return response.send(models);
     } catch (error) {
