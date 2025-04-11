@@ -306,9 +306,10 @@ export class ConnectionManagerRequestService {
      * @param {boolean?} [custom.includePreset=true]
      * @param {boolean?} [custom.includeInstruct=true]
      * @param {Partial<InstructSettings>?} [custom.instructSettings] Override instruct settings
+     * @param {Record<string, any>} [overridePayload] - Override payload for the request
      * @returns {Promise<import('../custom-request.js').ExtractedData | (() => AsyncGenerator<import('../custom-request.js').StreamResponse>)>} If not streaming, returns extracted data; if streaming, returns a function that creates an AsyncGenerator
      */
-    static async sendRequest(profileId, prompt, maxTokens, custom = this.defaultSendRequestParams) {
+    static async sendRequest(profileId, prompt, maxTokens, custom = this.defaultSendRequestParams, overridePayload = {}) {
         const { stream, signal, extractData, includePreset, includeInstruct, instructSettings } = { ...this.defaultSendRequestParams, ...custom };
 
         const context = SillyTavern.getContext();
@@ -338,6 +339,7 @@ export class ConnectionManagerRequestService {
                         custom_url: profile['api-url'],
                         reverse_proxy: proxyPreset?.url,
                         proxy_password: proxyPreset?.password,
+                        ...overridePayload,
                     }, {
                         presetName: includePreset ? profile.preset : undefined,
                     }, extractData, signal);
@@ -354,6 +356,7 @@ export class ConnectionManagerRequestService {
                         model: profile.model,
                         api_type: selectedApiMap.type,
                         api_server: profile['api-url'],
+                        ...overridePayload,
                     }, {
                         instructName: includeInstruct ? profile.instruct : undefined,
                         presetName: includePreset ? profile.preset : undefined,

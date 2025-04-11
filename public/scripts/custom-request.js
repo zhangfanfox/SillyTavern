@@ -82,7 +82,6 @@ export class TextCompletionService {
      */
     static createRequestData({ stream = false, prompt, max_tokens, model, api_type, api_server, temperature, min_p, ...props }) {
         const payload = {
-            ...props,
             stream,
             prompt,
             max_tokens,
@@ -92,6 +91,7 @@ export class TextCompletionService {
             api_server: api_server ?? getTextGenServer(api_type),
             temperature,
             min_p,
+            ...props,
         };
 
         // Remove undefined values to avoid API errors
@@ -391,7 +391,6 @@ export class ChatCompletionService {
      */
     static createRequestData({ stream = false, messages, model, chat_completion_source, max_tokens, temperature, custom_url, reverse_proxy, proxy_password, ...props }) {
         const payload = {
-            ...props,
             stream,
             messages,
             model,
@@ -401,6 +400,9 @@ export class ChatCompletionService {
             custom_url,
             reverse_proxy,
             proxy_password,
+            use_makersuite_sysprompt: true,
+            claude_use_sysprompt: true,
+            ...props,
         };
 
         // Remove undefined values to avoid API errors
