@@ -2164,6 +2164,10 @@ async function sendOpenAIRequest(type, messages, signal) {
             delete generate_data.presence_penalty;
             delete generate_data.frequency_penalty;
         }
+        if (generate_data.model.includes('grok-vision')) {
+            delete generate_data.tools;
+            delete generate_data.tool_choice;
+        }
     }
 
     if ((isOAI || isOpenRouter || isMistral || isCustom || isCohere || isNano || isXAI) && oai_settings.seed >= 0) {
@@ -4617,7 +4621,7 @@ async function onModelChange() {
             $('#openai_max_context').attr('max', unlocked_max);
         } else if (oai_settings.xai_model.includes('grok-2-vision')) {
             $('#openai_max_context').attr('max', max_32k);
-        }  else if (oai_settings.xai_model.includes('grok-vision')) {
+        } else if (oai_settings.xai_model.includes('grok-vision')) {
             $('#openai_max_context').attr('max', max_8k);
         } else {
             $('#openai_max_context').attr('max', max_128k);
