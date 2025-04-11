@@ -117,17 +117,17 @@ const default_bias_presets = {
     ],
 };
 
-const max_2k = 2047;
-const max_4k = 4095;
-const max_8k = 8191;
-const max_16k = 16383;
-const max_32k = 32767;
+const max_2k = 2048;
+const max_4k = 4096;
+const max_8k = 8192;
+const max_16k = 16384;
+const max_32k = 32768;
 const max_64k = 65535;
-const max_128k = 128 * 1000;
-const max_200k = 200 * 1000;
-const max_256k = 256 * 1000;
-const max_1mil = 1000 * 1000;
-const max_2mil = 2000 * 1000;
+const max_128k = 131072;
+const max_200k = 204800;
+const max_256k = 262144;
+const max_1mil = 1048576;
+const max_2mil = 2097152;
 const scale_max = 8191;
 const claude_max = 9000; // We have a proper tokenizer, so theoretically could be larger (up to 9k)
 const claude_100k_max = 99000;
@@ -4431,16 +4431,16 @@ async function onModelChange() {
         if (oai_settings.max_context_unlocked) {
             $('#openai_max_context').attr('max', unlocked_max);
         } else if (["codestral-2411-rc5", "codestral-2412", "codestral-2501", "codestral-latest", "codestral-mamba-2407", "codestral-mamba-latest", "open-codestral-mamba"].includes(oai_settings.mistralai_model)) {
-            $('#openai_max_context').attr('max', 262144);
+            $('#openai_max_context').attr('max', max_256k);
         } else if (["ministral-3b-2410", "ministral-3b-latest", "ministral-8b-2410", "ministral-8b-latest", "mistral-large-2407", "mistral-large-2411", "mistral-large-latest", "mistral-large-pixtral-2411", "mistral-tiny-2407", "mistral-tiny-latest", "open-mistral-nemo", "open-mistral-nemo-2407", "pixtral-12b", "pixtral-12b-2409", "pixtral-12b-latest", "pixtral-large-2411", "pixtral-large-latest"].includes(oai_settings.mistralai_model)) {
-            $('#openai_max_context').attr('max', 131072);
+            $('#openai_max_context').attr('max', max_128k);
         } else if (["open-mixtral-8x22b", "open-mixtral-8x22b-2404"].includes(oai_settings.mistralai_model)) {
-            $('#openai_max_context').attr('max', 65536);
+            $('#openai_max_context').attr('max', max_64k);
         } else if (oai_settings.mistralai_model.includes('ministral')) {
         } else if (["codestral-2405", "mistral-embed", "mistral-large-2402", "mistral-medium", "mistral-medium-2312", "mistral-medium-latest", "mistral-moderation-2411", "mistral-moderation-latest", "mistral-ocr-2503", "mistral-ocr-latest", "mistral-saba-2502", "mistral-saba-latest", "mistral-small", "mistral-small-2312", "mistral-small-2402", "mistral-small-2409", "mistral-small-2501", "mistral-small-2503", "mistral-small-latest", "mistral-tiny", "mistral-tiny-2312", "open-mistral-7b", "open-mixtral-8x7b"].includes(oai_settings.mistralai_model)) {
-            $('#openai_max_context').attr('max', 32768);
+            $('#openai_max_context').attr('max', max_32k);
         } else {
-            $('#openai_max_context').attr('max', 32768);
+            $('#openai_max_context').attr('max', max_32k);
         }
         oai_settings.openai_max_context = Math.min(oai_settings.openai_max_context, Number($('#openai_max_context').attr('max')));
         $('#openai_max_context').val(oai_settings.openai_max_context).trigger('input');
