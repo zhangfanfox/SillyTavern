@@ -4166,6 +4166,80 @@ function getMaxContextWindowAI(value) {
 }
 
 /**
+ * Get the maximum context size for the Mistral model
+ * @param {string} model Model identifier
+ * @param {boolean} isUnlocked Whether context limits are unlocked
+ * @returns {number} Maximum context size in tokens
+ */
+function getMistralMaxContext(model, isUnlocked) {
+    if (isUnlocked) {
+        return unlocked_max;
+    }
+
+    if (Array.isArray(model_list) && model_list.length > 0) {
+        const contextLength = model_list.find((record) => record.id === model)?.max_context_length;
+        if (contextLength) {
+            return contextLength;
+        }
+    }
+
+    const contextMap = {
+        'codestral-2411-rc5': 262144,
+        'codestral-2412': 262144,
+        'codestral-2501': 262144,
+        'codestral-latest': 262144,
+        'codestral-mamba-2407': 262144,
+        'codestral-mamba-latest': 262144,
+        'open-codestral-mamba': 262144,
+        'ministral-3b-2410': 131072,
+        'ministral-3b-latest': 131072,
+        'ministral-8b-2410': 131072,
+        'ministral-8b-latest': 131072,
+        'mistral-large-2407': 131072,
+        'mistral-large-2411': 131072,
+        'mistral-large-latest': 131072,
+        'mistral-large-pixtral-2411': 131072,
+        'mistral-tiny-2407': 131072,
+        'mistral-tiny-latest': 131072,
+        'open-mistral-nemo': 131072,
+        'open-mistral-nemo-2407': 131072,
+        'pixtral-12b': 131072,
+        'pixtral-12b-2409': 131072,
+        'pixtral-12b-latest': 131072,
+        'pixtral-large-2411': 131072,
+        'pixtral-large-latest': 131072,
+        'open-mixtral-8x22b': 65536,
+        'open-mixtral-8x22b-2404': 65536,
+        'codestral-2405': 32768,
+        'mistral-embed': 32768,
+        'mistral-large-2402': 32768,
+        'mistral-medium': 32768,
+        'mistral-medium-2312': 32768,
+        'mistral-medium-latest': 32768,
+        'mistral-moderation-2411': 32768,
+        'mistral-moderation-latest': 32768,
+        'mistral-ocr-2503': 32768,
+        'mistral-ocr-latest': 32768,
+        'mistral-saba-2502': 32768,
+        'mistral-saba-latest': 32768,
+        'mistral-small': 32768,
+        'mistral-small-2312': 32768,
+        'mistral-small-2402': 32768,
+        'mistral-small-2409': 32768,
+        'mistral-small-2501': 32768,
+        'mistral-small-2503': 32768,
+        'mistral-small-latest': 32768,
+        'mistral-tiny': 32768,
+        'mistral-tiny-2312': 32768,
+        'open-mistral-7b': 32768,
+        'open-mixtral-8x7b': 32768,
+    };
+
+    // Return context size if model found, otherwise default to 32k
+    return Object.entries(contextMap).find(([key]) => model.includes(key))?.[1] || 32768;
+}
+
+/**
  * Get the maximum context size for the Groq model
  * @param {string} model Model identifier
  * @param {boolean} isUnlocked Whether context limits are unlocked
@@ -4428,23 +4502,10 @@ async function onModelChange() {
     }
 
     if (oai_settings.chat_completion_source === chat_completion_sources.MISTRALAI) {
-        if (oai_settings.max_context_unlocked) {
-            $('#openai_max_context').attr('max', unlocked_max);
-        } else if (["codestral-2411-rc5", "codestral-2412", "codestral-2501", "codestral-latest", "codestral-mamba-2407", "codestral-mamba-latest", "open-codestral-mamba"].includes(oai_settings.mistralai_model)) {
-            $('#openai_max_context').attr('max', 262144);
-        } else if (["ministral-3b-2410", "ministral-3b-latest", "ministral-8b-2410", "ministral-8b-latest", "mistral-large-2407", "mistral-large-2411", "mistral-large-latest", "mistral-large-pixtral-2411", "mistral-tiny-2407", "mistral-tiny-latest", "open-mistral-nemo", "open-mistral-nemo-2407", "pixtral-12b", "pixtral-12b-2409", "pixtral-12b-latest", "pixtral-large-2411", "pixtral-large-latest"].includes(oai_settings.mistralai_model)) {
-            $('#openai_max_context').attr('max', 131072);
-        } else if (["open-mixtral-8x22b", "open-mixtral-8x22b-2404"].includes(oai_settings.mistralai_model)) {
-            $('#openai_max_context').attr('max', 65536);
-        } else if (["codestral-2405", "mistral-embed", "mistral-large-2402", "mistral-medium", "mistral-medium-2312", "mistral-medium-latest", "mistral-moderation-2411", "mistral-moderation-latest", "mistral-ocr-2503", "mistral-ocr-latest", "mistral-saba-2502", "mistral-saba-latest", "mistral-small", "mistral-small-2312", "mistral-small-2402", "mistral-small-2409", "mistral-small-2501", "mistral-small-2503", "mistral-small-latest", "mistral-tiny", "mistral-tiny-2312", "open-mistral-7b", "open-mixtral-8x7b"].includes(oai_settings.mistralai_model)) {
-            $('#openai_max_context').attr('max', 32768);
-        } else {
-            $('#openai_max_context').attr('max', 32768);
-        }
+        const maxContext = getMistralMaxContext(oai_settings.mistralai_model, oai_settings.max_context_unlocked);
+        $('#openai_max_context').attr('max', maxContext);
         oai_settings.openai_max_context = Math.min(oai_settings.openai_max_context, Number($('#openai_max_context').attr('max')));
         $('#openai_max_context').val(oai_settings.openai_max_context).trigger('input');
-
-        //mistral also caps temp at 1.0
         oai_settings.temp_openai = Math.min(claude_max_temp, oai_settings.temp_openai);
         $('#temp_openai').attr('max', claude_max_temp).val(oai_settings.temp_openai).trigger('input');
     }
