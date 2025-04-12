@@ -23,6 +23,7 @@ import {
     convertCohereMessages,
     convertMistralMessages,
     convertAI21Messages,
+    convertXAIMessages,
     mergeMessages,
     cachingAtDepthForOpenRouterClaude,
     cachingAtDepthForClaude,
@@ -1159,6 +1160,7 @@ router.post('/generate', function (request, response) {
         apiKey = readSecret(request.user.directories, SECRET_KEYS.XAI);
         headers = {};
         bodyParams = {};
+        request.body.messages = convertXAIMessages(request.body.messages, getPromptNames(request));
     } else {
         console.warn('This chat completion source is not supported yet.');
         return response.status(400).send({ error: true });

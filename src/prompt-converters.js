@@ -680,6 +680,43 @@ export function convertMistralMessages(messages, names) {
 }
 
 /**
+ * Convert a prompt from the messages objects to the format used by xAI.
+ * @param {object[]} messages Array of messages
+ * @param {PromptNames} names Prompt names
+ * @returns {object[]} Prompt for xAI
+ */
+export function convertXAIMessages(messages, names) {
+    if (!Array.isArray(messages)) {
+        return [];
+    }
+
+    messages.forEach(msg => {
+        if (!msg.name || msg.role === 'user') {
+            return;
+        }
+
+        const needsCharNamePrefix = [
+            { role: 'assistant', condition: names.charName && !msg.content.startsWith(`${names.charName}: `) && !names.startsWithGroupName(msg.content) },
+            { role: 'system', name: 'example_assistant', condition: names.charName && !msg.content.startsWith(`${names.charName}: `) && !names.startsWithGroupName(msg.content) },
+            { role: 'system', name: 'example_user', condition: names.userName && !msg.content.startsWith(`${names.userName}: `) },
+        ];
+
+        const matchingRule = needsCharNamePrefix.find(rule =>
+            msg.role === rule.role && (!rule.name || msg.name === rule.name) && rule.condition,
+        );
+
+        if (matchingRule) {
+            const prefix = msg.role === 'system' && msg.name === 'example_user' ? names.userName : names.charName;
+            msg.content = `${prefix}: ${msg.content}`;
+        }
+
+        delete msg.name;
+    });
+
+    return messages;
+}
+
+/**
  * Merge messages with the same consecutive role, removing names if they exist.
  * @param {any[]} messages Messages to merge
  * @param {PromptNames} names Prompt names
