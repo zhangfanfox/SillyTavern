@@ -1693,6 +1693,11 @@ function calculateOpenRouterCost() {
         }
     }
 
+    if (oai_settings.enable_web_search) {
+        const webSearchCost = (0.02).toFixed(2);
+        cost = t`${cost} + $${webSearchCost}`;
+    }
+
     $('#openrouter_max_prompt_cost').text(cost);
 }
 
@@ -5700,6 +5705,7 @@ export function initOpenAI() {
 
     $('#openai_enable_web_search').on('input', function () {
         oai_settings.enable_web_search = !!$(this).prop('checked');
+        calculateOpenRouterCost();
         saveSettingsDebounced();
     });
 
