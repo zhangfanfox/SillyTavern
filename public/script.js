@@ -3051,10 +3051,13 @@ export async function getExtensionPromptByName(moduleName) {
  * @returns {number} Maximum depth of extension prompts
  */
 export function getExtensionPromptMaxDepth() {
+    return MAX_INJECTION_DEPTH;
+    /*
     const prompts = Object.values(extension_prompts);
     const maxDepth = Math.max(...prompts.map(x => x.depth ?? 0));
     // Clamp to 1 <= depth <= MAX_INJECTION_DEPTH
     return Math.max(Math.min(maxDepth, MAX_INJECTION_DEPTH), 1);
+    */
 }
 
 /**
