@@ -4079,7 +4079,7 @@
                                     <div class="fa-solid fa-circle-chevron-down inline-drawer-icon down"></div>
                                 </div>
                                 <div class="inline-drawer-content">
-                                    <div id="wiActivationSettings" class="flex-container">
+                                    <div id="wiActivationSettings">
                                         <div id="wiSliders" class="flex2 flex-container">
                                             <div class="alignitemscenter flex-container flexFlowColumn flexGrow flexShrink gap0 flexBasis48p">
                                                 <small>
@@ -4131,31 +4131,12 @@
                                                 <input class="neo-range-slider" type="range" id="world_info_max_recursion_steps" name="world_info_max_recursion_steps" min="0" max="10" step="1">
                                                 <input class="neo-range-input" type="number" min="0" max="10" step="1" data-for="world_info_max_recursion_steps" id="world_info_max_recursion_steps_counter">
                                             </div>
-
-                                            <div class="alignitemscenter flex-container flexFlowColumn flexGrow flexShrink flexBasis48p">
-                                                <small data-i18n="Insertion Strategy">
-                                                    Insertion Strategy
-                                                </small>
-                                                <select id="world_info_character_strategy" class="flexGrow margin0">
-                                                    <option value="0" data-i18n="Sorted Evenly">Sorted Evenly</option>
-                                                    <option value="1" data-i18n="Character Lore First">Character Lore First</option>
-                                                    <option value="2" data-i18n="Global Lore First">Global Lore First</option>
-                                                </select>
-                                            </div>
                                         </div>
-                                        <div id="wiCheckboxes" class="flex1 flex-container flexFlowColumn">
-                                            <label title="Include names with each message into the context for scanning" data-i18n="[title]Include names with each message into the context for scanning" class="checkbox_label flex1">
-                                                <input id="world_info_include_names" type="checkbox" />
-                                                <small data-i18n="Include Names" class="whitespacenowrap flex1">
-                                                    Include Names
-                                                </small>
-                                            </label>
-                                            <label title="Entries can activate other entries by mentioning their keywords" data-i18n="[title]Entries can activate other entries by mentioning their keywords" class="checkbox_label flex1">
-                                                <input id="world_info_recursive" type="checkbox" />
-                                                <small data-i18n="Recursive Scan" class="whitespacenowrap flex1">
-                                                    Recursive Scan
-                                                </small>
-                                            </label>
+                                        <hr class="width100p">
+                                        <div class="flex-container flexFlowColumn flexGrow flexShrink flexBasis48p">
+                                            <small class="textAlignCenter" data-i18n="Matching Strategy">
+                                                Matching Strategy
+                                            </small>
                                             <label title="Lookup for the entry keys in the context will respect the case" data-i18n="[title]Lookup for the entry keys in the context will respect the case" class="checkbox_label flex1">
                                                 <input id="world_info_case_sensitive" type="checkbox" />
                                                 <small data-i18n="Case Sensitive" class="whitespacenowrap flex1">
@@ -4166,6 +4147,61 @@
                                                 <input id="world_info_match_whole_words" type="checkbox" />
                                                 <small data-i18n="Match Whole Words" class="whitespacenowrap flex1">
                                                     Match Whole Words
+                                                </small>
+                                            </label>
+                                            <label title="If the entry key consists of only one word, it would not be matched as part of other words" data-i18n="[title]If the entry key consists of only one word, it would not be matched as part of other words" class="checkbox_label flex1">
+                                                <input id="world_info_match_whole_words" type="checkbox" />
+                                                <small data-i18n="Match Whole Words" class="whitespacenowrap flex1">
+                                                    Match Persona Description
+                                                </small>
+                                            </label>
+                                            <label title="If the entry key consists of only one word, it would not be matched as part of other words" data-i18n="[title]If the entry key consists of only one word, it would not be matched as part of other words" class="checkbox_label flex1">
+                                                <input id="world_info_match_whole_words" type="checkbox" />
+                                                <small data-i18n="Match Whole Words" class="whitespacenowrap flex1">
+                                                    Match Character Description
+                                                </small>
+                                            </label>
+                                            <label title="If the entry key consists of only one word, it would not be matched as part of other words" data-i18n="[title]If the entry key consists of only one word, it would not be matched as part of other words" class="checkbox_label flex1">
+                                                <input id="world_info_match_whole_words" type="checkbox" />
+                                                <small data-i18n="Match Whole Words" class="whitespacenowrap flex1">
+                                                    Match Character Personality
+                                                </small>
+                                            </label>
+                                            <label title="If the entry key consists of only one word, it would not be matched as part of other words" data-i18n="[title]If the entry key consists of only one word, it would not be matched as part of other words" class="checkbox_label flex1">
+                                                <input id="world_info_match_whole_words" type="checkbox" />
+                                                <small data-i18n="Match Whole Words" class="whitespacenowrap flex1">
+                                                    Match Character Note
+                                                </small>
+                                            </label>
+                                            <label title="If the entry key consists of only one word, it would not be matched as part of other words" data-i18n="[title]If the entry key consists of only one word, it would not be matched as part of other words" class="checkbox_label flex1">
+                                                <input id="world_info_match_whole_words" type="checkbox" />
+                                                <small data-i18n="Match Whole Words" class="whitespacenowrap flex1">
+                                                    Match Scenario
+                                                </small>
+                                            </label>
+                                            <label title="If the entry key consists of only one word, it would not be matched as part of other words" data-i18n="[title]If the entry key consists of only one word, it would not be matched as part of other words" class="checkbox_label flex1">
+                                                <input id="world_info_match_characters_metadata" type="checkbox" />
+                                                <small data-i18n="Match Characters Metadata" class="whitespacenowrap flex1">
+                                                    Match Characters Metadata
+                                                </small>
+                                            </label>
+                                        </div>
+
+                                        <hr class="width100p">
+                                        <div class="flex-container flexFlowColumn flexGrow flexShrink flexBasis48p">
+                                            <small class="textAlignCenter" data-i18n="Miscelaneous">
+                                                Miscelaneous
+                                            </small>
+                                            <label title="Include names with each message into the context for scanning" data-i18n="[title]Include names with each message into the context for scanning" class="checkbox_label flex1">
+                                                <input id="world_info_include_names" type="checkbox" />
+                                                <small data-i18n="Include Names" class="whitespacenowrap flex1">
+                                                    Include Names
+                                                </small>
+                                            </label>
+                                            <label title="Entries can activate other entries by mentioning their keywords" data-i18n="[title]Entries can activate other entries by mentioning their keywords" class="checkbox_label flex1">
+                                                <input id="world_info_recursive" type="checkbox" />
+                                                <small data-i18n="Recursive Scan" class="whitespacenowrap flex1">
+                                                    Recursive Scan
                                                 </small>
                                             </label>
                                             <label title="Only the entries with the most number of key matches will be selected for Inclusion Group filtering" data-i18n="[title]Only the entries with the most number of key matches will be selected for Inclusion Group filtering" class="checkbox_label flex1">
@@ -4181,6 +4217,19 @@
                                                 </small>
                                             </label>
                                         </div>
+
+                                        <hr class="width100p">
+                                        <div class="alignitemscenter flex-container flexFlowColumn flexGrow flexShrink flexBasis48p">
+                                            <small data-i18n="Insertion Strategy">
+                                                Insertion Strategy
+                                            </small>
+                                            <select id="world_info_character_strategy" class="flexGrow margin0">
+                                                <option value="0" data-i18n="Sorted Evenly">Sorted Evenly</option>
+                                                <option value="1" data-i18n="Character Lore First">Character Lore First</option>
+                                                <option value="2" data-i18n="Global Lore First">Global Lore First</option>
+                                            </select>
+                                        </div>
+
                                     </div>
                                 </div>
                             </div>
@@ -6087,47 +6136,9 @@
                                         </button>
                                     </div>
                                 </div>
-                                <div name="perEntryOverridesBlock" class="flex-container wide100p alignitemscenter">
-                                    <div class="world_entry_form_control flex1">
-                                        <small class="textAlignCenter" data-i18n="Scan Depth">Scan Depth</small>
-                                        <input class="text_pole margin0" name="scanDepth" type="number" placeholder="Use global setting" data-i18n="[placeholder]Use global setting" max="1000">
-                                    </div>
-                                    <div class="world_entry_form_control flex1">
-                                        <small class="textAlignCenter" data-i18n="Case-Sensitive">Case-Sensitive</small>
-                                        <select name="caseSensitive" class="text_pole widthNatural margin0">
-                                            <option value="null" data-i18n="Use global">Use global</option>
-                                            <option value="true" data-i18n="Yes">Yes</option>
-                                            <option value="false" data-i18n="No">No</option>
-                                        </select>
-                                    </div>
-                                    <div class="world_entry_form_control flex1">
-                                        <small class="textAlignCenter" data-i18n="Whole Words">Whole Words</small>
-                                        <select name="matchWholeWords" class="text_pole widthNatural margin0">
-                                            <option value="null" data-i18n="Use global">Use global</option>
-                                            <option value="true" data-i18n="Yes">Yes</option>
-                                            <option value="false" data-i18n="No">No</option>
-                                        </select>
-                                    </div>
-                                    <div class="world_entry_form_control flex1">
-                                        <small class="textAlignCenter" data-i18n="Group Scoring">Group Scoring</small>
-                                        <select name="useGroupScoring" class="text_pole widthNatural margin0">
-                                            <option value="null" data-i18n="Use global">Use global</option>
-                                            <option value="true" data-i18n="Yes">Yes</option>
-                                            <option value="false" data-i18n="No">No</option>
-                                        </select>
-                                    </div>
-                                    <div class="world_entry_form_control flex1" title="Can be used to automatically activate Quick Replies" data-i18n="[title]Can be used to automatically activate Quick Replies">
-                                        <small class="textAlignCenter" data-i18n="Automation ID">Automation ID</small>
-                                        <input class="text_pole margin0" name="automationId" type="text" placeholder="( None )" data-i18n="[placeholder]( None )">
-                                    </div>
-                                    <div class="world_entry_form_control flex1" title="Defines delay levels for recursive scans.&#13;&#13;Initially, only the first level (smallest number) will match.&#13;Once no matches are found, the next level becomes eligible for matching.&#13;This repeats until all levels are checked.&#13;&#13;Tied to the &quot;Delay until recursion&quot; setting." data-i18n="[title]delay_until_recursion_level">
-                                        <small class="textAlignCenter">
-                                            <span data-i18n="Recursion Level">Recursion Level</span>
-                                            <div class="fa-solid fa-circle-info opacity50p"></div>
-                                        </small>
-                                        <input class="text_pole margin0" name="delayUntilRecursionLevel" type="text" placeholder="1">
-                                    </div>
-                                </div>
+
+
+
                                 <div name="contentAndCharFilterBlock" class="world_entry_thin_controls flex2">
                                     <div class="world_entry_form_control flex1">
                                         <label for="content ">
@@ -6143,26 +6154,6 @@
                                                         (<span data-i18n="extension_token_counter">Tokens:</span>&nbsp; <span class="world_entry_form_token_counter" data-first-run="true">counting...</span>)&nbsp;
                                                         <span class="world_entry_form_uid_value" data-first-run="true"></span>
                                                     </span>
-                                                    <div>
-                                                        <label class="checkbox flex-container alignitemscenter flexNoGap">
-                                                            <input type="checkbox" name="exclude_recursion" />
-                                                            <span data-i18n="Non-recursable (will not be activated by another)">
-                                                                Non-recursable (will not be activated by another)
-                                                            </span>
-                                                        </label>
-                                                        <label class="checkbox flex-container alignitemscenter flexNoGap">
-                                                            <input type="checkbox" name="prevent_recursion" />
-                                                            <span data-i18n="Prevent further recursion (this entry will not activate others)">
-                                                                Prevent further recursion (will not activate others)
-                                                            </span>
-                                                        </label>
-                                                        <label class="checkbox flex-container alignitemscenter flexNoGap">
-                                                            <input type="checkbox" name="delay_until_recursion" />
-                                                            <span data-i18n="Delay until recursion (can only be activated on recursive checking)">
-                                                                Delay until recursion (can only be activated on recursive checking)
-                                                            </span>
-                                                        </label>
-                                                    </div>
                                                 </span>
                                             </small>
                                             <small class="displayNone">
@@ -6177,6 +6168,131 @@
                                 <div class="world_entry_thin_controls commentContainer">
                                 </div>
                             </div>
+
+                            <div class="inline-drawer wide100p flexFlowColumn">
+                                <div class="inline-drawer-toggle inline-drawer-header userSettingsInnerExpandable">
+                                    <strong>Activation Settings</strong>
+                                    <div class="fa-solid fa-circle-chevron-down inline-drawer-icon down"></div>
+                                </div>
+                                <div class="inline-drawer-content flex-container flexFlowRow flexGap10">
+                                    <div class="flex1 flex-container flexFlowColumn flexGap10">
+                                        <div class="flex-container flexFlowRow alignItemsCenter justifySpaceBetween" title="Can be used to automatically activate Quick Replies" data-i18n="[title]Can be used to automatically activate Quick Replies">
+                                            <small class="flex1" data-i18n="Automation ID">Automation ID</small>
+                                            <input class="flex1 text_pole margin0" name="automationId" type="text" placeholder="( None )" data-i18n="[placeholder]( None )">
+                                        </div>
+                                        <small>
+                                            <label class="checkbox flex-container alignItemsCenter flexNoGap">
+                                                <input type="checkbox" name="exclude_recursion" />
+                                                <span data-i18n="Non-recursable (will not be activated by another)">
+                                                    Non-recursable (will not be activated by another)
+                                                </span>
+                                            </label>
+                                            <label class="checkbox flex-container alignItemsCenter flexNoGap">
+                                                <input type="checkbox" name="prevent_recursion" />
+                                                <span data-i18n="Prevent further recursion (this entry will not activate others)">
+                                                    Prevent further recursion (will not activate others)
+                                                </span>
+                                            </label>
+                                        </small>
+                                        <div class="flex-container alignItemsCenter flexNoGap">
+                                            <small class="flex1" data-i18n="Scan Depth">Scan Depth</small>
+                                            <input class="text_pole margin0 flex1" name="scanDepth" type="number" placeholder="Use global setting" data-i18n="[placeholder]Use global setting" max="1000">
+                                        </div>
+                                        <div class="checkbox flex-container alignItemsCenter flexNoGap">
+                                            <small class="flex1" data-i18n="Case-Sensitive">Case-Sensitive</small>
+                                            <select name="caseSensitive" class="text_pole widthNatural margin0 flex1">
+                                                <option value="null" data-i18n="Use global">Use global</option>
+                                                <option value="true" data-i18n="Yes">Yes</option>
+                                                <option value="false" data-i18n="No">No</option>
+                                            </select>
+                                        </div>
+                                        <div class="checkbox flex-container alignItemsCenter flexNoGap">
+                                            <small class="flex1" data-i18n="Whole Words">Whole Words</small>
+                                            <select name="matchWholeWords" class="text_pole widthNatural margin0 flex1">
+                                                <option value="null" data-i18n="Use global">Use global</option>
+                                                <option value="true" data-i18n="Yes">Yes</option>
+                                                <option value="false" data-i18n="No">No</option>
+                                            </select>
+                                        </div>
+                                        <div class="checkbox flex-container alignItemsCenter flexNoGap">
+                                            <small class="flex1" data-i18n="Group Scoring">Group Scoring</small>
+                                            <select name="useGroupScoring" class="text_pole widthNatural margin0 flex1">
+                                                <option value="null" data-i18n="Use global">Use global</option>
+                                                <option value="true" data-i18n="Yes">Yes</option>
+                                                <option value="false" data-i18n="No">No</option>
+                                            </select>
+                                        </div>
+
+                                        <small>
+                                            <label class="checkbox flex-container alignItemsCenter flexNoGap">
+                                                <input type="checkbox" name="delay_until_recursion" />
+                                                <span data-i18n="Delay until recursion (can only be activated on recursive checking)">
+                                                    Delay until recursion (can only be activated on recursive checking)
+                                                </span>
+                                            </label>
+                                        </small>
+                                        <div class="world_entry_form_control_recursion_delay flex-container alignItemsCenter" title="Defines delay levels for recursive scans.&#13;&#13;Initially, only the first level (smallest number) will match.&#13;Once no matches are found, the next level becomes eligible for matching.&#13;This repeats until all levels are checked.&#13;&#13;Tied to the &quot;Delay until recursion&quot; setting." data-i18n="[title]delay_until_recursion_level">
+                                            <small class="flex1">
+                                                <span data-i18n="Recursion Level">Recursion Level</span>
+                                                <div class="fa-solid fa-circle-info opacity50p"></div>
+                                            </small>
+                                            <input class="flex1 text_pole margin0" name="delayUntilRecursionLevel" type="text" placeholder="1">
+                                        </div>
+                                    </div>
+
+                                    <div class="flex1 flex-container flexFlowColumn flexGap10">
+                                        <div class="checkbox flex-container alignItemsCenter flexNoGap">
+                                            <small class="flex1" data-i18n="Match Persona Description">Match Persona Description</small>
+                                            <select name="matchPersonaDescription" class="text_pole widthNatural margin0 flex1">
+                                                <option value="null" data-i18n="Use global">Use global</option>
+                                                <option value="true" data-i18n="Yes">Yes</option>
+                                                <option value="false" data-i18n="No">No</option>
+                                            </select>
+                                        </div>
+                                        <div class="checkbox flex-container alignItemsCenter flexNoGap">
+                                            <small class="flex1" data-i18n="Match Character Description">Match Character Description</small>
+                                            <select name="matchCharacterDescription" class="text_pole widthNatural margin0 flex1">
+                                                <option value="null" data-i18n="Use global">Use global</option>
+                                                <option value="true" data-i18n="Yes">Yes</option>
+                                                <option value="false" data-i18n="No">No</option>
+                                            </select>
+                                        </div>
+                                        <div class="checkbox flex-container alignItemsCenter flexNoGap">
+                                            <small class="flex1" data-i18n="Match Character Personality">Match Character Personality</small>
+                                            <select name="matchCharacterPersonality" class="text_pole widthNatural margin0 flex1">
+                                                <option value="null" data-i18n="Use global">Use global</option>
+                                                <option value="true" data-i18n="Yes">Yes</option>
+                                                <option value="false" data-i18n="No">No</option>
+                                            </select>
+                                        </div>
+                                        <div class="checkbox flex-container alignItemsCenter flexNoGap">
+                                            <small class="flex1" data-i18n="Match Character Note">Match Character Note</small>
+                                            <select name="matchCharacterNote" class="text_pole widthNatural margin0 flex1">
+                                                <option value="null" data-i18n="Use global">Use global</option>
+                                                <option value="true" data-i18n="Yes">Yes</option>
+                                                <option value="false" data-i18n="No">No</option>
+                                            </select>
+                                        </div>
+                                        <div class="checkbox flex-container alignItemsCenter flexNoGap">
+                                            <small class="flex1" data-i18n="Match Scenario">Match Scenario</small>
+                                            <select name="matchScenario" class="text_pole widthNatural margin0 flex1">
+                                                <option value="null" data-i18n="Use global">Use global</option>
+                                                <option value="true" data-i18n="Yes">Yes</option>
+                                                <option value="false" data-i18n="No">No</option>
+                                            </select>
+                                        </div>
+                                        <div class="checkbox flex-container alignItemsCenter flexNoGap">
+                                            <small class="flex1" data-i18n="Match Character Metadata">Match Character Metadata</small>
+                                            <select name="matchCharacterMetadata" class="text_pole widthNatural margin0 flex1">
+                                                <option value="null" data-i18n="Use global">Use global</option>
+                                                <option value="true" data-i18n="Yes">Yes</option>
+                                                <option value="false" data-i18n="No">No</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
                             <div class="flex-container wide100p flexGap10">
                                 <div class="flex4 flex-container flexFlowColumn flexNoGap">
                                     <div class="flex-container justifySpaceBetween">
