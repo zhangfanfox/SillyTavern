@@ -4125,6 +4125,9 @@ function getMaxContextOpenAI(value) {
     if (oai_settings.max_context_unlocked) {
         return unlocked_max;
     }
+    else if (value.includes('gpt-4.1')) {
+        return max_1mil;
+    }
     else if (value.startsWith('o1') || value.startsWith('o3')) {
         return max_128k;
     }
@@ -5145,6 +5148,7 @@ export function isImageInliningSupported() {
         'c4ai-aya-vision-32b',
         'grok-2-vision',
         'grok-vision',
+        'gpt-4.1',
     ];
 
     switch (oai_settings.chat_completion_source) {
