@@ -6,7 +6,6 @@ import util from 'node:util';
 import net from 'node:net';
 import dns from 'node:dns';
 import process from 'node:process';
-import { fileURLToPath } from 'node:url';
 
 import cors from 'cors';
 import { csrfSync } from 'csrf-sync';
@@ -60,6 +59,7 @@ import {
 } from './src/util.js';
 import { UPLOADS_DIRECTORY } from './src/constants.js';
 import { ensureThumbnailCache } from './src/endpoints/thumbnails.js';
+import { serverDirectory } from './src/server-directory.js';
 
 // Routers
 import { router as usersPublicRouter } from './src/endpoints/users-public.js';
@@ -74,10 +74,7 @@ util.inspect.defaultOptions.maxArrayLength = null;
 util.inspect.defaultOptions.maxStringLength = null;
 util.inspect.defaultOptions.depth = 4;
 
-// Set a working directory for the server
-const serverDirectory = import.meta.dirname ?? path.dirname(fileURLToPath(import.meta.url));
 console.log(`Node version: ${process.version}. Running in ${process.env.NODE_ENV} environment. Server directory: ${serverDirectory}`);
-process.chdir(serverDirectory);
 
 // Work around a node v20.0.0, v20.1.0, and v20.2.0 bug. The issue was fixed in v20.3.0.
 // https://github.com/nodejs/node/issues/47822#issuecomment-1564708870
@@ -211,7 +208,7 @@ app.get('/', getCacheBusterMiddleware(), (request, response) => {
         return response.redirect(redirectUrl);
     }
 
-    return response.sendFile('index.html', { root: path.join(process.cwd(), 'public') });
+    return response.sendFile('index.html', { root: path.join(serverDirectory, 'public') });
 });
 
 // Callback endpoint for OAuth PKCE flows (e.g. OpenRouter)
@@ -231,7 +228,7 @@ app.get('/login', loginPageMiddleware);
 // Host frontend assets
 const webpackMiddleware = getWebpackServeMiddleware();
 app.use(webpackMiddleware);
-app.use(express.static(process.cwd() + '/public', {}));
+app.use(express.static(path.join(serverDirectory, 'public'), {}));
 
 // Public API
 app.use('/api/users', usersPublicRouter);
@@ -375,7 +372,7 @@ async function postSetupTasks(result) {
  * Registers a not-found error response if a not-found error page exists. Should only be called after all other middlewares have been registered.
  */
 function apply404Middleware() {
-    const notFoundWebpage = safeReadFileSync('./public/error/url-not-found.html') ?? '';
+    const notFoundWebpage = safeReadFileSync(path.join(serverDirectory, 'public/error/url-not-found.html')) ?? '';
     app.use((req, res) => {
         res.status(404).send(notFoundWebpage);
     });

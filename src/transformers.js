@@ -5,14 +5,16 @@ import { Buffer } from 'node:buffer';
 
 import { pipeline, env, RawImage } from 'sillytavern-transformers';
 import { getConfigValue } from './util.js';
+import { serverDirectory } from './server-directory.js';
 
 configureTransformers();
 
 function configureTransformers() {
     // Limit the number of threads to 1 to avoid issues on Android
     env.backends.onnx.wasm.numThreads = 1;
+    console.log(env.backends.onnx.wasm.wasmPaths);
     // Use WASM from a local folder to avoid CDN connections
-    env.backends.onnx.wasm.wasmPaths = path.join(process.cwd(), 'dist') + path.sep;
+    env.backends.onnx.wasm.wasmPaths = path.join(serverDirectory, 'node_modules', 'sillytavern-transformers', 'dist') + path.sep;
 }
 
 const tasks = {

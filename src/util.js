@@ -17,6 +17,7 @@ import { default as simpleGit } from 'simple-git';
 import chalk from 'chalk';
 import { LOG_LEVELS } from './constants.js';
 import bytes from 'bytes';
+import { serverDirectory } from './server-directory.js';
 
 /**
  * Parsed config object.
@@ -121,20 +122,19 @@ export async function getVersion() {
 
     try {
         const require = createRequire(import.meta.url);
-        const pkgJson = require(path.join(process.cwd(), './package.json'));
+        const pkgJson = require(path.join(serverDirectory, './package.json'));
         pkgVersion = pkgJson.version;
         if (commandExistsSync('git')) {
-            const git = simpleGit();
-            const cwd = process.cwd();
-            gitRevision = await git.cwd(cwd).revparse(['--short', 'HEAD']);
-            gitBranch = await git.cwd(cwd).revparse(['--abbrev-ref', 'HEAD']);
-            commitDate = await git.cwd(cwd).show(['-s', '--format=%ci', gitRevision]);
+            const git = simpleGit({ baseDir: serverDirectory });
+            gitRevision = await git.revparse(['--short', 'HEAD']);
+            gitBranch = await git.revparse(['--abbrev-ref', 'HEAD']);
+            commitDate = await git.show(['-s', '--format=%ci', gitRevision]);
 
-            const trackingBranch = await git.cwd(cwd).revparse(['--abbrev-ref', '@{u}']);
+            const trackingBranch = await git.revparse(['--abbrev-ref', '@{u}']);
 
             // Might fail, but exception is caught. Just don't run anything relevant after in this block...
-            const localLatest = await git.cwd(cwd).revparse(['HEAD']);
-            const remoteLatest = await git.cwd(cwd).revparse([trackingBranch]);
+            const localLatest = await git.revparse(['HEAD']);
+            const remoteLatest = await git.revparse([trackingBranch]);
             isLatest = localLatest === remoteLatest;
         }
     }

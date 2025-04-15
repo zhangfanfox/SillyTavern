@@ -1,6 +1,5 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import process from 'node:process';
 import { Buffer } from 'node:buffer';
 
 import express from 'express';
@@ -10,9 +9,10 @@ import { sync as writeFileAtomicSync } from  'write-file-atomic';
 
 import { getConfigValue, color } from '../util.js';
 import { write } from '../character-card-parser.js';
+import { serverDirectory } from '../server-directory.js';
 
-const contentDirectory = path.join(process.cwd(), 'default/content');
-const scaffoldDirectory = path.join(process.cwd(), 'default/scaffold');
+const contentDirectory = path.join(serverDirectory, 'default/content');
+const scaffoldDirectory = path.join(serverDirectory, 'default/scaffold');
 const contentIndexPath = path.join(contentDirectory, 'index.json');
 const scaffoldIndexPath = path.join(scaffoldDirectory, 'index.json');
 
@@ -149,6 +149,30 @@ async function seedContentForUser(contentIndex, directories, forceCategories) {
         }
 
         fs.cpSync(contentPath, targetPath, { recursive: true, force: false });
+        function setPermissionsSync(targetPath_) {
+
+            function appendWritablePermission(filepath, stats) {
+                const currentMode = stats.mode;
+                const newMode = currentMode | 0o200;
+                if (newMode != currentMode) {
+                    fs.chmodSync(filepath, newMode);
+                }
+            }
+
+            const stats = fs.statSync(targetPath_);
+
+            if (stats.isDirectory()) {
+                appendWritablePermission(targetPath_, stats);
+                const files = fs.readdirSync(targetPath_);
+
+                files.forEach((file) => {
+                    setPermissionsSync(path.join(targetPath_, file));
+                });
+            } else {
+                appendWritablePermission(targetPath_, stats);
+            }
+        }
+        setPermissionsSync(targetPath);
         console.info(`Content file ${contentItem.filename} copied to ${contentTarget}`);
         anyContentAdded = true;
     }
