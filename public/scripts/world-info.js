@@ -2191,6 +2191,12 @@ export const originalWIDataKeyMap = {
     'matchWholeWords': 'extensions.match_whole_words',
     'useGroupScoring': 'extensions.use_group_scoring',
     'caseSensitive': 'extensions.case_sensitive',
+    'matchPersonaDescription': 'extensions.match_persona_description',
+    'matchCharacterDescription': 'extensions.match_character_description',
+    'matchCharacterPersonality': 'extensions.match_character_personality',
+    'matchCharacterNote': 'extensions.match_character_note',
+    'matchScenario': 'extensions.match_scenario',
+    'matchCharacterMetadata': 'extensions.match_character_metadata',
     'scanDepth': 'extensions.scan_depth',
     'automationId': 'extensions.automation_id',
     'vectorized': 'extensions.vectorized',
@@ -3307,6 +3313,28 @@ export async function getWorldEntry(name, data, entry) {
         await saveWorldInfo(name, data);
     });
     useGroupScoringSelect.val((entry.useGroupScoring === null || entry.useGroupScoring === undefined) ? 'null' : entry.useGroupScoring ? 'true' : 'false').trigger('input');
+
+    function handleOptionalSelect(name) {
+        const key = originalWIDataKeyMap[name];
+        const selectElem = template.find(`select[name="${name}"]`);
+        selectElem.data('uid', entry.uid);
+        selectElem.on('input', async function () {
+            const uid = $(this).data('uid');
+            const value = $(this).val();
+
+            data.entries[uid][name] = value === 'null' ? null : value === 'true';
+            setWIOriginalDataValue(data, uid, key, data.entries[uid][name]);
+            await saveWorldInfo(name, data);
+        });
+        selectElem.val((entry[name] === null || entry[name] === undefined) ? 'null' : entry[name] ? 'true' : 'false').trigger('input');
+    }
+
+    handleOptionalSelect("matchPersonaDescription");
+    handleOptionalSelect("matchCharacterDescription");
+    handleOptionalSelect("matchCharacterPersonality");
+    handleOptionalSelect("matchCharacterNote");
+    handleOptionalSelect("matchScenario");
+    handleOptionalSelect("matchCharacterMetadata");
 
     // automation id
     const automationIdInput = template.find('input[name="automationId"]');
