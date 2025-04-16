@@ -4079,7 +4079,7 @@
                                     <div class="fa-solid fa-circle-chevron-down inline-drawer-icon down"></div>
                                 </div>
                                 <div class="inline-drawer-content">
-                                    <div id="wiActivationSettings">
+                                    <div id="wiActivationSettings" class="flex-container">
                                         <div id="wiSliders" class="flex2 flex-container">
                                             <div class="alignitemscenter flex-container flexFlowColumn flexGrow flexShrink gap0 flexBasis48p">
                                                 <small>
@@ -4131,67 +4131,19 @@
                                                 <input class="neo-range-slider" type="range" id="world_info_max_recursion_steps" name="world_info_max_recursion_steps" min="0" max="10" step="1">
                                                 <input class="neo-range-input" type="number" min="0" max="10" step="1" data-for="world_info_max_recursion_steps" id="world_info_max_recursion_steps_counter">
                                             </div>
-                                        </div>
-                                        <hr class="width100p">
-                                        <div class="flex-container flexFlowColumn flexGrow flexShrink flexBasis48p">
-                                            <small class="textAlignCenter" data-i18n="Matching Strategy">
-                                                Matching Strategy
-                                            </small>
-                                            <label title="Lookup for the entry keys in the context will respect the case" data-i18n="[title]Lookup for the entry keys in the context will respect the case" class="checkbox_label flex1">
-                                                <input id="world_info_case_sensitive" type="checkbox" />
-                                                <small data-i18n="Case Sensitive" class="whitespacenowrap flex1">
-                                                    Case-sensitive
-                                                </small>
-                                            </label>
-                                            <label title="If the entry key consists of only one word, it would not be matched as part of other words" data-i18n="[title]If the entry key consists of only one word, it would not be matched as part of other words" class="checkbox_label flex1">
-                                                <input id="world_info_match_whole_words" type="checkbox" />
-                                                <small data-i18n="Match Whole Words" class="whitespacenowrap flex1">
-                                                    Match Whole Words
-                                                </small>
-                                            </label>
-                                            <label title="If the entry key consists of only one word, it would not be matched as part of other words" data-i18n="[title]If the entry key consists of only one word, it would not be matched as part of other words" class="checkbox_label flex1">
-                                                <input id="world_info_match_whole_words" type="checkbox" />
-                                                <small data-i18n="Match Whole Words" class="whitespacenowrap flex1">
-                                                    Match Persona Description
-                                                </small>
-                                            </label>
-                                            <label title="If the entry key consists of only one word, it would not be matched as part of other words" data-i18n="[title]If the entry key consists of only one word, it would not be matched as part of other words" class="checkbox_label flex1">
-                                                <input id="world_info_match_whole_words" type="checkbox" />
-                                                <small data-i18n="Match Whole Words" class="whitespacenowrap flex1">
-                                                    Match Character Description
-                                                </small>
-                                            </label>
-                                            <label title="If the entry key consists of only one word, it would not be matched as part of other words" data-i18n="[title]If the entry key consists of only one word, it would not be matched as part of other words" class="checkbox_label flex1">
-                                                <input id="world_info_match_whole_words" type="checkbox" />
-                                                <small data-i18n="Match Whole Words" class="whitespacenowrap flex1">
-                                                    Match Character Personality
-                                                </small>
-                                            </label>
-                                            <label title="If the entry key consists of only one word, it would not be matched as part of other words" data-i18n="[title]If the entry key consists of only one word, it would not be matched as part of other words" class="checkbox_label flex1">
-                                                <input id="world_info_match_whole_words" type="checkbox" />
-                                                <small data-i18n="Match Whole Words" class="whitespacenowrap flex1">
-                                                    Match Character Note
-                                                </small>
-                                            </label>
-                                            <label title="If the entry key consists of only one word, it would not be matched as part of other words" data-i18n="[title]If the entry key consists of only one word, it would not be matched as part of other words" class="checkbox_label flex1">
-                                                <input id="world_info_match_whole_words" type="checkbox" />
-                                                <small data-i18n="Match Whole Words" class="whitespacenowrap flex1">
-                                                    Match Scenario
-                                                </small>
-                                            </label>
-                                            <label title="If the entry key consists of only one word, it would not be matched as part of other words" data-i18n="[title]If the entry key consists of only one word, it would not be matched as part of other words" class="checkbox_label flex1">
-                                                <input id="world_info_match_creator_notes" type="checkbox" />
-                                                <small data-i18n="Match Creator Notes" class="whitespacenowrap flex1">
-                                                    Match Creator Notes
-                                                </small>
-                                            </label>
-                                        </div>
 
-                                        <hr class="width100p">
-                                        <div class="flex-container flexFlowColumn flexGrow flexShrink flexBasis48p">
-                                            <small class="textAlignCenter" data-i18n="Miscelaneous">
-                                                Miscelaneous
-                                            </small>
+                                            <div class="alignitemscenter flex-container flexFlowColumn flexGrow flexShrink flexBasis48p">
+                                                <small data-i18n="Insertion Strategy">
+                                                    Insertion Strategy
+                                                </small>
+                                                <select id="world_info_character_strategy" class="flexGrow margin0">
+                                                    <option value="0" data-i18n="Sorted Evenly">Sorted Evenly</option>
+                                                    <option value="1" data-i18n="Character Lore First">Character Lore First</option>
+                                                    <option value="2" data-i18n="Global Lore First">Global Lore First</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                        <div id="wiCheckboxes" class="flex1 flex-container flexFlowColumn">
                                             <label title="Include names with each message into the context for scanning" data-i18n="[title]Include names with each message into the context for scanning" class="checkbox_label flex1">
                                                 <input id="world_info_include_names" type="checkbox" />
                                                 <small data-i18n="Include Names" class="whitespacenowrap flex1">
@@ -4202,6 +4154,18 @@
                                                 <input id="world_info_recursive" type="checkbox" />
                                                 <small data-i18n="Recursive Scan" class="whitespacenowrap flex1">
                                                     Recursive Scan
+                                                </small>
+                                            </label>
+                                            <label title="Lookup for the entry keys in the context will respect the case" data-i18n="[title]Lookup for the entry keys in the context will respect the case" class="checkbox_label flex1">
+                                                <input id="world_info_case_sensitive" type="checkbox" />
+                                                <small data-i18n="Case Sensitive" class="whitespacenowrap flex1">
+                                                    Case-sensitive
+                                                </small>
+                                            </label>
+                                            <label title="If the entry key consists of only one word, it would not be matched as part of other words" data-i18n="[title]If the entry key consists of only one word, it would not be matched as part of other words" class="checkbox_label flex1">
+                                                <input id="world_info_match_whole_words" type="checkbox" />
+                                                <small data-i18n="Match Whole Words" class="whitespacenowrap flex1">
+                                                    Match Whole Words
                                                 </small>
                                             </label>
                                             <label title="Only the entries with the most number of key matches will be selected for Inclusion Group filtering" data-i18n="[title]Only the entries with the most number of key matches will be selected for Inclusion Group filtering" class="checkbox_label flex1">
@@ -4217,19 +4181,6 @@
                                                 </small>
                                             </label>
                                         </div>
-
-                                        <hr class="width100p">
-                                        <div class="alignitemscenter flex-container flexFlowColumn flexGrow flexShrink flexBasis48p">
-                                            <small data-i18n="Insertion Strategy">
-                                                Insertion Strategy
-                                            </small>
-                                            <select id="world_info_character_strategy" class="flexGrow margin0">
-                                                <option value="0" data-i18n="Sorted Evenly">Sorted Evenly</option>
-                                                <option value="1" data-i18n="Character Lore First">Character Lore First</option>
-                                                <option value="2" data-i18n="Global Lore First">Global Lore First</option>
-                                            </select>
-                                        </div>
-
                                     </div>
                                 </div>
                             </div>
