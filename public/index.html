@@ -6174,26 +6174,12 @@
                                     <strong>Activation Settings</strong>
                                     <div class="fa-solid fa-circle-chevron-down inline-drawer-icon down"></div>
                                 </div>
-                                <div class="inline-drawer-content flex-container flexFlowRow flexGap10">
+                                <div class="inline-drawer-content flex-container flexFlowRow flexGap10 paddingBottom5px">
                                     <div class="flex1 flex-container flexFlowColumn flexGap10">
                                         <div class="flex-container flexFlowRow alignItemsCenter justifySpaceBetween" title="Can be used to automatically activate Quick Replies" data-i18n="[title]Can be used to automatically activate Quick Replies">
                                             <small class="flex1" data-i18n="Automation ID">Automation ID</small>
                                             <input class="flex1 text_pole margin0" name="automationId" type="text" placeholder="( None )" data-i18n="[placeholder]( None )">
                                         </div>
-                                        <small>
-                                            <label class="checkbox flex-container alignItemsCenter flexNoGap">
-                                                <input type="checkbox" name="exclude_recursion" />
-                                                <span data-i18n="Non-recursable (will not be activated by another)">
-                                                    Non-recursable (will not be activated by another)
-                                                </span>
-                                            </label>
-                                            <label class="checkbox flex-container alignItemsCenter flexNoGap">
-                                                <input type="checkbox" name="prevent_recursion" />
-                                                <span data-i18n="Prevent further recursion (this entry will not activate others)">
-                                                    Prevent further recursion (will not activate others)
-                                                </span>
-                                            </label>
-                                        </small>
                                         <div class="flex-container alignItemsCenter flexNoGap">
                                             <small class="flex1" data-i18n="Scan Depth">Scan Depth</small>
                                             <input class="text_pole margin0 flex1" name="scanDepth" type="number" placeholder="Use global setting" data-i18n="[placeholder]Use global setting" max="1000">
@@ -6241,54 +6227,56 @@
                                     </div>
 
                                     <div class="flex1 flex-container flexFlowColumn flexGap10">
-                                        <div class="checkbox flex-container alignItemsCenter flexNoGap">
-                                            <small class="flex1" data-i18n="Match Persona Description">Match Persona Description</small>
-                                            <select name="matchPersonaDescription" class="text_pole widthNatural margin0 flex1">
-                                                <option value="null" data-i18n="Use global">Use global</option>
-                                                <option value="true" data-i18n="Yes">Yes</option>
-                                                <option value="false" data-i18n="No">No</option>
-                                            </select>
-                                        </div>
-                                        <div class="checkbox flex-container alignItemsCenter flexNoGap">
-                                            <small class="flex1" data-i18n="Match Character Description">Match Character Description</small>
-                                            <select name="matchCharacterDescription" class="text_pole widthNatural margin0 flex1">
-                                                <option value="null" data-i18n="Use global">Use global</option>
-                                                <option value="true" data-i18n="Yes">Yes</option>
-                                                <option value="false" data-i18n="No">No</option>
-                                            </select>
-                                        </div>
-                                        <div class="checkbox flex-container alignItemsCenter flexNoGap">
-                                            <small class="flex1" data-i18n="Match Character Personality">Match Character Personality</small>
-                                            <select name="matchCharacterPersonality" class="text_pole widthNatural margin0 flex1">
-                                                <option value="null" data-i18n="Use global">Use global</option>
-                                                <option value="true" data-i18n="Yes">Yes</option>
-                                                <option value="false" data-i18n="No">No</option>
-                                            </select>
-                                        </div>
-                                        <div class="checkbox flex-container alignItemsCenter flexNoGap">
-                                            <small class="flex1" data-i18n="Match Character Note">Match Character Note</small>
-                                            <select name="matchCharacterNote" class="text_pole widthNatural margin0 flex1">
-                                                <option value="null" data-i18n="Use global">Use global</option>
-                                                <option value="true" data-i18n="Yes">Yes</option>
-                                                <option value="false" data-i18n="No">No</option>
-                                            </select>
-                                        </div>
-                                        <div class="checkbox flex-container alignItemsCenter flexNoGap">
-                                            <small class="flex1" data-i18n="Match Scenario">Match Scenario</small>
-                                            <select name="matchScenario" class="text_pole widthNatural margin0 flex1">
-                                                <option value="null" data-i18n="Use global">Use global</option>
-                                                <option value="true" data-i18n="Yes">Yes</option>
-                                                <option value="false" data-i18n="No">No</option>
-                                            </select>
-                                        </div>
-                                        <div class="checkbox flex-container alignItemsCenter flexNoGap">
-                                            <small class="flex1" data-i18n="Match Creator Notes">Match Creator Notes</small>
-                                            <select name="matchCreatorNotes" class="text_pole widthNatural margin0 flex1">
-                                                <option value="null" data-i18n="Use global">Use global</option>
-                                                <option value="true" data-i18n="Yes">Yes</option>
-                                                <option value="false" data-i18n="No">No</option>
-                                            </select>
-                                        </div>
+                                        <small>
+                                            <label class="checkbox flex-container alignItemsCenter flexNoGap">
+                                                <input type="checkbox" name="exclude_recursion" />
+                                                <span data-i18n="Non-recursable (will not be activated by another)">
+                                                    Non-recursable (will not be activated by another)
+                                                </span>
+                                            </label>
+                                            <label class="checkbox flex-container alignItemsCenter flexNoGap">
+                                                <input type="checkbox" name="prevent_recursion" />
+                                                <span data-i18n="Prevent further recursion (this entry will not activate others)">
+                                                    Prevent further recursion (will not activate others)
+                                                </span>
+                                            </label>                                            
+                                            <label class="checkbox flex-container alignItemsCenter flexNoGap">
+                                                <input type="checkbox" name="matchPersonaDescription" />
+                                                <span data-i18n="Match Persona Description">
+                                                    Match Persona Description
+                                                </span>
+                                            </label>
+                                            <label class="checkbox flex-container alignItemsCenter flexNoGap">
+                                                <input type="checkbox" name="matchCharacterDescription" />
+                                                <span data-i18n="Match Character Description">
+                                                    Match Character Description
+                                                </span>
+                                            </label>
+                                            <label class="checkbox flex-container alignItemsCenter flexNoGap">
+                                                <input type="checkbox" name="matchCharacterPersonality" />
+                                                <span data-i18n="Match Character Personality">
+                                                    Match Character Personality
+                                                </span>
+                                            </label>
+                                            <label class="checkbox flex-container alignItemsCenter flexNoGap">
+                                                <input type="checkbox" name="matchCharacterNote" />
+                                                <span data-i18n="Match Character Note">
+                                                    Match Character Note
+                                                </span>
+                                            </label>
+                                            <label class="checkbox flex-container alignItemsCenter flexNoGap">
+                                                <input type="checkbox" name="matchScenario" />
+                                                <span data-i18n="Match Scenario">
+                                                    Match Scenario
+                                                </span>
+                                            </label>
+                                            <label class="checkbox flex-container alignItemsCenter flexNoGap">
+                                                <input type="checkbox" name="matchCreatorNotes" />
+                                                <span data-i18n="Match Creator Notes">
+                                                    Match Creator Notes
+                                                </span>
+                                            </label>
+                                        </small>
                                     </div>
                                 </div>
                             </div>
