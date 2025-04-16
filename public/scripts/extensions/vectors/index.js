@@ -1475,12 +1475,12 @@ jQuery(async () => {
         settings.use_alt_endpoint = $('#altEndpointUrl_enabled').prop('checked');
         Object.assign(extension_settings.vectors, settings);
         saveSettingsDebounced();
-    })
+    });
     $('#altEndpoint_address').val(settings.alt_endpoint_url).on('change', () => {
         settings.alt_endpoint_url = String($('#altEndpoint_address').val());
         Object.assign(extension_settings.vectors, settings);
         saveSettingsDebounced();
-    })
+    });
     $('#api_key_nomicai').on('click', async () => {
         const popupText = 'NomicAI API Key:';
         const key = await callGenericPopup(popupText, POPUP_TYPE.INPUT, '', {
