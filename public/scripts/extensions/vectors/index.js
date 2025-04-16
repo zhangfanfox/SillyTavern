@@ -55,6 +55,8 @@ const getBatchSize = () => ['transformers', 'palm', 'ollama'].includes(settings.
 const settings = {
     // For both
     source: 'transformers',
+    alt_endpoint_url: '',
+    use_alt_endpoint: false,
     include_wi: false,
     togetherai_model: 'togethercomputer/m2-bert-80M-32k-retrieval',
     openai_model: 'text-embedding-ada-002',
@@ -109,6 +111,7 @@ const settings = {
 const moduleWorker = new ModuleWorkerWrapper(synchronizeChat);
 const webllmProvider = new WebLlmVectorProvider();
 const cachedSummaries = new Map();
+const vector_api_requires_url = ['llamacpp', 'vllm', 'ollama', 'koboldcpp'];
 
 /**
  * Gets the Collection ID for a file embedded in the chat.
@@ -777,14 +780,14 @@ function getVectorsRequestBody(args = {}) {
             break;
         case 'ollama':
             body.model = extension_settings.vectors.ollama_model;
-            body.apiUrl = textgenerationwebui_settings.server_urls[textgen_types.OLLAMA];
+            body.apiUrl = settings.use_alt_endpoint ? settings.alt_endpoint_url : textgenerationwebui_settings.server_urls[textgen_types.OLLAMA];
             body.keep = !!extension_settings.vectors.ollama_keep;
             break;
         case 'llamacpp':
-            body.apiUrl = textgenerationwebui_settings.server_urls[textgen_types.LLAMACPP];
+            body.apiUrl = settings.use_alt_endpoint ? settings.alt_endpoint_url : textgenerationwebui_settings.server_urls[textgen_types.LLAMACPP];
             break;
         case 'vllm':
-            body.apiUrl = textgenerationwebui_settings.server_urls[textgen_types.VLLM];
+            body.apiUrl = settings.use_alt_endpoint ? settings.alt_endpoint_url : textgenerationwebui_settings.server_urls[textgen_types.VLLM];
             body.model = extension_settings.vectors.vllm_model;
             break;
         case 'webllm':
@@ -1087,6 +1090,7 @@ function toggleSettings() {
     $('#webllm_vectorsModel').toggle(settings.source === 'webllm');
     $('#koboldcpp_vectorsModel').toggle(settings.source === 'koboldcpp');
     $('#google_vectorsModel').toggle(settings.source === 'palm');
+    $('#altEndpointUrl').toggle(vector_api_requires_url.includes(settings.source));
     if (settings.source === 'webllm') {
         loadWebLlmModels();
     }
@@ -1165,7 +1169,7 @@ async function createKoboldCppEmbeddings(items) {
         headers: getRequestHeaders(),
         body: JSON.stringify({
             items: items,
-            server: textgenerationwebui_settings.server_urls[textgen_types.KOBOLDCPP],
+            server: settings.use_alt_endpoint ? settings.alt_endpoint_url : textgenerationwebui_settings.server_urls[textgen_types.KOBOLDCPP],
         }),
     });
 
@@ -1467,6 +1471,16 @@ jQuery(async () => {
         saveSettingsDebounced();
         toggleSettings();
     });
+    $('#altEndpointUrl_enabled').prop('checked', settings.use_alt_endpoint).on('input', () => {
+        settings.use_alt_endpoint = $('#altEndpointUrl_enabled').prop('checked');
+        Object.assign(extension_settings.vectors, settings);
+        saveSettingsDebounced();
+    })
+    $('#altEndpoint_address').val(settings.alt_endpoint_url).on('change', () => {
+        settings.alt_endpoint_url = String($('#altEndpoint_address').val());
+        Object.assign(extension_settings.vectors, settings);
+        saveSettingsDebounced();
+    })
     $('#api_key_nomicai').on('click', async () => {
         const popupText = 'NomicAI API Key:';
         const key = await callGenericPopup(popupText, POPUP_TYPE.INPUT, '', {
