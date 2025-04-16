@@ -98,6 +98,17 @@ const KNOWN_DECORATORS = ['@@activate', '@@dont_activate'];
 
 // Typedef area
 /**
+ * @typedef {object} WIGlobalScanData The chat-independent data to be scanned. Each of
+ *     these fields can be enabled for scanning per entry.
+ * @property {string} personaDescription User persona description
+ * @property {string} characterDescription
+ * @property {string} characterPersonality
+ * @property {string} characterNote
+ * @property {string} scenario Character defined scenario
+ * @property {string} creatorNotes
+ */
+
+/**
  * @typedef {object} WIScanEntry The entry that triggered the scan
  * @property {number} [scanDepth] The depth of the scan
  * @property {boolean} [caseSensitive] If the scan is case sensitive
