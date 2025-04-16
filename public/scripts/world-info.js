@@ -156,6 +156,11 @@ class WorldInfoBuffer {
     static externalActivations = new Map();
 
     /**
+     * @type {WIGlobalScanData} Chat independent data to be scanned, such as persona and character descriptions
+     */
+    #globalScanDataBuffer = null;
+
+    /**
      * @type {string[]} Array of messages sorted by ascending depth
      */
     #depthBuffer = [];
@@ -182,10 +187,12 @@ class WorldInfoBuffer {
 
     /**
      * Initialize the buffer with the given messages.
+     * @param {WIGlobalScanData} globalScanData Chat independent context to be scanned
      * @param {string[]} messages Array of messages to add to the buffer
      */
-    constructor(messages) {
+    constructor(globalScanData, messages) {
         this.#initDepthBuffer(messages);
+        this.#globalScanDataBuffer = globalScanData;
     }
 
     /**
@@ -241,6 +248,25 @@ class WorldInfoBuffer {
         const MATCHER = '\x01';
         const JOINER = '\n' + MATCHER;
         let result = MATCHER + this.#depthBuffer.slice(this.#startDepth, depth).join(JOINER);
+
+        if (entry.matchPersonaDescription) {
+            result += JOINER + this.#globalScanDataBuffer.personaDescription;
+        }
+        if (entry.matchCharacterDescription) {
+            result += JOINER + this.#globalScanDataBuffer.characterDescription;
+        }
+        if (entry.matchCharacterPersonality) {
+            result += JOINER + this.#globalScanDataBuffer.characterPersonality;
+        }
+        if (entry.matchCharacterNote) {
+            result += JOINER + this.#globalScanDataBuffer.characterNote;
+        }
+        if (entry.matchScenario) {
+            result += JOINER + this.#globalScanDataBuffer.scenario;
+        }
+        if (entry.matchCreatorNotes) {
+            result += JOINER + this.#globalScanDataBuffer.creatorNotes;
+        }
 
         if (this.#injectBuffer.length > 0) {
             result += JOINER + this.#injectBuffer.join(JOINER);
@@ -770,6 +796,7 @@ export const worldInfoCache = new StructuredCloneMap({ cloneOnGet: true, cloneOn
 
 /**
  * Gets the world info based on chat messages.
+ * @param {WIGlobalScanData} globalScanData Chat independent context to be scanned
  * @param {string[]} chat - The chat messages to scan, in reverse order.
  * @param {number} maxContext - The maximum context size of the generation.
  * @param {boolean} isDryRun - If true, the function will not emit any events.
@@ -783,10 +810,10 @@ export const worldInfoCache = new StructuredCloneMap({ cloneOnGet: true, cloneOn
  * @property {Array} anAfter - Array of entries after Author's Note
  * @returns {Promise<WIPromptResult>} The world info string and depth.
  */
-export async function getWorldInfoPrompt(chat, maxContext, isDryRun) {
+export async function getWorldInfoPrompt(globalScanData, chat, maxContext, isDryRun) {
     let worldInfoString = '', worldInfoBefore = '', worldInfoAfter = '';
 
-    const activatedWorldInfo = await checkWorldInfo(chat, maxContext, isDryRun);
+    const activatedWorldInfo = await checkWorldInfo(globalScanData, chat, maxContext, isDryRun);
     worldInfoBefore = activatedWorldInfo.worldInfoBefore;
     worldInfoAfter = activatedWorldInfo.worldInfoAfter;
     worldInfoString = worldInfoBefore + worldInfoAfter;
@@ -3333,17 +3360,17 @@ export async function getWorldEntry(name, data, entry) {
 
     function handleOptionalSelect(name) {
         const key = originalWIDataKeyMap[name];
-        const selectElem = template.find(`select[name="${name}"]`);
-        selectElem.data('uid', entry.uid);
-        selectElem.on('input', async function () {
+        const checkBoxElem = template.find(`input[type="checkbox"][name="${name}"]`);
+        checkBoxElem.data('uid', entry.uid);
+        checkBoxElem.on('change', async function () {
             const uid = $(this).data('uid');
-            const value = $(this).val();
+            const isChecked = $(this).is(':checked');
 
-            data.entries[uid][name] = value === 'null' ? null : value === 'true';
+            data.entries[uid][name] = isChecked;
             setWIOriginalDataValue(data, uid, key, data.entries[uid][name]);
             await saveWorldInfo(name, data);
         });
-        selectElem.val((entry[name] === null || entry[name] === undefined) ? 'null' : entry[name] ? 'true' : 'false').trigger('input');
+        checkBoxElem.prop('checked', !!entry[name]).trigger('change');
     }
 
     handleOptionalSelect("matchPersonaDescription");
@@ -4020,7 +4047,7 @@ function parseDecorators(content) {
 
 /**
  * Performs a scan on the chat and returns the world info activated.
- * @param {string[]} chat The chat messages to scan, in reverse order.
+ * @param {WIGlobalScanData} globalScanData Chat independent context to be scanned
  * @param {number} maxContext The maximum context size of the generation.
  * @param {boolean} isDryRun Whether to perform a dry run.
  * @typedef {object} WIActivated
@@ -4033,9 +4060,9 @@ function parseDecorators(content) {
  * @property {Set<any>} allActivatedEntries All entries.
  * @returns {Promise<WIActivated>} The world info activated.
  */
-export async function checkWorldInfo(chat, maxContext, isDryRun) {
+export async function checkWorldInfo(globalScanData, chat, maxContext, isDryRun) {
     const context = getContext();
-    const buffer = new WorldInfoBuffer(chat);
+    const buffer = new WorldInfoBuffer(globalScanData, chat);
 
     console.debug(`[WI] --- START WI SCAN (on ${chat.length} messages)${isDryRun ? ' (DRY RUN)' : ''} ---`);
 
