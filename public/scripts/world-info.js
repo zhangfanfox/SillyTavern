@@ -108,7 +108,7 @@ const KNOWN_DECORATORS = ['@@activate', '@@dont_activate'];
  * @property {boolean} [matchCharacterPersonality] If the scan should match against the character
  * @property {boolean} [matchCharacterNote] If the scan should match against the character note
  * @property {boolean} [matchScenario] If the scan should match against the character scenario
- * @property {boolean} [matchCreatorsNotes] If the scan should match against the character metadata
+ * @property {boolean} [matchCreatorNotes] If the scan should match against the character metadata
  * @property {number} [uid] The UID of the entry that triggered the scan
  * @property {string} [world] The world info book of origin of the entry
  * @property {string[]} [key] The primary keys to scan for
@@ -2202,7 +2202,7 @@ export const originalWIDataKeyMap = {
     'matchCharacterPersonality': 'extensions.match_character_personality',
     'matchCharacterNote': 'extensions.match_character_note',
     'matchScenario': 'extensions.match_scenario',
-    'matchCreatorsNotes': 'extensions.match_creators_notes',
+    'matchCreatorNotes': 'extensions.match_creator_notes',
     'scanDepth': 'extensions.scan_depth',
     'automationId': 'extensions.automation_id',
     'vectorized': 'extensions.vectorized',
@@ -3340,7 +3340,7 @@ export async function getWorldEntry(name, data, entry) {
     handleOptionalSelect("matchCharacterPersonality");
     handleOptionalSelect("matchCharacterNote");
     handleOptionalSelect("matchScenario");
-    handleOptionalSelect("matchCreatorsNotes");
+    handleOptionalSelect("matchCreatorNotes");
 
     // automation id
     const automationIdInput = template.find('input[name="automationId"]');
