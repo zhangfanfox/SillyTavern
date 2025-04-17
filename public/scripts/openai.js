@@ -4451,7 +4451,7 @@ async function onModelChange() {
             $('#openai_max_context').attr('max', max_32k);
         } else if (value.includes('gemini-1.5-pro') || value.includes('gemini-exp-1206') || value.includes('gemini-2.0-pro')) {
             $('#openai_max_context').attr('max', max_2mil);
-        } else if (value.includes('gemini-1.5-flash') || value.includes('gemini-2.0-flash') || value.includes('gemini-2.5-pro-exp-03-25') || value.includes('gemini-2.5-pro-preview-03-25')) {
+        } else if (value.includes('gemini-1.5-flash') || value.includes('gemini-2.0-flash') || value.includes('gemini-2.5-flash-preview-04-17') || value.includes('gemini-2.5-pro-exp-03-25') || value.includes('gemini-2.5-pro-preview-03-25')) {
             $('#openai_max_context').attr('max', max_1mil);
         } else if (value.includes('gemini-1.0-pro') || value === 'gemini-pro') {
             $('#openai_max_context').attr('max', max_32k);
@@ -5165,7 +5165,7 @@ export function isImageInliningSupported() {
         case chat_completion_sources.OPENAI:
             return visionSupportedModels.some(model => oai_settings.openai_model.includes(model) && !oai_settings.openai_model.includes('gpt-4-turbo-preview') && !oai_settings.openai_model.includes('o3-mini'));
         case chat_completion_sources.MAKERSUITE:
-            return visionSupportedModels.some(model => oai_settings.google_model.includes(model));
+            return visionSupportedModels.some(model => oai_settings.google_model.includes(model)) || oai_settings.google_model.includes('gemini-2.5-flash-preview');
         case chat_completion_sources.CLAUDE:
             return visionSupportedModels.some(model => oai_settings.claude_model.includes(model));
         case chat_completion_sources.OPENROUTER:
