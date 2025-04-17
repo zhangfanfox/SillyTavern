@@ -508,7 +508,12 @@ export function convertGooglePrompt(messages, model, useSysPrompt, names) {
         if (index > 0 && message.role === contents[contents.length - 1].role) {
             parts.forEach((part) => {
                 if (part.text) {
-                    contents[contents.length - 1].parts[0].text += '\n\n' + part.text;
+                    const textPart = contents[contents.length - 1].parts.find(p => typeof p.text === 'string');
+                    if (textPart) {
+                        textPart.text += '\n\n' + part.text;
+                    } else {
+                        contents[contents.length - 1].parts.push(part);
+                    }
                 }
                 if (part.inlineData || part.functionCall || part.functionResponse) {
                     contents[contents.length - 1].parts.push(part);
