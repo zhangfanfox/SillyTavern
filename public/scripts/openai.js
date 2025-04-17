@@ -5103,6 +5103,7 @@ export function isImageInliningSupported() {
         'gemini-2.5-pro-preview-03-25',
         'gemini-2.0-pro-exp',
         'gemini-2.0-pro-exp-02-05',
+        'gemini-2.5-flash-preview-04-17',
         'gemini-2.0-flash-lite-preview',
         'gemini-2.0-flash-lite-preview-02-05',
         'gemini-2.0-flash',
@@ -5165,7 +5166,7 @@ export function isImageInliningSupported() {
         case chat_completion_sources.OPENAI:
             return visionSupportedModels.some(model => oai_settings.openai_model.includes(model) && !oai_settings.openai_model.includes('gpt-4-turbo-preview') && !oai_settings.openai_model.includes('o3-mini'));
         case chat_completion_sources.MAKERSUITE:
-            return visionSupportedModels.some(model => oai_settings.google_model.includes(model)) || oai_settings.google_model.includes('gemini-2.5-flash-preview');
+            return visionSupportedModels.some(model => oai_settings.google_model.includes(model));
         case chat_completion_sources.CLAUDE:
             return visionSupportedModels.some(model => oai_settings.claude_model.includes(model));
         case chat_completion_sources.OPENROUTER:
