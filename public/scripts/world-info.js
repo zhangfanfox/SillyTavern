@@ -1340,14 +1340,14 @@ function registerWorldInfoSlashCommands() {
 
     async function getGlobalBooksCallback() {
         if (!selected_world_info?.length) {
-            return [];
+            return JSON.stringify([]);
         }
 
         let entries = selected_world_info.slice();
 
         console.debug(`[WI] Selected global world info has ${entries.length} entries`, selected_world_info);
 
-        return entries;
+        return JSON.stringify(entries);
     }
 
     SlashCommandParser.addCommandObject(SlashCommand.fromProps({
