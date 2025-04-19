@@ -710,8 +710,7 @@ router.post('/importURL', async (request, response) => {
             type = 'character';
             result = await downloadGenericPng(url);
         } else {
-            const receivedURL = new URL(url);
-            console.error(`Received an import for "${receivedURL.host}", but site is not whitelisted. This domain must be added to the config key "whitelistImportDomains" to allow import from this source.`);
+            console.error(`Received an import for "${getHostFromUrl(url)}", but site is not whitelisted. This domain must be added to the config key "whitelistImportDomains" to allow import from this source.`);
             return response.sendStatus(404);
         }
 
