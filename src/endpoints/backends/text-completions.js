@@ -340,9 +340,6 @@ router.post('/generate', async function (request, response) {
         }
 
         if (request.body.api_type === TEXTGEN_TYPES.DREAMGEN) {
-            request.body = _.pickBy(request.body, (_, key) => DREAMGEN_KEYS.includes(key));
-            // NOTE: DreamGen sometimes get confused by the unusual formatting in the character cards.
-            request.body.stop?.push('### User', '## User');
             args.body = JSON.stringify(request.body);
         }
 
