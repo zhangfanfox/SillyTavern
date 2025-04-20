@@ -157,9 +157,21 @@ body {
 }
 
 ::-webkit-scrollbar {
-    width: 10px;
-    height: 10px;
+    width: 0.7rem;
     scrollbar-gutter: stable;
+}
+
+::-webkit-scrollbar-track {
+    cursor: default;
+    background-color: rgba(126, 126, 126, 0.2); /* Adaptive, but won't contrast with neutral-gray. */
+}
+
+::-webkit-scrollbar-thumb {
+    cursor: grab;
+}
+
+::-webkit-scrollbar-thumb:active {
+    cursor: grabbing;
 }
 
 .scrollY {
