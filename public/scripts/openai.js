@@ -1412,8 +1412,8 @@ export async function prepareOpenAIMessages({
         await populateChatCompletion(prompts, chatCompletion, { bias, quietPrompt, quietImage, type, cyclePrompt, messages, messageExamples });
     } catch (error) {
         if (error instanceof TokenBudgetExceededError) {
-            toastr.error(t`Context size exceeded.`);
-            chatCompletion.log('Context size exceeded.');
+            toastr.error(t`Mandatory prompts exceed the context size.`);
+            chatCompletion.log('Mandatory prompts exceed the context size.');
             promptManager.error = t`Not enough free tokens for mandatory prompts. Raise your token limit or disable custom prompts.`;
         } else if (error instanceof InvalidCharacterNameError) {
             toastr.warning(t`An error occurred while counting tokens: Invalid character name`);
