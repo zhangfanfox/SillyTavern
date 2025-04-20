@@ -3362,15 +3362,15 @@ export async function getWorldEntry(name, data, entry) {
         const key = originalWIDataKeyMap[fieldName];
         const checkBoxElem = template.find(`input[type="checkbox"][name="${fieldName}"]`);
         checkBoxElem.data('uid', entry.uid);
-        checkBoxElem.on('change', async function () {
+        checkBoxElem.on('input', async function () {
             const uid = $(this).data('uid');
-            const isChecked = $(this).is(':checked');
+            const value = $(this).prop('checked');
 
-            data.entries[uid][fieldName] = isChecked;
+            data.entries[uid][fieldName] = value;
             setWIOriginalDataValue(data, uid, key, data.entries[uid][fieldName]);
             await saveWorldInfo(name, data);
         });
-        checkBoxElem.prop('checked', !!entry[name]).trigger('change');
+        checkBoxElem.prop('checked', !!entry[fieldName]).trigger('input');
     }
 
     handleOptionalSelect("matchPersonaDescription");
@@ -3586,6 +3586,11 @@ export const newWorldInfoEntryDefinition = {
     disable: { default: false, type: 'boolean' },
     excludeRecursion: { default: false, type: 'boolean' },
     preventRecursion: { default: false, type: 'boolean' },
+    matchPersonaDescription: { default: false, type: 'boolean' },
+    matchCharacterDescription: { default: false, type: 'boolean' },
+    matchCharacterDepthPrompt: { default: false, type: 'boolean' },
+    matchScenario: { default: false, type: 'boolean' },
+    matchCreatorNotes: { default: false, type: 'boolean' },
     delayUntilRecursion: { default: 0, type: 'number' },
     probability: { default: 100, type: 'number' },
     useProbability: { default: true, type: 'boolean' },
