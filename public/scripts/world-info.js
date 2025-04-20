@@ -3373,12 +3373,12 @@ export async function getWorldEntry(name, data, entry) {
         checkBoxElem.prop('checked', !!entry[fieldName]).trigger('input');
     }
 
-    handleOptionalSelect("matchPersonaDescription");
-    handleOptionalSelect("matchCharacterDescription");
-    handleOptionalSelect("matchCharacterPersonality");
-    handleOptionalSelect("matchCharacterDepthPrompt");
-    handleOptionalSelect("matchScenario");
-    handleOptionalSelect("matchCreatorNotes");
+    handleOptionalSelect('matchPersonaDescription');
+    handleOptionalSelect('matchCharacterDescription');
+    handleOptionalSelect('matchCharacterPersonality');
+    handleOptionalSelect('matchCharacterDepthPrompt');
+    handleOptionalSelect('matchScenario');
+    handleOptionalSelect('matchCreatorNotes');
 
     // automation id
     const automationIdInput = template.find('input[name="automationId"]');
