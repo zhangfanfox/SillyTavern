@@ -103,7 +103,7 @@ const KNOWN_DECORATORS = ['@@activate', '@@dont_activate'];
  * @property {string} personaDescription User persona description
  * @property {string} characterDescription
  * @property {string} characterPersonality
- * @property {string} characterNote
+ * @property {string} characterDepthPrompt
  * @property {string} scenario Character defined scenario
  * @property {string} creatorNotes
  */
@@ -259,7 +259,7 @@ class WorldInfoBuffer {
             result += JOINER + this.#globalScanDataBuffer.characterPersonality;
         }
         if (entry.matchCharacterNote) {
-            result += JOINER + this.#globalScanDataBuffer.characterNote;
+            result += JOINER + this.#globalScanDataBuffer.characterDepthPrompt;
         }
         if (entry.matchScenario) {
             result += JOINER + this.#globalScanDataBuffer.scenario;
@@ -2238,7 +2238,7 @@ export const originalWIDataKeyMap = {
     'matchPersonaDescription': 'extensions.match_persona_description',
     'matchCharacterDescription': 'extensions.match_character_description',
     'matchCharacterPersonality': 'extensions.match_character_personality',
-    'matchCharacterNote': 'extensions.match_character_note',
+    'matchCharacterDepthPrompt': 'extensions.match_character_depth_prompt',
     'matchScenario': 'extensions.match_scenario',
     'matchCreatorNotes': 'extensions.match_creator_notes',
     'scanDepth': 'extensions.scan_depth',
@@ -3376,7 +3376,7 @@ export async function getWorldEntry(name, data, entry) {
     handleOptionalSelect("matchPersonaDescription");
     handleOptionalSelect("matchCharacterDescription");
     handleOptionalSelect("matchCharacterPersonality");
-    handleOptionalSelect("matchCharacterNote");
+    handleOptionalSelect("matchCharacterDepthPrompt");
     handleOptionalSelect("matchScenario");
     handleOptionalSelect("matchCreatorNotes");
 
