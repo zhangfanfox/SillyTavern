@@ -3358,16 +3358,16 @@ export async function getWorldEntry(name, data, entry) {
     });
     useGroupScoringSelect.val((entry.useGroupScoring === null || entry.useGroupScoring === undefined) ? 'null' : entry.useGroupScoring ? 'true' : 'false').trigger('input');
 
-    function handleOptionalSelect(name) {
-        const key = originalWIDataKeyMap[name];
-        const checkBoxElem = template.find(`input[type="checkbox"][name="${name}"]`);
+    function handleOptionalSelect(fieldName) {
+        const key = originalWIDataKeyMap[fieldName];
+        const checkBoxElem = template.find(`input[type="checkbox"][name="${fieldName}"]`);
         checkBoxElem.data('uid', entry.uid);
         checkBoxElem.on('change', async function () {
             const uid = $(this).data('uid');
             const isChecked = $(this).is(':checked');
 
-            data.entries[uid][name] = isChecked;
-            setWIOriginalDataValue(data, uid, key, data.entries[uid][name]);
+            data.entries[uid][fieldName] = isChecked;
+            setWIOriginalDataValue(data, uid, key, data.entries[uid][fieldName]);
             await saveWorldInfo(name, data);
         });
         checkBoxElem.prop('checked', !!entry[name]).trigger('change');
