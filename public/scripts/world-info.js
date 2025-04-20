@@ -115,11 +115,11 @@ const KNOWN_DECORATORS = ['@@activate', '@@dont_activate'];
  * @property {boolean} [matchWholeWords] If the scan should match whole words
  * @property {boolean} [useGroupScoring] If the scan should use group scoring
  * @property {boolean} [matchPersonaDescription] If the scan should match against the persona description
- * @property {boolean} [matchCharacterDescription] If the scan should match against the character
- * @property {boolean} [matchCharacterPersonality] If the scan should match against the character
- * @property {boolean} [matchCharacterNote] If the scan should match against the character note
+ * @property {boolean} [matchCharacterDescription] If the scan should match against the character description
+ * @property {boolean} [matchCharacterPersonality] If the scan should match against the character personality
+ * @property {boolean} [matchCharacterDepthPrompt] If the scan should match against the character depth prompt
  * @property {boolean} [matchScenario] If the scan should match against the character scenario
- * @property {boolean} [matchCreatorNotes] If the scan should match against the character metadata
+ * @property {boolean} [matchCreatorNotes] If the scan should match against the creator notes
  * @property {number} [uid] The UID of the entry that triggered the scan
  * @property {string} [world] The world info book of origin of the entry
  * @property {string[]} [key] The primary keys to scan for
@@ -258,7 +258,7 @@ class WorldInfoBuffer {
         if (entry.matchCharacterPersonality) {
             result += JOINER + this.#globalScanDataBuffer.characterPersonality;
         }
-        if (entry.matchCharacterNote) {
+        if (entry.matchCharacterDepthPrompt) {
             result += JOINER + this.#globalScanDataBuffer.characterDepthPrompt;
         }
         if (entry.matchScenario) {

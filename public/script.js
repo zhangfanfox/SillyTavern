@@ -3164,7 +3164,7 @@ export function getCharacterCardFields({ chid = null } = {}) {
     result.jailbreak = power_user.prefer_character_jailbreak ? baseChatReplace(character.data?.post_history_instructions?.trim(), name1, name2) : '';
     result.version = character.data?.character_version ?? '';
     result.charDepthPrompt = baseChatReplace(character.data?.extensions?.depth_prompt?.prompt?.trim(), name1, name2);
-    result.creatorNotes = baseChatReplace(character.creator_notes?.trim(), name1, name2);
+    result.creatorNotes = baseChatReplace(character.data?.creator_notes?.trim(), name1, name2);
 
     if (selected_group) {
         const groupCards = getGroupCharacterCards(selected_group, Number(currentChid));
