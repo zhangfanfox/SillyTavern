@@ -20,10 +20,28 @@ import open from 'open';
 
 // local library imports
 import './src/fetch-patch.js';
-import { serverEvents, EVENT_NAMES } from './src/server-events.js';
 import { CommandLineParser } from './src/command-line.js';
-import { loadPlugins } from './src/plugin-loader.js';
-import {
+import { serverDirectory } from './src/server-directory.js';
+
+console.log(`Node version: ${process.version}. Running in ${process.env.NODE_ENV} environment. Server directory: ${serverDirectory}`);
+
+// Work around a node v20.0.0, v20.1.0, and v20.2.0 bug. The issue was fixed in v20.3.0.
+// https://github.com/nodejs/node/issues/47822#issuecomment-1564708870
+// Safe to remove once support for Node v20 is dropped.
+if (process.versions && process.versions.node && process.versions.node.match(/20\.[0-2]\.0/)) {
+    // @ts-ignore
+    if (net.setDefaultAutoSelectFamily) net.setDefaultAutoSelectFamily(false);
+}
+
+// config.yaml will be set when parsing command line arguments
+const cliArgs = new CommandLineParser().parse(process.argv);
+globalThis.DATA_ROOT = cliArgs.dataRoot;
+globalThis.COMMAND_LINE_ARGS = cliArgs;
+process.chdir(serverDirectory);
+
+const { serverEvents, EVENT_NAMES } = await import('./src/server-events.js');
+const { loadPlugins } = await import('./src/plugin-loader.js');
+const {
     initUserStorage,
     getCookieSecret,
     getCookieSessionName,
@@ -38,17 +56,17 @@ import {
     getSessionCookieAge,
     verifySecuritySettings,
     loginPageMiddleware,
-} from './src/users.js';
+} = await import('./src/users.js');
 
-import getWebpackServeMiddleware from './src/middleware/webpack-serve.js';
-import basicAuthMiddleware from './src/middleware/basicAuth.js';
-import getWhitelistMiddleware from './src/middleware/whitelist.js';
-import accessLoggerMiddleware, { getAccessLogPath, migrateAccessLog } from './src/middleware/accessLogWriter.js';
-import multerMonkeyPatch from './src/middleware/multerMonkeyPatch.js';
-import initRequestProxy from './src/request-proxy.js';
-import getCacheBusterMiddleware from './src/middleware/cacheBuster.js';
-import corsProxyMiddleware from './src/middleware/corsProxy.js';
-import {
+const { default: getWebpackServeMiddleware } = await import('./src/middleware/webpack-serve.js');
+const { default: basicAuthMiddleware } = await import('./src/middleware/basicAuth.js');
+const { default: getWhitelistMiddleware } = await import('./src/middleware/whitelist.js');
+const { default: accessLoggerMiddleware, getAccessLogPath, migrateAccessLog } = await import('./src/middleware/accessLogWriter.js');
+const { default: multerMonkeyPatch } = await import('./src/middleware/multerMonkeyPatch.js');
+const { default: initRequestProxy } = await import('./src/request-proxy.js');
+const { default: getCacheBusterMiddleware } = await import('./src/middleware/cacheBuster.js');
+const { default: corsProxyMiddleware } = await import('./src/middleware/corsProxy.js');
+const {
     getVersion,
     color,
     removeColorFormatting,
@@ -56,37 +74,22 @@ import {
     safeReadFileSync,
     setupLogLevel,
     setWindowTitle,
-} from './src/util.js';
-import { UPLOADS_DIRECTORY } from './src/constants.js';
-import { ensureThumbnailCache } from './src/endpoints/thumbnails.js';
-import { serverDirectory } from './src/server-directory.js';
+} = await import('./src/util.js');
+const { UPLOADS_DIRECTORY } = await import('./src/constants.js');
+const { ensureThumbnailCache } = await import('./src/endpoints/thumbnails.js');
 
 // Routers
-import { router as usersPublicRouter } from './src/endpoints/users-public.js';
-import { init as statsInit, onExit as statsOnExit } from './src/endpoints/stats.js';
-import { checkForNewContent } from './src/endpoints/content-manager.js';
-import { init as settingsInit } from './src/endpoints/settings.js';
-import { redirectDeprecatedEndpoints, ServerStartup, setupPrivateEndpoints } from './src/server-startup.js';
-import { diskCache } from './src/endpoints/characters.js';
+const { router : usersPublicRouter } = await import('./src/endpoints/users-public.js');
+const { init : statsInit, onExit : statsOnExit } = await import('./src/endpoints/stats.js');
+const { checkForNewContent } = await import('./src/endpoints/content-manager.js');
+const { init : settingsInit } = await import('./src/endpoints/settings.js');
+const { redirectDeprecatedEndpoints, ServerStartup, setupPrivateEndpoints } = await import('./src/server-startup.js');
+const { diskCache } = await import('./src/endpoints/characters.js');
 
 // Unrestrict console logs display limit
 util.inspect.defaultOptions.maxArrayLength = null;
 util.inspect.defaultOptions.maxStringLength = null;
 util.inspect.defaultOptions.depth = 4;
-
-console.log(`Node version: ${process.version}. Running in ${process.env.NODE_ENV} environment. Server directory: ${serverDirectory}`);
-
-// Work around a node v20.0.0, v20.1.0, and v20.2.0 bug. The issue was fixed in v20.3.0.
-// https://github.com/nodejs/node/issues/47822#issuecomment-1564708870
-// Safe to remove once support for Node v20 is dropped.
-if (process.versions && process.versions.node && process.versions.node.match(/20\.[0-2]\.0/)) {
-    // @ts-ignore
-    if (net.setDefaultAutoSelectFamily) net.setDefaultAutoSelectFamily(false);
-}
-
-const cliArgs = new CommandLineParser().parse(process.argv);
-globalThis.DATA_ROOT = cliArgs.dataRoot;
-globalThis.COMMAND_LINE_ARGS = cliArgs;
 
 if (!cliArgs.enableIPv6 && !cliArgs.enableIPv4) {
     console.error('error: You can\'t disable all internet protocols: at least IPv6 or IPv4 must be enabled.');
