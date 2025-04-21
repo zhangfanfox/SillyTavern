@@ -163,6 +163,9 @@ body {
 
 ::-webkit-scrollbar-track {
     cursor: default;
+}
+
+::-webkit-scrollbar-track:hover {
     background-color: rgba(126, 126, 126, 0.2); /* Adaptive, but won't contrast with neutral-gray. */
 }
 
