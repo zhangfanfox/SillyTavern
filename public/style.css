@@ -157,7 +157,7 @@ body {
 }
 
 ::-webkit-scrollbar {
-    width: 0.7rem;
+    width: 0.8em;
     scrollbar-gutter: stable;
 }
 
