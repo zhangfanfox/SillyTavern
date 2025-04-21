@@ -134,7 +134,6 @@ html {
     -webkit-transform: translateZ(0);
     -webkit-backface-visibility: hidden;
     -webkit-perspective: 1000;
-    font-size: var(--mainFontSize);
 }
 
 body {
@@ -151,13 +150,14 @@ body {
     background-attachment: fixed;
     background-size: cover;
     font-family: var(--mainFontFamily);
+    font-size: var(--mainFontSize);
     color: var(--SmartThemeBodyColor);
     overflow: hidden;
     color-scheme: only light;
 }
 
 ::-webkit-scrollbar {
-    width: 0.75rem;
+    width: 0.8rem;
     scrollbar-gutter: stable;
 }
 
