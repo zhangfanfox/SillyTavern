@@ -412,6 +412,15 @@ async function sendMakerSuiteRequest(request, response) {
             tools.push({ function_declarations: functionDeclarations });
         }
 
+        if ('enable_thinking' in request.body && 'thinking_budget' in request.body) {
+            const thinkingEnabled = Boolean(request.body.enable_thinking);
+            const thinkingBudget = Number(request.body.thinking_budget);
+
+            if (thinkingEnabled) {
+                generationConfig.thinkingConfig = { thinkingBudget: thinkingBudget };
+            }
+        }
+
         let body = {
             contents: prompt.contents,
             safetySettings: safetySettings,

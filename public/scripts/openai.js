@@ -165,6 +165,11 @@ const textCompletionModels = [
     'code-search-ada-code-001',
 ];
 
+// One more models list to maintain, yay
+const thinkingBudgetModels = [
+    'gemini-2.5-flash-preview-04-17',
+];
+
 let biasCache = undefined;
 export let model_list = [];
 
@@ -306,6 +311,8 @@ export const settingsToUpdate = {
     n: ['#n_openai', 'n', false],
     bypass_status_check: ['#openai_bypass_status_check', 'bypass_status_check', true],
     request_images: ['#openai_request_images', 'request_images', true],
+    enable_thinking: ['#enable_thinking', 'enable_thinking', true],
+    thinking_budget: ['#thinking_budget', 'thinking_budget', false],
 };
 
 const default_settings = {
@@ -385,6 +392,8 @@ const default_settings = {
     reasoning_effort: 'medium',
     enable_web_search: false,
     request_images: false,
+    enable_thinking: true,
+    thinking_budget: 1000,
     seed: -1,
     n: 1,
 };
@@ -466,6 +475,8 @@ const oai_settings = {
     reasoning_effort: 'medium',
     enable_web_search: false,
     request_images: false,
+    enable_thinking: true,
+    thinking_budget: 1000,
     seed: -1,
     n: 1,
 };
@@ -2029,6 +2040,11 @@ async function sendOpenAIRequest(type, messages, signal) {
         'custom_prompt_post_processing': oai_settings.custom_prompt_post_processing,
     };
 
+    if (thinkingBudgetModels.includes(model)) {
+        generate_data['enable_thinking'] = oai_settings.enable_thinking;
+        generate_data['thinking_budget'] = oai_settings.thinking_budget;
+    }
+
     if (!canMultiSwipe && ToolManager.canPerformToolCalls(type)) {
         await ToolManager.registerFunctionToolsOpenAI(generate_data);
     }
@@ -3284,6 +3300,8 @@ function loadOpenAISettings(data, settings) {
     oai_settings.show_thoughts = settings.show_thoughts ?? default_settings.show_thoughts;
     oai_settings.reasoning_effort = settings.reasoning_effort ?? default_settings.reasoning_effort;
     oai_settings.enable_web_search = settings.enable_web_search ?? default_settings.enable_web_search;
+    oai_settings.enable_thinking = settings.enable_thinking ?? default_settings.enable_thinking;
+    oai_settings.thinking_budget = settings.thinking_budget ?? default_settings.thinking_budget;
     oai_settings.request_images = settings.request_images ?? default_settings.request_images;
     oai_settings.seed = settings.seed ?? default_settings.seed;
     oai_settings.n = settings.n ?? default_settings.n;
@@ -3419,6 +3437,10 @@ function loadOpenAISettings(data, settings) {
     $('#openai_reasoning_effort').val(oai_settings.reasoning_effort);
     $(`#openai_reasoning_effort option[value="${oai_settings.reasoning_effort}"]`).prop('selected', true);
 
+    $('#enable_thinking').prop('checked', oai_settings.enable_thinking);
+    $('#thinking_budget').val(oai_settings.thinking_budget);
+    $('#thinking_budget_counter').val(oai_settings.thinking_budget);
+
     if (settings.reverse_proxy !== undefined) oai_settings.reverse_proxy = settings.reverse_proxy;
     $('#openai_reverse_proxy').val(oai_settings.reverse_proxy);
 
@@ -3449,6 +3471,7 @@ function loadOpenAISettings(data, settings) {
 
     setNamesBehaviorControls();
     setContinuePostfixControls();
+    updateThinkingBudgetUI();
 
     if (oai_settings.custom_prompt_post_processing === custom_prompt_post_processing_types.CLAUDE) {
         oai_settings.custom_prompt_post_processing = custom_prompt_post_processing_types.MERGE;
@@ -3504,6 +3527,14 @@ function setContinuePostfixControls() {
     $('#continue_postfix').val(oai_settings.continue_postfix);
     const checkedItemText = $('input[name="continue_postfix"]:checked ~ span').text().trim();
     $('#continue_postfix_display').text(checkedItemText);
+}
+
+/**
+ * Updates the visibility and state of the Thinking Budget controls.
+ */
+function updateThinkingBudgetUI() {
+    const modelSupportsControl = thinkingBudgetModels.includes(getChatCompletionModel());
+    $('#thinking_budget_controls').toggle(modelSupportsControl);
 }
 
 async function getStatusOpen() {
@@ -3686,6 +3717,8 @@ async function saveOpenAIPreset(name, settings, triggerUi = true) {
         reasoning_effort: settings.reasoning_effort,
         enable_web_search: settings.enable_web_search,
         request_images: settings.request_images,
+        enable_thinking: settings.enable_thinking,
+        thinking_budget: settings.thinking_budget,
         seed: settings.seed,
         n: settings.n,
     };
@@ -4716,6 +4749,7 @@ async function onModelChange() {
 
     $('#openai_max_context_counter').attr('max', Number($('#openai_max_context').attr('max')));
 
+    updateThinkingBudgetUI();
     saveSettingsDebounced();
     eventSource.emit(event_types.CHATCOMPLETION_MODEL_CHANGED, value);
 }
@@ -5534,6 +5568,7 @@ export function initOpenAI() {
     $('#chat_completion_source').on('change', function () {
         oai_settings.chat_completion_source = String($(this).find(':selected').val());
         toggleChatCompletionForms();
+        updateThinkingBudgetUI();
         saveSettingsDebounced();
         reconnectOpenAi();
         forceCharacterEditorTokenize();
@@ -5716,6 +5751,29 @@ export function initOpenAI() {
 
     $('#openai_reasoning_effort').on('input', function () {
         oai_settings.reasoning_effort = String($(this).val());
+        saveSettingsDebounced();
+    });
+
+    $('#enable_thinking').on('input', function () {
+        oai_settings.enable_thinking = !!$(this).prop('checked');
+        updateThinkingBudgetUI();
+        saveSettingsDebounced();
+    });
+
+    $('#thinking_budget').on('input', function () {
+        oai_settings.thinking_budget = Number($(this).val());
+        $('#thinking_budget_counter').val(oai_settings.thinking_budget);
+        saveSettingsDebounced();
+    });
+
+    $('#thinking_budget_counter').on('input', function () {
+        let value = Number($(this).val());
+        const min = Number($('#thinking_budget').attr('min'));
+        const max = Number($('#thinking_budget').attr('max'));
+        value = Math.max(min, Math.min(max, value));
+        $(this).val(value);
+        oai_settings.thinking_budget = value;
+        $('#thinking_budget').val(value);
         saveSettingsDebounced();
     });
 
