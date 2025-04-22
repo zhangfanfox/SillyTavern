@@ -28,7 +28,8 @@ import {
     cachingAtDepthForOpenRouterClaude,
     cachingAtDepthForClaude,
     getPromptNames,
-    calculateBudgetTokens,
+    calculateClaudeBudgetTokens,
+    calculateGoogleBudgetTokens,
 } from '../../prompt-converters.js';
 
 import { readSecret, SECRET_KEYS } from '../secrets.js';
@@ -202,7 +203,7 @@ async function sendClaudeRequest(request, response) {
             // No prefill when thinking
             voidPrefill = true;
             const reasoningEffort = request.body.reasoning_effort;
-            const budgetTokens = calculateBudgetTokens(requestBody.max_tokens, reasoningEffort, requestBody.stream);
+            const budgetTokens = calculateClaudeBudgetTokens(requestBody.max_tokens, reasoningEffort, requestBody.stream);
             const minThinkTokens = 1024;
             if (requestBody.max_tokens <= minThinkTokens) {
                 const newValue = requestBody.max_tokens + minThinkTokens;
@@ -340,6 +341,7 @@ async function sendMakerSuiteRequest(request, response) {
     const stream = Boolean(request.body.stream);
     const enableWebSearch = Boolean(request.body.enable_web_search);
     const requestImages = Boolean(request.body.request_images);
+    const reasoningEffort = String(request.body.reasoning_effort);
     const isThinking = model.includes('thinking');
     const isGemma = model.includes('gemma');
 
@@ -412,11 +414,15 @@ async function sendMakerSuiteRequest(request, response) {
             tools.push({ function_declarations: functionDeclarations });
         }
 
-        if ('enable_thinking' in request.body && 'thinking_budget' in request.body) {
-            const thinkingEnabled = Boolean(request.body.enable_thinking);
-            const thinkingBudget = Number(request.body.thinking_budget);
+        // One more models list to maintain, yay
+        const thinkingBudgetModels = [
+            'gemini-2.5-flash-preview-04-17',
+        ];
 
-            if (thinkingEnabled) {
+        if (thinkingBudgetModels.includes(model)) {
+            const thinkingBudget = calculateGoogleBudgetTokens(generationConfig.maxOutputTokens, reasoningEffort);
+
+            if (Number.isInteger(thinkingBudget)) {
                 generationConfig.thinkingConfig = { thinkingBudget: thinkingBudget };
             }
         }

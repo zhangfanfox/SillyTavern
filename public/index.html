@@ -2034,32 +2034,6 @@
                                             </span>
                                         </div>
                                     </div>
-                                    <div id="thinking_budget_container" data-source="makersuite">
-                                        <div id="thinking_budget_controls">
-                                            <div class="range-block">
-                                                <label for="enable_thinking" class="checkbox_label widthFreeExpand">
-                                                    <input id="enable_thinking" type="checkbox" />
-                                                    <span data-i18n="Enable thinking">Enable thinking</span>
-                                                </label>
-                                                <div class="toggle-description justifyLeft marginBot5" data-i18n="thinking_budget_desc">
-                                                    Must be enabled for Thinking Budget to take effect.
-                                                </div>
-                                            </div>
-                                            <div class="range-block">
-                                                <div class="range-block-title" data-i18n="Thinking Budget (Tokens)">
-                                                    Thinking Budget (tokens)
-                                                </div>
-                                                <div class="range-block-range-and-counter">
-                                                    <div class="range-block-range">
-                                                        <input id="thinking_budget" type="range" min="0" max="24576" step="1">
-                                                    </div>
-                                                    <div class="range-block-counter">
-                                                        <input id="thinking_budget_counter" type="number" min="0" max="24576" step="1" data-for="thinking_budget">
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
                                     <div class="range-block" data-source="deepseek,openrouter,custom,claude,xai">
                                         <label for="openai_show_thoughts" class="checkbox_label widthFreeExpand">
                                             <input id="openai_show_thoughts" type="checkbox" />
@@ -2074,16 +2048,19 @@
                                             </span>
                                         </div>
                                     </div>
-                                    <div class="flex-container flexFlowColumn wide100p textAlignCenter marginTop10" data-source="openai,custom,claude,xai">
-                                        <div class="flex-container oneline-dropdown" title="Constrains effort on reasoning for reasoning models.&#10;Currently supported values are low, medium, and high.&#10;Reducing reasoning effort can result in faster responses and fewer tokens used on reasoning in a response." data-i18n="[title]Constrains effort on reasoning for reasoning models.">
+                                    <div class="flex-container flexFlowColumn wide100p textAlignCenter marginTop10" data-source="openai,custom,claude,xai,makersuite">
+                                        <div class="flex-container oneline-dropdown" title="Constrains effort on reasoning for reasoning models.&#10;Reducing reasoning effort can result in faster responses and fewer tokens used on reasoning in a response." data-i18n="[title]Constrains effort on reasoning for reasoning models.">
                                             <label for="openai_reasoning_effort">
                                                 <span data-i18n="Reasoning Effort">Reasoning Effort</span>
-                                                <i data-source="claude" class="opacity50p fa-solid fa-circle-info" title="Allocates a portion of the response length for thinking (low: 10%, medium: 25%, high: 50%), but minimum 1024 tokens."></i>
+                                                <i data-source="claude,makersuite" class="opacity50p fa-solid fa-circle-info" title="Allocates a portion of the response length for thinking (low: 10%, medium: 25%, high: 50%), but minimum 1024 tokens."></i>
                                             </label>
                                             <select id="openai_reasoning_effort">
+                                                <option data-i18n="openai_reasoning_effort_auto" value="auto">Unset (model-default)</option>
+                                                <option data-i18n="openai_reasoning_effort_minimum" value="min">Mininum (model-defined)</option>
                                                 <option data-i18n="openai_reasoning_effort_low" value="low">Low</option>
                                                 <option data-i18n="openai_reasoning_effort_medium" value="medium">Medium</option>
                                                 <option data-i18n="openai_reasoning_effort_high" value="high">High</option>
+                                                <option data-i18n="openai_reasoning_effort_maximum" value="max">Maximum (model-defined)</option>
                                             </select>
                                         </div>
                                     </div>

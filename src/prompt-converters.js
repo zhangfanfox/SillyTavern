@@ -3,6 +3,15 @@ import { getConfigValue, tryParse } from './util.js';
 
 const PROMPT_PLACEHOLDER = getConfigValue('promptPlaceholder', 'Let\'s get started.');
 
+const REASONING_EFFORT = {
+    auto: 'auto',
+    low: 'low',
+    medium: 'medium',
+    high: 'high',
+    min: 'min',
+    max: 'max',
+};
+
 /**
  * @typedef {object} PromptNames
  * @property {string} charName Character name
@@ -944,24 +953,34 @@ export function cachingAtDepthForOpenRouterClaude(messages, cachingAtDepth) {
 }
 
 /**
- * Calculate the budget tokens for a given reasoning effort.
+ * Calculate the Claude budget tokens for a given reasoning effort.
  * @param {number} maxTokens Maximum tokens
  * @param {string} reasoningEffort Reasoning effort
  * @param {boolean} stream If streaming is enabled
  * @returns {number} Budget tokens
  */
-export function calculateBudgetTokens(maxTokens, reasoningEffort, stream) {
+export function calculateClaudeBudgetTokens(maxTokens, reasoningEffort, stream) {
     let budgetTokens = 0;
 
     switch (reasoningEffort) {
-        case 'low':
+        // Claude doesn't have a default budget value. Use same as min.
+        case REASONING_EFFORT.auto:
+            budgetTokens = 1024;
+            break;
+        case REASONING_EFFORT.min:
+            budgetTokens = 1024;
+            break;
+        case REASONING_EFFORT.low:
             budgetTokens = Math.floor(maxTokens * 0.1);
             break;
-        case 'medium':
+        case REASONING_EFFORT.medium:
             budgetTokens = Math.floor(maxTokens * 0.25);
             break;
-        case 'high':
+        case REASONING_EFFORT.high:
             budgetTokens = Math.floor(maxTokens * 0.5);
+            break;
+        case REASONING_EFFORT.max:
+            budgetTokens = maxTokens;
             break;
     }
 
@@ -970,6 +989,40 @@ export function calculateBudgetTokens(maxTokens, reasoningEffort, stream) {
     if (!stream) {
         budgetTokens = Math.min(budgetTokens, 21333);
     }
+
+    return budgetTokens;
+}
+
+/**
+ * Calculate the Google budget tokens for a given reasoning effort.
+ * @param {number} maxTokens Maximum tokens
+ * @param {string} reasoningEffort Reasoning effort
+ * @returns {number?} Budget tokens
+ */
+export function calculateGoogleBudgetTokens(maxTokens, reasoningEffort) {
+    let budgetTokens = 0;
+
+    switch (reasoningEffort) {
+        case REASONING_EFFORT.auto:
+            return null;
+        case REASONING_EFFORT.min:
+            budgetTokens = 0;
+            break;
+        case REASONING_EFFORT.low:
+            budgetTokens = Math.floor(maxTokens * 0.1);
+            break;
+        case REASONING_EFFORT.medium:
+            budgetTokens = Math.floor(maxTokens * 0.25);
+            break;
+        case REASONING_EFFORT.high:
+            budgetTokens = Math.floor(maxTokens * 0.5);
+            break;
+        case REASONING_EFFORT.max:
+            budgetTokens = maxTokens;
+            break;
+    }
+
+    budgetTokens = Math.min(budgetTokens, 24576);
 
     return budgetTokens;
 }
