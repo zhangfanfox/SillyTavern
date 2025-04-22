@@ -2135,29 +2135,29 @@ export function initDefaultSlashCommands() {
         aliases: ['floor', 'jump', 'scrollto'],
         callback: async (_, index) => {
             const floorIndex = Number(index);
-    
+
             // Validate input
             if (isNaN(floorIndex) || floorIndex < 0 || (typeof chat !== 'undefined' && floorIndex >= chat.length)) {
-                 const maxIndex = (typeof chat !== 'undefined' ? chat.length - 1 : 'unknown');
+                const maxIndex = (typeof chat !== 'undefined' ? chat.length - 1 : 'unknown');
                 toastr.warning(`Invalid message index: ${index}. Please enter a number between 0 and ${maxIndex}.`);
                 console.warn(`WARN: Invalid message index provided for /goto-floor: ${index}. Max index: ${maxIndex}`);
                 return '';
             }
-    
+
             const messageElement = document.querySelector(`[mesid="${floorIndex}"]`);
-    
+
             if (messageElement) {
                 const headerElement = messageElement.querySelector('.mes_header') ||
                                       messageElement.querySelector('.mes_meta') ||
                                       messageElement.querySelector('.mes_name_area') ||
                                       messageElement.querySelector('.mes_name');
-    
+
                 const elementToScroll = headerElement || messageElement; // Prefer header, fallback to whole message
                 const blockPosition = headerElement ? 'center' : 'start'; // Center header, else start of message
-    
+
                 elementToScroll.scrollIntoView({ behavior: 'smooth', block: blockPosition });
                 console.log(`INFO: Scrolled ${headerElement ? 'header of' : ''} message ${floorIndex} into view (block: ${blockPosition}).`);
-    
+
                 // --- Highlight with smooth animation ---
                 messageElement.classList.add('highlight-scroll');
                 setTimeout(() => {
@@ -2169,7 +2169,7 @@ export function initDefaultSlashCommands() {
                         messageElement.classList.remove('highlight-scroll', 'highlight-scroll-fadeout');
                     }, 500); // Matches the 0.5s transition duration
                 }, 1500); // Start fade out after 1.5 seconds
-    
+
             } else {
                 toastr.warning(`Could not find element for message ${floorIndex} (using [mesid="${floorIndex}"]). It might not be rendered yet. Try scrolling up or use /chat-render all.`);
                 console.warn(`WARN: Element not found for message index ${floorIndex} using querySelector [mesid="${floorIndex}"] in /goto-floor.`);
@@ -2201,7 +2201,7 @@ export function initDefaultSlashCommands() {
         </div>
     `,
     }));
-    
+
     // --- Improved CSS for highlight ---
     const styleId = 'goto-floor-highlight-style';
     if (!document.getElementById(styleId)) {
