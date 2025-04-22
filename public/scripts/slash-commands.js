@@ -1,4 +1,5 @@
 import { Fuse, DOMPurify } from '../lib.js';
+import { flashHighlight } from './utils.js';
 
 import {
     Generate,
@@ -2134,64 +2135,67 @@ export function initDefaultSlashCommands() {
         name: 'goto-floor',
         aliases: ['floor', 'jump', 'scrollto'],
         callback: async (_, index) => {
-            // --- Load all messages first to ensure the target element exists ---
-            console.log(`INFO: Loading all messages before attempting to goto-floor ${index}.`);
-            await showMoreMessages(Number.MAX_SAFE_INTEGER);
-            console.log(`INFO: All messages loaded (or loading initiated).`);
-            // --- End of loading step ---
-    
-    
             const floorIndex = Number(index);
     
-            // Validate input
-            if (isNaN(floorIndex) || floorIndex < 0 || (typeof chat !== 'undefined' && floorIndex >= chat.length)) {
-                const maxIndex = (typeof chat !== 'undefined' ? chat.length - 1 : 'unknown');
+            const chatLength = typeof chat !== 'undefined' ? chat.length : -1; // Use -1 if chat is undefined to avoid errors
+            if (isNaN(floorIndex) || floorIndex < 0 || (chatLength !== -1 && floorIndex >= chatLength)) {
+                const maxIndex = (chatLength !== -1 ? chatLength - 1 : 'unknown');
                 toastr.warning(`Invalid message index: ${index}. Please enter a number between 0 and ${maxIndex}.`);
                 console.warn(`WARN: Invalid message index provided for /goto-floor: ${index}. Max index: ${maxIndex}`);
                 return '';
             }
     
-            // Give the rendering a moment to potentially catch up after showMoreMessages
-            // This might be necessary depending on how showMoreMessages works internally
-            await new Promise(resolve => setTimeout(resolve, 100)); // Adjust delay if needed
+            // --- Load all messages first to ensure the target element exists ---
+            console.log(`INFO: Attempting to load all messages before attempting to goto-floor ${index}.`);
+            try {
+                // Assuming showMoreMessages is available globally or within scope
+                await showMoreMessages(Number.MAX_SAFE_INTEGER);
+                console.log(`INFO: All messages loaded (or loading initiated).`);
+                // Give the rendering a moment to potentially catch up after showMoreMessages
+                await new Promise(resolve => setTimeout(resolve, 100)); // Adjust delay if needed
+            } catch (error) {
+                console.error('Error loading messages:', error);
+                toastr.error('An error occurred while trying to load messages.');
+                return ''; // Exit if loading fails
+            }
+            // --- End of loading step ---
     
             const messageElement = document.querySelector(`[mesid="${floorIndex}"]`);
     
             if (messageElement) {
-                const headerElement = messageElement.querySelector('.mes_header') ||
-                                      messageElement.querySelector('.mes_meta') ||
-                                      messageElement.querySelector('.mes_name_area') ||
-                                      messageElement.querySelector('.mes_name');
-    
-                const elementToScroll = headerElement || messageElement; // Prefer header, fallback to whole message
-                const blockPosition = headerElement ? 'center' : 'start'; // Center header, else start of message
+                // --- Corrected: Use the actual class from the template ---
+                const headerElement = messageElement.querySelector('.ch_name');
+                const elementToScroll = headerElement || messageElement; // Fallback to the entire message div
+                const blockPosition = headerElement ? 'center' : 'start';
     
                 elementToScroll.scrollIntoView({ behavior: 'smooth', block: blockPosition });
-                console.log(`INFO: Scrolled ${headerElement ? 'header of' : ''} message ${floorIndex} into view (block: ${blockPosition}).`);
     
-                // --- Highlight with smooth animation ---
-                messageElement.classList.add('highlight-scroll');
-                setTimeout(() => {
-                    // Add a class to fade out, then remove the highlight class after fade
-                    messageElement.classList.add('highlight-scroll-fadeout');
-                    // Wait for fadeout transition to complete before removing the base class
-                    // Match this duration to the transition duration in CSS
-                    setTimeout(() => {
-                        messageElement.classList.remove('highlight-scroll', 'highlight-scroll-fadeout');
-                    }, 500); // Matches the 0.5s transition duration
-                }, 1500); // Start fade out after 1.5 seconds
+                // Highlight the message element
+                if (messageElement instanceof HTMLElement) {
+                    if (typeof $ !== 'undefined') { // Check if jQuery is available
+                         flashHighlight($(messageElement), 1500);
+                    } else {
+                        console.warn('jQuery not available, cannot use flashHighlight.');
+                        // Optional: Add a temporary CSS class highlight if jQuery/flashHighlight is missing
+                         messageElement.style.transition = 'background-color 0.5s ease';
+                         messageElement.style.backgroundColor = 'yellow'; // Or some highlight color
+                         setTimeout(() => {
+                             messageElement.style.backgroundColor = ''; // Remove highlight
+                         }, 1500); // Match flash duration
+                    }
+    
+                } else {
+                    console.warn('Message element is not an HTMLElement, cannot flash highlight.');
+                }
+    
     
             } else {
-                 // This case is less likely now after showMoreMessages, but still possible
-                 // if the element hasn't been added to the DOM yet for some reason after loading.
-                toastr.warning(`Could not find element for message ${floorIndex} (using [mesid="${floorIndex}"]) even after attempting to load all messages. It might not be rendered yet. Try scrolling up or use /chat-render all again if issues persist.`);
+                // Only warn if element is not found *after* attempting to load all messages
+                toastr.warning(`Could not find element for message ${floorIndex} (using [mesid="${floorIndex}"]) even after attempting to load all messages. It might not be rendered yet or the index is invalid.`);
                 console.warn(`WARN: Element not found for message index ${floorIndex} using querySelector [mesid="${floorIndex}"] in /goto-floor, even after attempting to load all messages.`);
-                const chatContainer = document.getElementById('chat');
-                if (chatContainer) {
-                    chatContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                }
+                // Do NOT scroll the chat container in this case
             }
-            return '';
+            return ''; // Return empty string as expected by some slash command parsers
         },
         unnamedArgumentList: [
             SlashCommandArgument.fromProps({
@@ -2204,8 +2208,9 @@ export function initDefaultSlashCommands() {
         helpString: `
         <div>
             Scrolls the chat view to the specified message index. Uses the <code>[mesid]</code> attribute for locating the message element. Index starts at 0.
-            It attempts to center the character's name/header area within the message block. Highlights the message using the theme's 'matchedText' color with a smooth animation.
+            It attempts to center the character's name/header area within the message block by targeting the <code>.ch_name</code> element. Highlights the message using a flash animation.
             Automatically attempts to load all messages before scrolling to improve success rate, addressing issues with lazy loading.
+            A warning is displayed if the message element cannot be located even after attempting to load all messages.
         </div>
         <div>
             <strong>Example:</strong> <pre><code>/goto-floor 10</code></pre> Scrolls to the 11th message (mesid=10).
@@ -2213,55 +2218,11 @@ export function initDefaultSlashCommands() {
     `,
     }));
     
-    // --- Improved CSS for highlight ---
     const styleId = 'goto-floor-highlight-style';
-    if (!document.getElementById(styleId)) {
-        const style = document.createElement('style');
-        style.id = styleId;
-        style.textContent = `
-            /* Base state for elements that *can* be highlighted */
-            /* Ensures transition applies smoothly in both directions */
-            .mes, .mes_block {
-                transition: background-color 0.5s ease-in-out, box-shadow 0.5s ease-in-out;
-                /* Add position relative if not already present, needed for potential pseudo-elements */
-                position: relative;
-            }
-    
-            /* --- Highlighting Style --- */
-            .mes.highlight-scroll,
-            .mes_block.highlight-scroll {
-                /* Use theme color for shadow, fallback to gold */
-                box-shadow: 0 0 10px var(--ac-style-color-matchedText, #FFD700) !important;
-                z-index: 5; /* Ensure highlight is visually prominent */
-            }
-    
-            /* Modern browsers: Use color-mix for transparent background */
-            @supports (background-color: color-mix(in srgb, white 50%, black)) {
-                .mes.highlight-scroll,
-                .mes_block.highlight-scroll {
-                     /* Mix theme color with transparent for background */
-                     background-color: color-mix(in srgb, var(--ac-style-color-matchedText, #FFD700) 35%, transparent) !important;
-                }
-            }
-    
-            /* Fallback for older browsers: Use a fixed semi-transparent background */
-            @supports not (background-color: color-mix(in srgb, white 50%, black)) {
-                .mes.highlight-scroll,
-                .mes_block.highlight-scroll {
-                    background-color: rgba(255, 215, 0, 0.35) !important; /* Fallback semi-transparent gold */
-                }
-            }
-    
-            /* --- Fade-out Control --- */
-            /* When fading out, explicitly transition back to transparent/none */
-            .mes.highlight-scroll-fadeout,
-            .mes_block.highlight-scroll-fadeout {
-                background-color: transparent !important;
-                box-shadow: none !important;
-            }
-        `;
-        document.head.appendChild(style);
+    if (document.getElementById(styleId)) {
+        document.getElementById(styleId).remove();
     }
+
     registerVariableCommands();
 }
 
