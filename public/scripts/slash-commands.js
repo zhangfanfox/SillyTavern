@@ -22,6 +22,7 @@ import {
     extractMessageBias,
     generateQuietPrompt,
     generateRaw,
+    getFirstDisplayedMessageId,
     getThumbnailUrl,
     is_send_press,
     main_api,
@@ -2133,74 +2134,44 @@ export function initDefaultSlashCommands() {
 
     SlashCommandParser.addCommandObject(SlashCommand.fromProps({
         name: 'chat-jump',
-        aliases: ['floor', 'jump', 'scrollto'],
+        aliases: ['chat-scrollto', 'floor-teleport'],
         callback: async (_, index) => {
-            const floorIndex = Number(index);
+            const messageIndex = Number(index);
 
-            const chatLength = typeof chat !== 'undefined' ? chat.length : -1; // Use -1 if chat is undefined to avoid errors
-            if (isNaN(floorIndex) || floorIndex < 0 || (chatLength !== -1 && floorIndex >= chatLength)) {
-                const maxIndex = (chatLength !== -1 ? chatLength - 1 : 'unknown');
-                toastr.warning(`Invalid message index: ${index}. Please enter a number between 0 and ${maxIndex}.`);
-                console.warn(`WARN: Invalid message index provided for /chat-jump: ${index}. Max index: ${maxIndex}`);
+            if (isNaN(messageIndex) || messageIndex < 0 || messageIndex >= chat.length) {
+                toastr.warning(t`Invalid message index: ${index}. Please enter a number between 0 and ${chat.length}.`);
+                console.warn(`WARN: Invalid message index provided for /chat-jump: ${index}. Max index: ${chat.length}`);
                 return '';
             }
 
-            // --- Load all messages first to ensure the target element exists ---
-            console.log(`INFO: Attempting to load all messages before attempting to chat-jump ${index}.`);
-            try {
-                // Assuming showMoreMessages is available globally or within scope
-                await showMoreMessages(Number.MAX_SAFE_INTEGER);
-                console.log('INFO: All messages loaded (or loading initiated).');
-                // Give the rendering a moment to potentially catch up after showMoreMessages
-                await new Promise(resolve => setTimeout(resolve, 100)); // Adjust delay if needed
-            } catch (error) {
-                console.error('Error loading messages:', error);
-                toastr.error('An error occurred while trying to load messages.');
-                return ''; // Exit if loading fails
+            // Load more messages if needed
+            const firstDisplayedMessageId = getFirstDisplayedMessageId();
+            if (isFinite(firstDisplayedMessageId) && messageIndex < firstDisplayedMessageId) {
+                const needToLoadCount = firstDisplayedMessageId - messageIndex;
+                await showMoreMessages(needToLoadCount);
+                await delay(1);
             }
-            // --- End of loading step ---
 
-            const messageElement = document.querySelector(`[mesid="${floorIndex}"]`);
             const chatContainer = document.getElementById('chat');
+            const messageElement = document.querySelector(`#chat .mes[mesid="${messageIndex}"]`);
 
-            if (messageElement && chatContainer) {
-                const headerElement = messageElement.querySelector('.ch_name');
-                const elementToScroll = headerElement || messageElement; // Fallback to the entire message div
-
-                // Calculate position relative to chat container
-                const elementRect = elementToScroll.getBoundingClientRect();
+            if (messageElement instanceof HTMLElement && chatContainer instanceof HTMLElement) {
+                const elementRect = messageElement.getBoundingClientRect();
                 const containerRect = chatContainer.getBoundingClientRect();
-                const scrollPosition = elementRect.top - containerRect.top + chatContainer.scrollTop;
 
-                const viewportOffset = chatContainer.clientHeight * 0.1; // 25% from top
+                const scrollPosition = elementRect.top - containerRect.top + chatContainer.scrollTop;
                 chatContainer.scrollTo({
-                    top: scrollPosition - viewportOffset,
+                    top: scrollPosition,
                     behavior: 'smooth',
                 });
 
-                // Highlight the message element
-                if (messageElement instanceof HTMLElement) {
-                    if (typeof $ !== 'undefined') { // Check if jQuery is available
-                        flashHighlight($(messageElement), 1500);
-                    } else {
-                        console.warn('jQuery not available, cannot use flashHighlight.');
-                        // Optional: Add a temporary CSS class highlight if jQuery/flashHighlight is missing
-                        messageElement.style.transition = 'background-color 0.5s ease';
-                        messageElement.style.backgroundColor = 'yellow'; // Or some highlight color
-                        setTimeout(() => {
-                            messageElement.style.backgroundColor = ''; // Remove highlight
-                        }, 1500); // Match flash duration
-                    }
-                } else {
-                    console.warn('Message element is not an HTMLElement, cannot flash highlight.');
-                }
+                flashHighlight($(messageElement), 2000);
             } else {
-                // Only warn if element is not found *after* attempting to load all messages
-                toastr.warning(`Could not find element for message ${floorIndex} (using [mesid="${floorIndex}"]) even after attempting to load all messages. It might not be rendered yet or the index is invalid.`);
-                console.warn(`WARN: Element not found for message index ${floorIndex} using querySelector [mesid="${floorIndex}"] in /chat-jump, even after attempting to load all messages.`);
-                // Do NOT scroll the chat container in this case
+                toastr.warning(t`Could not find element for message ${messageIndex}. It might not be rendered yet or the index is invalid.`);
+                console.warn(`WARN: Element not found for message index ${messageIndex} in /chat-jump.`);
             }
-            return ''; // Return empty string as expected by some slash command parsers
+
+            return '';
         },
         unnamedArgumentList: [
             SlashCommandArgument.fromProps({
@@ -2212,21 +2183,13 @@ export function initDefaultSlashCommands() {
         ],
         helpString: `
         <div>
-            Scrolls the chat view to the specified message index. Uses the <code>[mesid]</code> attribute for locating the message element. Index starts at 0.
-            It attempts to center the character's name/header area within the message block by targeting the <code>.ch_name</code> element. Highlights the message using a flash animation.
-            Automatically attempts to load all messages before scrolling to improve success rate, addressing issues with lazy loading.
-            A warning is displayed if the message element cannot be located even after attempting to load all messages.
+            Scrolls the chat view to the specified message index. Index starts at 0.
         </div>
         <div>
-            <strong>Example:</strong> <pre><code>/chat-jump 10</code></pre> Scrolls to the 11th message (mesid=10).
+            <strong>Example:</strong> <pre><code>/chat-jump 10</code></pre> Scrolls to the 11th message (id=10).
         </div>
     `,
     }));
-
-    const styleId = 'chat-jump-highlight-style';
-    if (document.getElementById(styleId)) {
-        document.getElementById(styleId).remove();
-    }
 
     registerVariableCommands();
 }
