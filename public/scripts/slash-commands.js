@@ -2161,14 +2161,22 @@ export function initDefaultSlashCommands() {
             // --- End of loading step ---
 
             const messageElement = document.querySelector(`[mesid="${floorIndex}"]`);
+            const chatContainer = document.getElementById('chat');
 
-            if (messageElement) {
-                // --- Corrected: Use the actual class from the template ---
+            if (messageElement && chatContainer) {
                 const headerElement = messageElement.querySelector('.ch_name');
                 const elementToScroll = headerElement || messageElement; // Fallback to the entire message div
-                const blockPosition = headerElement ? 'center' : 'start';
 
-                elementToScroll.scrollIntoView({ behavior: 'smooth', block: blockPosition });
+                // Calculate position relative to chat container
+                const elementRect = elementToScroll.getBoundingClientRect();
+                const containerRect = chatContainer.getBoundingClientRect();
+                const scrollPosition = elementRect.top - containerRect.top + chatContainer.scrollTop;
+
+                const viewportOffset = chatContainer.clientHeight * 0.1; // 25% from top
+                chatContainer.scrollTo({
+                    top: scrollPosition - viewportOffset,
+                    behavior: 'smooth',
+                });
 
                 // Highlight the message element
                 if (messageElement instanceof HTMLElement) {
@@ -2183,12 +2191,9 @@ export function initDefaultSlashCommands() {
                             messageElement.style.backgroundColor = ''; // Remove highlight
                         }, 1500); // Match flash duration
                     }
-
                 } else {
                     console.warn('Message element is not an HTMLElement, cannot flash highlight.');
                 }
-
-
             } else {
                 // Only warn if element is not found *after* attempting to load all messages
                 toastr.warning(`Could not find element for message ${floorIndex} (using [mesid="${floorIndex}"]) even after attempting to load all messages. It might not be rendered yet or the index is invalid.`);
