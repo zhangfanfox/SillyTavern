@@ -1947,32 +1947,27 @@ async function sendAltScaleRequest(messages, logit_bias, signal, type) {
 }
 
 function getReasoningEffort() {
-    // Do not set the field. Let the model decide.
-    if (oai_settings.reasoning_effort === reasoning_effort_types.auto) {
-        return undefined;
+    // These sources expect the effort as string.
+    const reasoningEffortSources = [
+        chat_completion_sources.OPENAI,
+        chat_completion_sources.CUSTOM,
+        chat_completion_sources.XAI,
+    ];
+
+    if (!reasoningEffortSources.includes(oai_settings.chat_completion_source)) {
+        return oai_settings.reasoning_effort;
     }
 
-    // These sources require effort as a string
-    if (oai_settings.reasoning_effort === reasoning_effort_types.min) {
-        switch (oai_settings.chat_completion_source) {
-            case chat_completion_sources.OPENAI:
-            case chat_completion_sources.CUSTOM:
-            case chat_completion_sources.XAI:
-                return reasoning_effort_types.low;
-        }
+    switch (oai_settings.reasoning_effort) {
+        case reasoning_effort_types.auto:
+            return undefined;
+        case reasoning_effort_types.min:
+            return reasoning_effort_types.low;
+        case reasoning_effort_types.max:
+            return reasoning_effort_types.high;
+        default:
+            return oai_settings.reasoning_effort;
     }
-
-    // Same here, but max effort
-    if (oai_settings.reasoning_effort === reasoning_effort_types.max) {
-        switch (oai_settings.chat_completion_source) {
-            case chat_completion_sources.OPENAI:
-            case chat_completion_sources.CUSTOM:
-            case chat_completion_sources.XAI:
-                return reasoning_effort_types.high;
-        }
-    }
-
-    return oai_settings.reasoning_effort;
 }
 
 /**
