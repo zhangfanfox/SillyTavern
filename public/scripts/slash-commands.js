@@ -2134,8 +2134,15 @@ export function initDefaultSlashCommands() {
         name: 'goto-floor',
         aliases: ['floor', 'jump', 'scrollto'],
         callback: async (_, index) => {
+            // --- Load all messages first to ensure the target element exists ---
+            console.log(`INFO: Loading all messages before attempting to goto-floor ${index}.`);
+            await showMoreMessages(Number.MAX_SAFE_INTEGER);
+            console.log(`INFO: All messages loaded (or loading initiated).`);
+            // --- End of loading step ---
+    
+    
             const floorIndex = Number(index);
-
+    
             // Validate input
             if (isNaN(floorIndex) || floorIndex < 0 || (typeof chat !== 'undefined' && floorIndex >= chat.length)) {
                 const maxIndex = (typeof chat !== 'undefined' ? chat.length - 1 : 'unknown');
@@ -2143,21 +2150,25 @@ export function initDefaultSlashCommands() {
                 console.warn(`WARN: Invalid message index provided for /goto-floor: ${index}. Max index: ${maxIndex}`);
                 return '';
             }
-
+    
+            // Give the rendering a moment to potentially catch up after showMoreMessages
+            // This might be necessary depending on how showMoreMessages works internally
+            await new Promise(resolve => setTimeout(resolve, 100)); // Adjust delay if needed
+    
             const messageElement = document.querySelector(`[mesid="${floorIndex}"]`);
-
+    
             if (messageElement) {
                 const headerElement = messageElement.querySelector('.mes_header') ||
                                       messageElement.querySelector('.mes_meta') ||
                                       messageElement.querySelector('.mes_name_area') ||
                                       messageElement.querySelector('.mes_name');
-
+    
                 const elementToScroll = headerElement || messageElement; // Prefer header, fallback to whole message
                 const blockPosition = headerElement ? 'center' : 'start'; // Center header, else start of message
-
+    
                 elementToScroll.scrollIntoView({ behavior: 'smooth', block: blockPosition });
                 console.log(`INFO: Scrolled ${headerElement ? 'header of' : ''} message ${floorIndex} into view (block: ${blockPosition}).`);
-
+    
                 // --- Highlight with smooth animation ---
                 messageElement.classList.add('highlight-scroll');
                 setTimeout(() => {
@@ -2169,10 +2180,12 @@ export function initDefaultSlashCommands() {
                         messageElement.classList.remove('highlight-scroll', 'highlight-scroll-fadeout');
                     }, 500); // Matches the 0.5s transition duration
                 }, 1500); // Start fade out after 1.5 seconds
-
+    
             } else {
-                toastr.warning(`Could not find element for message ${floorIndex} (using [mesid="${floorIndex}"]). It might not be rendered yet. Try scrolling up or use /chat-render all.`);
-                console.warn(`WARN: Element not found for message index ${floorIndex} using querySelector [mesid="${floorIndex}"] in /goto-floor.`);
+                 // This case is less likely now after showMoreMessages, but still possible
+                 // if the element hasn't been added to the DOM yet for some reason after loading.
+                toastr.warning(`Could not find element for message ${floorIndex} (using [mesid="${floorIndex}"]) even after attempting to load all messages. It might not be rendered yet. Try scrolling up or use /chat-render all again if issues persist.`);
+                console.warn(`WARN: Element not found for message index ${floorIndex} using querySelector [mesid="${floorIndex}"] in /goto-floor, even after attempting to load all messages.`);
                 const chatContainer = document.getElementById('chat');
                 if (chatContainer) {
                     chatContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -2192,16 +2205,14 @@ export function initDefaultSlashCommands() {
         <div>
             Scrolls the chat view to the specified message index. Uses the <code>[mesid]</code> attribute for locating the message element. Index starts at 0.
             It attempts to center the character's name/header area within the message block. Highlights the message using the theme's 'matchedText' color with a smooth animation.
+            Automatically attempts to load all messages before scrolling to improve success rate, addressing issues with lazy loading.
         </div>
         <div>
             <strong>Example:</strong> <pre><code>/goto-floor 10</code></pre> Scrolls to the 11th message (mesid=10).
         </div>
-        <div>
-            Note: Due to virtual scrolling, very old messages might need loading first.
-        </div>
     `,
     }));
-
+    
     // --- Improved CSS for highlight ---
     const styleId = 'goto-floor-highlight-style';
     if (!document.getElementById(styleId)) {
