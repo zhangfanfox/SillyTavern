@@ -365,7 +365,7 @@ export function convertCohereMessages(messages, names) {
  * @param {string} model Model name
  * @param {boolean} useSysPrompt Use system prompt
  * @param {PromptNames} names Prompt names
- * @returns {{contents: *[], system_instruction: {parts: {text: string}}}} Prompt for Google MakerSuite models
+ * @returns {{contents: *[], system_instruction: {parts: {text: string}[]}}} Prompt for Google MakerSuite models
  */
 export function convertGooglePrompt(messages, model, useSysPrompt, names) {
     const visionSupportedModels = [
@@ -980,7 +980,7 @@ export function calculateClaudeBudgetTokens(maxTokens, reasoningEffort, stream) 
             budgetTokens = Math.floor(maxTokens * 0.5);
             break;
         case REASONING_EFFORT.max:
-            budgetTokens = maxTokens;
+            budgetTokens = Math.floor(maxTokens * 0.95);
             break;
     }
 
