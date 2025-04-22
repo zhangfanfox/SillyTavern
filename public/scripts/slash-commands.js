@@ -2132,25 +2132,25 @@ export function initDefaultSlashCommands() {
     }));
 
     SlashCommandParser.addCommandObject(SlashCommand.fromProps({
-        name: 'goto-floor',
+        name: 'chat-jump',
         aliases: ['floor', 'jump', 'scrollto'],
         callback: async (_, index) => {
             const floorIndex = Number(index);
-    
+
             const chatLength = typeof chat !== 'undefined' ? chat.length : -1; // Use -1 if chat is undefined to avoid errors
             if (isNaN(floorIndex) || floorIndex < 0 || (chatLength !== -1 && floorIndex >= chatLength)) {
                 const maxIndex = (chatLength !== -1 ? chatLength - 1 : 'unknown');
                 toastr.warning(`Invalid message index: ${index}. Please enter a number between 0 and ${maxIndex}.`);
-                console.warn(`WARN: Invalid message index provided for /goto-floor: ${index}. Max index: ${maxIndex}`);
+                console.warn(`WARN: Invalid message index provided for /chat-jump: ${index}. Max index: ${maxIndex}`);
                 return '';
             }
-    
+
             // --- Load all messages first to ensure the target element exists ---
-            console.log(`INFO: Attempting to load all messages before attempting to goto-floor ${index}.`);
+            console.log(`INFO: Attempting to load all messages before attempting to chat-jump ${index}.`);
             try {
                 // Assuming showMoreMessages is available globally or within scope
                 await showMoreMessages(Number.MAX_SAFE_INTEGER);
-                console.log(`INFO: All messages loaded (or loading initiated).`);
+                console.log('INFO: All messages loaded (or loading initiated).');
                 // Give the rendering a moment to potentially catch up after showMoreMessages
                 await new Promise(resolve => setTimeout(resolve, 100)); // Adjust delay if needed
             } catch (error) {
@@ -2159,40 +2159,40 @@ export function initDefaultSlashCommands() {
                 return ''; // Exit if loading fails
             }
             // --- End of loading step ---
-    
+
             const messageElement = document.querySelector(`[mesid="${floorIndex}"]`);
-    
+
             if (messageElement) {
                 // --- Corrected: Use the actual class from the template ---
                 const headerElement = messageElement.querySelector('.ch_name');
                 const elementToScroll = headerElement || messageElement; // Fallback to the entire message div
                 const blockPosition = headerElement ? 'center' : 'start';
-    
+
                 elementToScroll.scrollIntoView({ behavior: 'smooth', block: blockPosition });
-    
+
                 // Highlight the message element
                 if (messageElement instanceof HTMLElement) {
                     if (typeof $ !== 'undefined') { // Check if jQuery is available
-                         flashHighlight($(messageElement), 1500);
+                        flashHighlight($(messageElement), 1500);
                     } else {
                         console.warn('jQuery not available, cannot use flashHighlight.');
                         // Optional: Add a temporary CSS class highlight if jQuery/flashHighlight is missing
-                         messageElement.style.transition = 'background-color 0.5s ease';
-                         messageElement.style.backgroundColor = 'yellow'; // Or some highlight color
-                         setTimeout(() => {
-                             messageElement.style.backgroundColor = ''; // Remove highlight
-                         }, 1500); // Match flash duration
+                        messageElement.style.transition = 'background-color 0.5s ease';
+                        messageElement.style.backgroundColor = 'yellow'; // Or some highlight color
+                        setTimeout(() => {
+                            messageElement.style.backgroundColor = ''; // Remove highlight
+                        }, 1500); // Match flash duration
                     }
-    
+
                 } else {
                     console.warn('Message element is not an HTMLElement, cannot flash highlight.');
                 }
-    
-    
+
+
             } else {
                 // Only warn if element is not found *after* attempting to load all messages
                 toastr.warning(`Could not find element for message ${floorIndex} (using [mesid="${floorIndex}"]) even after attempting to load all messages. It might not be rendered yet or the index is invalid.`);
-                console.warn(`WARN: Element not found for message index ${floorIndex} using querySelector [mesid="${floorIndex}"] in /goto-floor, even after attempting to load all messages.`);
+                console.warn(`WARN: Element not found for message index ${floorIndex} using querySelector [mesid="${floorIndex}"] in /chat-jump, even after attempting to load all messages.`);
                 // Do NOT scroll the chat container in this case
             }
             return ''; // Return empty string as expected by some slash command parsers
@@ -2213,12 +2213,12 @@ export function initDefaultSlashCommands() {
             A warning is displayed if the message element cannot be located even after attempting to load all messages.
         </div>
         <div>
-            <strong>Example:</strong> <pre><code>/goto-floor 10</code></pre> Scrolls to the 11th message (mesid=10).
+            <strong>Example:</strong> <pre><code>/chat-jump 10</code></pre> Scrolls to the 11th message (mesid=10).
         </div>
     `,
     }));
-    
-    const styleId = 'goto-floor-highlight-style';
+
+    const styleId = 'chat-jump-highlight-style';
     if (document.getElementById(styleId)) {
         document.getElementById(styleId).remove();
     }
