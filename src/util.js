@@ -23,7 +23,7 @@ import { serverDirectory } from './server-directory.js';
  * Parsed config object.
  */
 let CACHED_CONFIG = null;
-let CONFIG_FILE = null;
+let CONFIG_PATH = null;
 
 /**
  * Converts a configuration key to an environment variable key.
@@ -38,10 +38,10 @@ export const keyToEnv = (key) => 'SILLYTAVERN_' + String(key).toUpperCase().repl
  * @param {string} configFilePath Path to the config file
  */
 export function setConfigFilePath(configFilePath) {
-    if (CONFIG_FILE !== null) {
+    if (CONFIG_PATH !== null) {
         console.error(color.red('Config file path already set. Please restart the server to change the config file path.'));
     }
-    CONFIG_FILE = path.resolve(configFilePath);
+    CONFIG_PATH = path.resolve(configFilePath);
 }
 
 /**
@@ -49,7 +49,7 @@ export function setConfigFilePath(configFilePath) {
  * @returns {object} Config object
  */
 export function getConfig() {
-    if (CONFIG_FILE === null) {
+    if (CONFIG_PATH === null) {
         console.trace();
         console.error(color.red('No config file path set. Please set the config file path using setConfigFilePath().'));
         process.exit(1);
@@ -57,14 +57,14 @@ export function getConfig() {
     if (CACHED_CONFIG) {
         return CACHED_CONFIG;
     }
-    if (!fs.existsSync(CONFIG_FILE)) {
+    if (!fs.existsSync(CONFIG_PATH)) {
         console.error(color.red('No config file found. Please create a config.yaml file. The default config file can be found in the /default folder.'));
         console.error(color.red('The program will now exit.'));
         process.exit(1);
     }
 
     try {
-        const config = yaml.parse(fs.readFileSync(CONFIG_FILE, 'utf8'));
+        const config = yaml.parse(fs.readFileSync(CONFIG_PATH, 'utf8'));
         CACHED_CONFIG = config;
         return config;
     } catch (error) {
