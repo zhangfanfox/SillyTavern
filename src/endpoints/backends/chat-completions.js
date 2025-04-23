@@ -1225,6 +1225,10 @@ router.post('/generate', function (request, response) {
             bodyParams['route'] = 'fallback';
         }
 
+        if (request.body.reasoning_effort) {
+            bodyParams['reasoning'] = { effort: request.body.reasoning_effort };
+        }
+
         let cachingAtDepth = getConfigValue('claude.cachingAtDepth', -1, 'number');
         if (Number.isInteger(cachingAtDepth) && cachingAtDepth >= 0 && request.body.model?.startsWith('anthropic/claude-3')) {
             cachingAtDepthForOpenRouterClaude(request.body.messages, cachingAtDepth);
