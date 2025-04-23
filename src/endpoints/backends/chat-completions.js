@@ -433,7 +433,7 @@ async function sendMakerSuiteRequest(request, response) {
             generationConfig: generationConfig,
         };
 
-        if (useSystemPrompt && Array.isArray(prompt.system_instruction) && prompt.system_instruction.length) {
+        if (useSystemPrompt && Array.isArray(prompt.system_instruction.parts) && prompt.system_instruction.parts.length) {
             body.systemInstruction = prompt.system_instruction;
         }
 
