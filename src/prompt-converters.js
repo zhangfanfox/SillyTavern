@@ -963,16 +963,13 @@ export function calculateClaudeBudgetTokens(maxTokens, reasoningEffort, stream) 
     let budgetTokens = 0;
 
     switch (reasoningEffort) {
-        // Claude doesn't have a default budget value. Use same as min.
-        case REASONING_EFFORT.auto:
-            budgetTokens = 1024;
-            break;
         case REASONING_EFFORT.min:
             budgetTokens = 1024;
             break;
         case REASONING_EFFORT.low:
             budgetTokens = Math.floor(maxTokens * 0.1);
             break;
+        case REASONING_EFFORT.auto:
         case REASONING_EFFORT.medium:
             budgetTokens = Math.floor(maxTokens * 0.25);
             break;
