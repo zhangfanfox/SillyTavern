@@ -1952,6 +1952,7 @@ function getReasoningEffort() {
         chat_completion_sources.OPENAI,
         chat_completion_sources.CUSTOM,
         chat_completion_sources.XAI,
+        chat_completion_sources.OPENROUTER,
     ];
 
     if (!reasoningEffortSources.includes(oai_settings.chat_completion_source)) {
