@@ -403,8 +403,8 @@ export function convertGooglePrompt(messages, model, useSysPrompt, names) {
     ];
 
     const isMultimodal = visionSupportedModels.includes(model);
+    const sysPrompt = [];
 
-    let sys_prompt = '';
     if (useSysPrompt) {
         while (messages.length > 1 && messages[0].role === 'system') {
             // Append example names if not already done by the frontend (e.g. for group chats).
@@ -418,12 +418,12 @@ export function convertGooglePrompt(messages, model, useSysPrompt, names) {
                     messages[0].content = `${names.charName}: ${messages[0].content}`;
                 }
             }
-            sys_prompt += `${messages[0].content}\n\n`;
+            sysPrompt.push(messages[0].content);
             messages.shift();
         }
     }
 
-    const system_instruction = { parts: [{ text: sys_prompt.trim() }] };
+    const system_instruction = { parts: sysPrompt.map(text => ({ text })) };
     const toolNameMap = {};
 
     const contents = [];
