@@ -3358,7 +3358,7 @@ export async function getWorldEntry(name, data, entry) {
     });
     useGroupScoringSelect.val((entry.useGroupScoring === null || entry.useGroupScoring === undefined) ? 'null' : entry.useGroupScoring ? 'true' : 'false').trigger('input');
 
-    function handleOptionalSelect(fieldName) {
+    function handleMatchCheckbox(fieldName) {
         const key = originalWIDataKeyMap[fieldName];
         const checkBoxElem = template.find(`input[type="checkbox"][name="${fieldName}"]`);
         checkBoxElem.data('uid', entry.uid);
@@ -3373,12 +3373,12 @@ export async function getWorldEntry(name, data, entry) {
         checkBoxElem.prop('checked', !!entry[fieldName]).trigger('input');
     }
 
-    handleOptionalSelect('matchPersonaDescription');
-    handleOptionalSelect('matchCharacterDescription');
-    handleOptionalSelect('matchCharacterPersonality');
-    handleOptionalSelect('matchCharacterDepthPrompt');
-    handleOptionalSelect('matchScenario');
-    handleOptionalSelect('matchCreatorNotes');
+    handleMatchCheckbox('matchPersonaDescription');
+    handleMatchCheckbox('matchCharacterDescription');
+    handleMatchCheckbox('matchCharacterPersonality');
+    handleMatchCheckbox('matchCharacterDepthPrompt');
+    handleMatchCheckbox('matchScenario');
+    handleMatchCheckbox('matchCreatorNotes');
 
     // automation id
     const automationIdInput = template.find('input[name="automationId"]');
