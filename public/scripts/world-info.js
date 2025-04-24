@@ -3588,6 +3588,7 @@ export const newWorldInfoEntryDefinition = {
     preventRecursion: { default: false, type: 'boolean' },
     matchPersonaDescription: { default: false, type: 'boolean' },
     matchCharacterDescription: { default: false, type: 'boolean' },
+    matchCharacterPersonality: { default: false, type: 'boolean' },
     matchCharacterDepthPrompt: { default: false, type: 'boolean' },
     matchScenario: { default: false, type: 'boolean' },
     matchCreatorNotes: { default: false, type: 'boolean' },
