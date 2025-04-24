@@ -4054,6 +4054,7 @@ function parseDecorators(content) {
 /**
  * Performs a scan on the chat and returns the world info activated.
  * @param {WIGlobalScanData} globalScanData Chat independent context to be scanned
+ * @param {string[]} chat The chat messages to scan, in reverse order.
  * @param {number} maxContext The maximum context size of the generation.
  * @param {boolean} isDryRun Whether to perform a dry run.
  * @typedef {object} WIActivated
