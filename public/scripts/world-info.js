@@ -4925,6 +4925,12 @@ export function convertCharacterBook(characterBook) {
             sticky: entry.extensions?.sticky ?? null,
             cooldown: entry.extensions?.cooldown ?? null,
             delay: entry.extensions?.delay ?? null,
+            matchPersonaDescription: entry.extensions?.matchPersonaDescription ?? false,
+            matchCharacterDescription: entry.extensions?.matchCharacterDescription ?? false,
+            matchCharacterPersonality: entry.extensions?.matchCharacterPersonality ?? false,
+            matchCharacterDepthPrompt: entry.extensions?.matchCharacterDepthPrompt ?? false,
+            matchScenario: entry.extensions?.matchScenario ?? false,
+            matchCreatorNotes: entry.extensions?.matchCreatorNotes ?? false,
             extensions: entry.extensions ?? {},
         };
     });

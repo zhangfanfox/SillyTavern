@@ -702,6 +702,12 @@ function convertWorldInfoToCharacterBook(name, entries) {
                 sticky: entry.sticky ?? null,
                 cooldown: entry.cooldown ?? null,
                 delay: entry.delay ?? null,
+                matchPersonaDescription: entry.matchPersonaDescription ?? false,
+                matchCharacterDescription: entry.matchCharacterDescription ?? false,
+                matchCharacterPersonality: entry.matchCharacterPersonality ?? false,
+                matchCharacterDepthPrompt: entry.matchCharacterDepthPrompt ?? false,
+                matchScenario: entry.matchScenario ?? false,
+                matchCreatorNotes: entry.matchCreatorNotes ?? false,
             },
         };
 
