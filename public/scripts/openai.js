@@ -5134,9 +5134,7 @@ export function isImageInliningSupported() {
         case chat_completion_sources.OPENAI:
             return visionSupportedModels.some(model =>
                 oai_settings.openai_model.includes(model)
-                && !oai_settings.openai_model.includes('gpt-4-turbo-preview')
-                && !oai_settings.openai_model.includes('o1-mini')
-                && !oai_settings.openai_model.includes('o3-mini'),
+                && ['gpt-4-turbo-preview', 'o1-mini', 'o3-mini'].some(x => !oai_settings.openai_model.includes(x))
             );
         case chat_completion_sources.MAKERSUITE:
             return visionSupportedModels.some(model => oai_settings.google_model.includes(model));
