@@ -187,10 +187,10 @@ class WorldInfoBuffer {
 
     /**
      * Initialize the buffer with the given messages.
-     * @param {WIGlobalScanData} globalScanData Chat independent context to be scanned
      * @param {string[]} messages Array of messages to add to the buffer
+     * @param {WIGlobalScanData} globalScanData Chat independent context to be scanned
      */
-    constructor(globalScanData, messages) {
+    constructor(messages, globalScanData) {
         this.#initDepthBuffer(messages);
         this.#globalScanDataBuffer = globalScanData;
     }
@@ -796,10 +796,10 @@ export const worldInfoCache = new StructuredCloneMap({ cloneOnGet: true, cloneOn
 
 /**
  * Gets the world info based on chat messages.
- * @param {WIGlobalScanData} globalScanData Chat independent context to be scanned
  * @param {string[]} chat - The chat messages to scan, in reverse order.
  * @param {number} maxContext - The maximum context size of the generation.
  * @param {boolean} isDryRun - If true, the function will not emit any events.
+ * @param {WIGlobalScanData} globalScanData Chat independent context to be scanned
  * @typedef {object} WIPromptResult
  * @property {string} worldInfoString - Complete world info string
  * @property {string} worldInfoBefore - World info that goes before the prompt
@@ -810,10 +810,10 @@ export const worldInfoCache = new StructuredCloneMap({ cloneOnGet: true, cloneOn
  * @property {Array} anAfter - Array of entries after Author's Note
  * @returns {Promise<WIPromptResult>} The world info string and depth.
  */
-export async function getWorldInfoPrompt(globalScanData, chat, maxContext, isDryRun) {
+export async function getWorldInfoPrompt(chat, maxContext, isDryRun, globalScanData) {
     let worldInfoString = '', worldInfoBefore = '', worldInfoAfter = '';
 
-    const activatedWorldInfo = await checkWorldInfo(globalScanData, chat, maxContext, isDryRun);
+    const activatedWorldInfo = await checkWorldInfo(chat, maxContext, isDryRun, globalScanData);
     worldInfoBefore = activatedWorldInfo.worldInfoBefore;
     worldInfoAfter = activatedWorldInfo.worldInfoAfter;
     worldInfoString = worldInfoBefore + worldInfoAfter;
@@ -4053,10 +4053,10 @@ function parseDecorators(content) {
 
 /**
  * Performs a scan on the chat and returns the world info activated.
- * @param {WIGlobalScanData} globalScanData Chat independent context to be scanned
  * @param {string[]} chat The chat messages to scan, in reverse order.
  * @param {number} maxContext The maximum context size of the generation.
  * @param {boolean} isDryRun Whether to perform a dry run.
+ * @param {WIGlobalScanData} globalScanData Chat independent context to be scanned
  * @typedef {object} WIActivated
  * @property {string} worldInfoBefore The world info before the chat.
  * @property {string} worldInfoAfter The world info after the chat.
@@ -4067,9 +4067,9 @@ function parseDecorators(content) {
  * @property {Set<any>} allActivatedEntries All entries.
  * @returns {Promise<WIActivated>} The world info activated.
  */
-export async function checkWorldInfo(globalScanData, chat, maxContext, isDryRun) {
+export async function checkWorldInfo(chat, maxContext, isDryRun, globalScanData) {
     const context = getContext();
-    const buffer = new WorldInfoBuffer(globalScanData, chat);
+    const buffer = new WorldInfoBuffer(chat, globalScanData);
 
     console.debug(`[WI] --- START WI SCAN (on ${chat.length} messages)${isDryRun ? ' (DRY RUN)' : ''} ---`);
 

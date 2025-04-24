@@ -4155,7 +4155,7 @@ export async function Generate(type, { automatic_trigger, force_name2, quiet_pro
         scenario: scenario,
         creatorNotes: creatorNotes,
     };
-    const { worldInfoString, worldInfoBefore, worldInfoAfter, worldInfoExamples, worldInfoDepth } = await getWorldInfoPrompt(globalScanData, chatForWI, this_max_context, dryRun);
+    const { worldInfoString, worldInfoBefore, worldInfoAfter, worldInfoExamples, worldInfoDepth } = await getWorldInfoPrompt(chatForWI, this_max_context, dryRun, globalScanData);
     setExtensionPrompt('QUIET_PROMPT', '', extension_prompt_types.IN_PROMPT, 0, true);
 
     // Add message example WI
