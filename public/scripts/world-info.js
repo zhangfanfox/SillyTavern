@@ -5160,8 +5160,7 @@ export async function assignLorebookToChat(event) {
     return callGenericPopup(template, POPUP_TYPE.TEXT);
 }
 
-jQuery(() => {
-
+export function initWorldInfo() {
     $('#world_info').on('mousedown change', async function (e) {
         // If there's no world names, don't do anything
         if (world_names.length === 0) {
@@ -5373,7 +5372,7 @@ jQuery(() => {
             }
         });
     });
-});
+}
 
 /**
  * Moves a World Info entry from a source lorebook to a target lorebook.
