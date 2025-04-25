@@ -101,11 +101,11 @@ const KNOWN_DECORATORS = ['@@activate', '@@dont_activate'];
  * @typedef {object} WIGlobalScanData The chat-independent data to be scanned. Each of
  *     these fields can be enabled for scanning per entry.
  * @property {string} personaDescription User persona description
- * @property {string} characterDescription
- * @property {string} characterPersonality
- * @property {string} characterDepthPrompt
+ * @property {string} characterDescription Character description
+ * @property {string} characterPersonality Character personality
+ * @property {string} characterDepthPrompt Character depth prompt (sometimes referred to as character notes)
  * @property {string} scenario Character defined scenario
- * @property {string} creatorNotes
+ * @property {string} creatorNotes Character creator notes
  */
 
 /**
