@@ -50,6 +50,7 @@ import {
     importWorldInfo,
     wi_anchor_position,
     world_info_include_names,
+    initWorldInfo,
 } from './scripts/world-info.js';
 
 import {
@@ -992,6 +993,7 @@ async function firstLoadInit() {
     initBackgrounds();
     initAuthorsNote();
     await initPersonas();
+    initWorldInfo();
     initRossMods();
     initStats();
     initCfg();
