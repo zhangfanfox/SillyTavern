@@ -4237,12 +4237,20 @@ export async function Generate(type, { automatic_trigger, force_name2, quiet_pro
 
         // Do not suffix the message for continuation
         if (i === 0 && isContinue) {
+            // Pick something that's very unlikely to be in a message
+            const FORMAT_TOKEN = '\u0000\ufffc\u0000\ufffd';
+
             if (isInstruct) {
+                const originalMessage = String(coreChat[j].mes ?? '');
+                coreChat[j].mes = originalMessage.replaceAll(FORMAT_TOKEN, '') + FORMAT_TOKEN;
                 // Reformat with the last output sequence (if any)
                 chat2[i] = formatMessageHistoryItem(coreChat[j], isInstruct, force_output_sequence.LAST);
+                coreChat[j].mes = originalMessage;
             }
 
-            chat2[i] = chat2[i].slice(0, chat2[i].lastIndexOf(coreChat[j].mes) + coreChat[j].mes.length);
+            chat2[i] = chat2[i].includes(FORMAT_TOKEN)
+                ? chat2[i].slice(0, chat2[i].lastIndexOf(FORMAT_TOKEN))
+                : chat2[i].slice(0, chat2[i].lastIndexOf(coreChat[j].mes) + coreChat[j].mes.length);
             continue_mag = coreChat[j].mes;
         }
 
