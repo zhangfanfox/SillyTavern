@@ -4927,12 +4927,12 @@ export function convertCharacterBook(characterBook) {
             sticky: entry.extensions?.sticky ?? null,
             cooldown: entry.extensions?.cooldown ?? null,
             delay: entry.extensions?.delay ?? null,
-            matchPersonaDescription: entry.extensions?.matchPersonaDescription ?? false,
-            matchCharacterDescription: entry.extensions?.matchCharacterDescription ?? false,
-            matchCharacterPersonality: entry.extensions?.matchCharacterPersonality ?? false,
-            matchCharacterDepthPrompt: entry.extensions?.matchCharacterDepthPrompt ?? false,
-            matchScenario: entry.extensions?.matchScenario ?? false,
-            matchCreatorNotes: entry.extensions?.matchCreatorNotes ?? false,
+            matchPersonaDescription: entry.extensions?.match_persona_description ?? false,
+            matchCharacterDescription: entry.extensions?.match_character_description ?? false,
+            matchCharacterPersonality: entry.extensions?.match_character_personality ?? false,
+            matchCharacterDepthPrompt: entry.extensions?.match_character_depth_prompt ?? false,
+            matchScenario: entry.extensions?.match_scenario ?? false,
+            matchCreatorNotes: entry.extensions?.match_creator_notes ?? false,
             extensions: entry.extensions ?? {},
         };
     });
