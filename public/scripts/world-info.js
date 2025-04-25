@@ -5160,6 +5160,102 @@ export async function assignLorebookToChat(event) {
     return callGenericPopup(template, POPUP_TYPE.TEXT);
 }
 
+/**
+ * Moves a World Info entry from a source lorebook to a target lorebook.
+ *
+ * @param {string} sourceName - The name of the source lorebook file.
+ * @param {string} targetName - The name of the target lorebook file.
+ * @param {string|number} uid - The UID of the entry to move from the source lorebook.
+ * @returns {Promise<boolean>} True if the move was successful, false otherwise.
+ */
+export async function moveWorldInfoEntry(sourceName, targetName, uid) {
+    if (sourceName === targetName) {
+        return false;
+    }
+
+    if (!world_names.includes(sourceName)) {
+        toastr.error(t`Source lorebook '${sourceName}' not found.`);
+        console.error(`[WI Move] Source lorebook '${sourceName}' does not exist.`);
+        return false;
+    }
+
+    if (!world_names.includes(targetName)) {
+        toastr.error(t`Target lorebook '${targetName}' not found.`);
+        console.error(`[WI Move] Target lorebook '${targetName}' does not exist.`);
+        return false;
+    }
+
+    const entryUidString = String(uid);
+
+    try {
+        const sourceData = await loadWorldInfo(sourceName);
+        const targetData = await loadWorldInfo(targetName);
+
+        if (!sourceData || !sourceData.entries) {
+            toastr.error(t`Failed to load data for source lorebook '${sourceName}'.`);
+            console.error(`[WI Move] Could not load source data for '${sourceName}'.`);
+            return false;
+        }
+        if (!targetData || !targetData.entries) {
+            toastr.error(t`Failed to load data for target lorebook '${targetName}'.`);
+            console.error(`[WI Move] Could not load target data for '${targetName}'.`);
+            return false;
+        }
+
+        if (!sourceData.entries[entryUidString]) {
+            toastr.error(t`Entry not found in source lorebook '${sourceName}'.`);
+            console.error(`[WI Move] Entry UID ${entryUidString} not found in '${sourceName}'.`);
+            return false;
+        }
+
+        const entryToMove = structuredClone(sourceData.entries[entryUidString]);
+
+
+        const newUid = getFreeWorldEntryUid(targetData);
+        if (newUid === null) {
+            console.error(`[WI Move] Failed to get a free UID in '${targetName}'.`);
+            return false;
+        }
+
+        entryToMove.uid = newUid;
+        // Place the entry at the end of the target lorebook
+        const maxDisplayIndex = Object.values(targetData.entries).reduce((max, entry) => Math.max(max, entry.displayIndex ?? -1), -1);
+        entryToMove.displayIndex = maxDisplayIndex + 1;
+
+        targetData.entries[newUid] = entryToMove;
+
+        delete sourceData.entries[entryUidString];
+        // Remove from originalData if it exists
+        deleteWIOriginalDataValue(sourceData, entryUidString);
+        // TODO: setWIOriginalDataValue
+        console.debug(`[WI Move] Removed entry UID ${entryUidString} from source '${sourceName}'.`);
+
+
+        await saveWorldInfo(targetName, targetData, true);
+        console.debug(`[WI Move] Saved target lorebook '${targetName}'.`);
+        await saveWorldInfo(sourceName, sourceData, true);
+        console.debug(`[WI Move] Saved source lorebook '${sourceName}'.`);
+
+
+        console.log(`[WI Move] ${entryToMove.comment} moved successfully to '${targetName}'.`);
+
+        // Check if the currently viewed book in the editor is the source or target and reload it
+        const currentEditorBookIndex = Number($('#world_editor_select').val());
+        if (!isNaN(currentEditorBookIndex)) {
+            const currentEditorBookName = world_names[currentEditorBookIndex];
+            if (currentEditorBookName === sourceName || currentEditorBookName === targetName) {
+                reloadEditor(currentEditorBookName);
+            }
+        }
+
+        return true;
+    } catch (error) {
+        toastr.error(t`An unexpected error occurred while moving the entry: ${error.message}`);
+        console.error('[WI Move] Unexpected error:', error);
+        return false;
+    }
+}
+
 export function initWorldInfo() {
     $('#world_info').on('mousedown change', async function (e) {
         // If there's no world names, don't do anything
@@ -5372,100 +5468,4 @@ export function initWorldInfo() {
             }
         });
     });
-}
-
-/**
- * Moves a World Info entry from a source lorebook to a target lorebook.
- *
- * @param {string} sourceName - The name of the source lorebook file.
- * @param {string} targetName - The name of the target lorebook file.
- * @param {string|number} uid - The UID of the entry to move from the source lorebook.
- * @returns {Promise<boolean>} True if the move was successful, false otherwise.
- */
-export async function moveWorldInfoEntry(sourceName, targetName, uid) {
-    if (sourceName === targetName) {
-        return false;
-    }
-
-    if (!world_names.includes(sourceName)) {
-        toastr.error(t`Source lorebook '${sourceName}' not found.`);
-        console.error(`[WI Move] Source lorebook '${sourceName}' does not exist.`);
-        return false;
-    }
-
-    if (!world_names.includes(targetName)) {
-        toastr.error(t`Target lorebook '${targetName}' not found.`);
-        console.error(`[WI Move] Target lorebook '${targetName}' does not exist.`);
-        return false;
-    }
-
-    const entryUidString = String(uid);
-
-    try {
-        const sourceData = await loadWorldInfo(sourceName);
-        const targetData = await loadWorldInfo(targetName);
-
-        if (!sourceData || !sourceData.entries) {
-            toastr.error(t`Failed to load data for source lorebook '${sourceName}'.`);
-            console.error(`[WI Move] Could not load source data for '${sourceName}'.`);
-            return false;
-        }
-        if (!targetData || !targetData.entries) {
-            toastr.error(t`Failed to load data for target lorebook '${targetName}'.`);
-            console.error(`[WI Move] Could not load target data for '${targetName}'.`);
-            return false;
-        }
-
-        if (!sourceData.entries[entryUidString]) {
-            toastr.error(t`Entry not found in source lorebook '${sourceName}'.`);
-            console.error(`[WI Move] Entry UID ${entryUidString} not found in '${sourceName}'.`);
-            return false;
-        }
-
-        const entryToMove = structuredClone(sourceData.entries[entryUidString]);
-
-
-        const newUid = getFreeWorldEntryUid(targetData);
-        if (newUid === null) {
-            console.error(`[WI Move] Failed to get a free UID in '${targetName}'.`);
-            return false;
-        }
-
-        entryToMove.uid = newUid;
-        // Place the entry at the end of the target lorebook
-        const maxDisplayIndex = Object.values(targetData.entries).reduce((max, entry) => Math.max(max, entry.displayIndex ?? -1), -1);
-        entryToMove.displayIndex = maxDisplayIndex + 1;
-
-        targetData.entries[newUid] = entryToMove;
-
-        delete sourceData.entries[entryUidString];
-        // Remove from originalData if it exists
-        deleteWIOriginalDataValue(sourceData, entryUidString);
-        // TODO: setWIOriginalDataValue
-        console.debug(`[WI Move] Removed entry UID ${entryUidString} from source '${sourceName}'.`);
-
-
-        await saveWorldInfo(targetName, targetData, true);
-        console.debug(`[WI Move] Saved target lorebook '${targetName}'.`);
-        await saveWorldInfo(sourceName, sourceData, true);
-        console.debug(`[WI Move] Saved source lorebook '${sourceName}'.`);
-
-
-        console.log(`[WI Move] ${entryToMove.comment} moved successfully to '${targetName}'.`);
-
-        // Check if the currently viewed book in the editor is the source or target and reload it
-        const currentEditorBookIndex = Number($('#world_editor_select').val());
-        if (!isNaN(currentEditorBookIndex)) {
-            const currentEditorBookName = world_names[currentEditorBookIndex];
-            if (currentEditorBookName === sourceName || currentEditorBookName === targetName) {
-                reloadEditor(currentEditorBookName);
-            }
-        }
-
-        return true;
-    } catch (error) {
-        toastr.error(t`An unexpected error occurred while moving the entry: ${error.message}`);
-        console.error('[WI Move] Unexpected error:', error);
-        return false;
-    }
 }
