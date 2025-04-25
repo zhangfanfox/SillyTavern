@@ -2751,6 +2751,7 @@ export function substituteParams(content, _name1, _name2, _original, _group, _re
         environment.charVersion = fields.version || '';
         environment.char_version = fields.version || '';
         environment.charDepthPrompt = fields.charDepthPrompt || '';
+        environment.creatorNotes = fields.creatorNotes || '';
     }
 
     // Must be substituted last so that they're replaced inside {{description}}
@@ -4291,7 +4292,6 @@ export async function Generate(type, { automatic_trigger, force_name2, quiet_pro
         loreAfter: worldInfoAfter,
         mesExamples: mesExamplesArray.join(''),
         mesExamplesRaw: mesExamplesRawArray.join(''),
-        creatorNotes: creatorNotes,
     };
 
     const storyString = renderStoryString(storyStringParams);
