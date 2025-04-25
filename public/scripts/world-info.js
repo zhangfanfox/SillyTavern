@@ -158,7 +158,7 @@ class WorldInfoBuffer {
     /**
      * @type {WIGlobalScanData} Chat independent data to be scanned, such as persona and character descriptions
      */
-    #globalScanDataBuffer = null;
+    #globalScanData = null;
 
     /**
      * @type {string[]} Array of messages sorted by ascending depth
@@ -192,7 +192,7 @@ class WorldInfoBuffer {
      */
     constructor(messages, globalScanData) {
         this.#initDepthBuffer(messages);
-        this.#globalScanDataBuffer = globalScanData;
+        this.#globalScanData = globalScanData;
     }
 
     /**
@@ -249,23 +249,23 @@ class WorldInfoBuffer {
         const JOINER = '\n' + MATCHER;
         let result = MATCHER + this.#depthBuffer.slice(this.#startDepth, depth).join(JOINER);
 
-        if (entry.matchPersonaDescription) {
-            result += JOINER + this.#globalScanDataBuffer.personaDescription;
+        if (entry.matchPersonaDescription && this.#globalScanData.personaDescription) {
+            result += JOINER + this.#globalScanData.personaDescription;
         }
-        if (entry.matchCharacterDescription) {
-            result += JOINER + this.#globalScanDataBuffer.characterDescription;
+        if (entry.matchCharacterDescription && this.#globalScanData.characterDescription) {
+            result += JOINER + this.#globalScanData.characterDescription;
         }
-        if (entry.matchCharacterPersonality) {
-            result += JOINER + this.#globalScanDataBuffer.characterPersonality;
+        if (entry.matchCharacterPersonality && this.#globalScanData.characterPersonality) {
+            result += JOINER + this.#globalScanData.characterPersonality;
         }
-        if (entry.matchCharacterDepthPrompt) {
-            result += JOINER + this.#globalScanDataBuffer.characterDepthPrompt;
+        if (entry.matchCharacterDepthPrompt && this.#globalScanData.characterDepthPrompt) {
+            result += JOINER + this.#globalScanData.characterDepthPrompt;
         }
-        if (entry.matchScenario) {
-            result += JOINER + this.#globalScanDataBuffer.scenario;
+        if (entry.matchScenario && this.#globalScanData.scenario) {
+            result += JOINER + this.#globalScanData.scenario;
         }
-        if (entry.matchCreatorNotes) {
-            result += JOINER + this.#globalScanDataBuffer.creatorNotes;
+        if (entry.matchCreatorNotes && this.#globalScanData.creatorNotes) {
+            result += JOINER + this.#globalScanData.creatorNotes;
         }
 
         if (this.#injectBuffer.length > 0) {
