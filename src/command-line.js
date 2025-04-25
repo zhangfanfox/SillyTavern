@@ -1,7 +1,8 @@
 import yargs from 'yargs/yargs';
 import { hideBin } from 'yargs/helpers';
 import ipRegex from 'ip-regex';
-import { canResolve, color, getConfigValue, setConfigFilePath, stringToBool } from './util.js';
+import { canResolve, color, getConfigValue, stringToBool } from './util.js';
+import { initConfig } from './config-init.js';
 
 /**
  * @typedef {object} CommandLineArguments Parsed command line arguments
@@ -185,7 +186,7 @@ export class CommandLineParser {
             }).parseSync();
 
         const configPath = cliArguments.configPath ?? this.default.configPath;
-        setConfigFilePath(configPath);
+        initConfig(configPath);
         /** @type {CommandLineArguments} */
         const result = {
             configPath: configPath,

@@ -15,8 +15,8 @@ import yauzl from 'yauzl';
 import mime from 'mime-types';
 import { default as simpleGit } from 'simple-git';
 import chalk from 'chalk';
-import { LOG_LEVELS } from './constants.js';
 import bytes from 'bytes';
+import { LOG_LEVELS } from './constants.js';
 import { serverDirectory } from './server-directory.js';
 
 /**
