@@ -966,7 +966,7 @@ function registerWorldInfoSlashCommands() {
     /**
      * Gets the name of the character-bound lorebook.
      * @param {import('./slash-commands/SlashCommand.js').NamedArguments} args Named arguments
-     * @param {import('./slash-commands/SlashCommand.js').UnnamedArguments} name Character name
+     * @param {string} name Character name
      * @returns {string} The name of the character-bound lorebook, a JSON string of the character's lorebooks, or an empty string
      */
     function getCharBookCallback({ type }, name) {
@@ -3443,7 +3443,7 @@ function createEntryInputAutocomplete(input, callback, { allowMultiple = false }
     });
 
     $(input).on('focus click', function () {
-        $(input).autocomplete('search', allowMultiple ? String($(input).val()).split(/,\s*/).pop() : $(input).val());
+        $(input).autocomplete('search', allowMultiple ? String($(input).val()).split(/,\s*/).pop() : String($(input).val()));
     });
 }
 
@@ -5118,7 +5118,7 @@ export function openWorldInfoEditor(worldName) {
 
 /**
  * Assigns a lorebook to the current chat.
- * @param {PointerEvent} event Pointer event
+ * @param {JQuery.ClickEvent<Document, undefined, any, any>} event Pointer event
  * @returns {Promise<void>}
  */
 export async function assignLorebookToChat(event) {
@@ -5157,7 +5157,7 @@ export async function assignLorebookToChat(event) {
         saveMetadata();
     });
 
-    return callGenericPopup(template, POPUP_TYPE.TEXT);
+    await callGenericPopup(template, POPUP_TYPE.TEXT);
 }
 
 /**
