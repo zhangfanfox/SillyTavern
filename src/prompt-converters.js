@@ -351,11 +351,6 @@ export function convertCohereMessages(messages, names) {
         }
     });
 
-    // A prompt should end with a user/tool message
-    if (messages.length && !['user', 'tool'].includes(messages[messages.length - 1].role)) {
-        messages[messages.length - 1].role = 'user';
-    }
-
     return { chatHistory: messages };
 }
 
