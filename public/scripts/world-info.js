@@ -5347,7 +5347,7 @@ export function initWorldInfo() {
     if (!isMobile()) {
         $('#world_info').select2({
             width: '100%',
-            placeholder: 'No Worlds active. Click here to select.',
+            placeholder: t`No Worlds active. Click here to select.`,
             allowClear: true,
             closeOnSelect: false,
         });
