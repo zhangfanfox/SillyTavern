@@ -374,6 +374,7 @@ async function sendMakerSuiteRequest(request, response) {
             model.includes('gemini-2.0-flash') ||
             model.includes('gemini-1.5-pro') ||
             model.includes('gemini-1.5-flash') ||
+            model.includes('learnlm') ||
             model.startsWith('gemini-exp')
         ) && request.body.use_makersuite_sysprompt;
 
