@@ -5148,9 +5148,8 @@ export function isImageInliningSupported() {
         'gemini-1.5',
         'gemini-2.0',
         'gemini-2.5',
-        'gemini-exp-1114',
-        'gemini-exp-1121',
         'gemini-exp-1206',
+        'learnlm',
         // MistralAI
         'mistral-small-2503',
         'mistral-small-latest',
