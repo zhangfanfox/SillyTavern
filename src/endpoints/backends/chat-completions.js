@@ -345,6 +345,7 @@ async function sendMakerSuiteRequest(request, response) {
     const reasoningEffort = String(request.body.reasoning_effort);
     const isThinking = model.includes('thinking');
     const isGemma = model.includes('gemma');
+    const isLearnLM = model.includes('learnlm');
 
     const generationConfig = {
         stopSequences: request.body.stop,
@@ -392,7 +393,7 @@ async function sendMakerSuiteRequest(request, response) {
         }
         // Most of the other models allow for setting the threshold of filters, except for HARM_CATEGORY_CIVIC_INTEGRITY, to OFF.
 
-        if (enableWebSearch && !useMultiModal && !isGemma) {
+        if (enableWebSearch && !useMultiModal && !isGemma && !isLearnLM) {
             const searchTool = model.includes('1.5') || model.includes('1.0')
                 ? ({ google_search_retrieval: {} })
                 : ({ google_search: {} });
