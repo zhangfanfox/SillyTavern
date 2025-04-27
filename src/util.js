@@ -1087,3 +1087,39 @@ export function mutateJsonString(jsonString, mutation) {
         return jsonString;
     }
 }
+
+/**
+ * Sets the permissions of a file or directory to be writable.
+ * @param {string} targetPath Path to the file or directory
+ */
+export function setPermissionsSync(targetPath) {
+    /**
+     * Appends writable permission to the file mode.
+     * @param {string} filePath Path to the file
+     * @param {fs.Stats} stats File stats
+     */
+    function appendWritablePermission(filePath, stats) {
+        const currentMode = stats.mode;
+        const newMode = currentMode | 0o200;
+        if (newMode != currentMode) {
+            fs.chmodSync(filePath, newMode);
+        }
+    }
+
+    try {
+        const stats = fs.statSync(targetPath);
+
+        if (stats.isDirectory()) {
+            appendWritablePermission(targetPath, stats);
+            const files = fs.readdirSync(targetPath);
+
+            files.forEach((file) => {
+                setPermissionsSync(path.join(targetPath, file));
+            });
+        } else {
+            appendWritablePermission(targetPath, stats);
+        }
+    } catch (error) {
+        console.error(`Error setting write permissions for ${targetPath}:`, error);
+    }
+}

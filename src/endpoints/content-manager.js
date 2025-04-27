@@ -7,7 +7,7 @@ import fetch from 'node-fetch';
 import sanitize from 'sanitize-filename';
 import { sync as writeFileAtomicSync } from  'write-file-atomic';
 
-import { getConfigValue, color } from '../util.js';
+import { getConfigValue, color, setPermissionsSync } from '../util.js';
 import { write } from '../character-card-parser.js';
 import { serverDirectory } from '../server-directory.js';
 
@@ -149,29 +149,6 @@ async function seedContentForUser(contentIndex, directories, forceCategories) {
         }
 
         fs.cpSync(contentPath, targetPath, { recursive: true, force: false });
-        function setPermissionsSync(targetPath_) {
-
-            function appendWritablePermission(filepath, stats) {
-                const currentMode = stats.mode;
-                const newMode = currentMode | 0o200;
-                if (newMode != currentMode) {
-                    fs.chmodSync(filepath, newMode);
-                }
-            }
-
-            const stats = fs.statSync(targetPath_);
-
-            if (stats.isDirectory()) {
-                appendWritablePermission(targetPath_, stats);
-                const files = fs.readdirSync(targetPath_);
-
-                files.forEach((file) => {
-                    setPermissionsSync(path.join(targetPath_, file));
-                });
-            } else {
-                appendWritablePermission(targetPath_, stats);
-            }
-        }
         setPermissionsSync(targetPath);
         console.info(`Content file ${contentItem.filename} copied to ${contentTarget}`);
         anyContentAdded = true;
