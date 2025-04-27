@@ -343,7 +343,6 @@ async function sendMakerSuiteRequest(request, response) {
     const enableWebSearch = Boolean(request.body.enable_web_search);
     const requestImages = Boolean(request.body.request_images);
     const reasoningEffort = String(request.body.reasoning_effort);
-    const isThinking = model.includes('thinking');
     const isGemma = model.includes('gemma');
     const isLearnLM = model.includes('learnlm');
 
@@ -359,43 +358,52 @@ async function sendMakerSuiteRequest(request, response) {
     };
 
     function getGeminiBody() {
+        // #region UGLY MODEL LISTS AREA
+        const imageGenerationModels =  [
+            'gemini-2.0-flash-exp',
+            'gemini-2.0-flash-exp-image-generation',
+        ];
+
+        const blockNoneModels = [
+            'gemini-1.5-pro-001',
+            'gemini-1.5-flash-001',
+            'gemini-1.5-flash-8b-exp-0827',
+            'gemini-1.5-flash-8b-exp-0924',
+        ];
+
+        const thinkingBudgetModels = [
+            'gemini-2.5-flash-preview-04-17',
+        ];
+        // #endregion
+
         if (!Array.isArray(generationConfig.stopSequences) || !generationConfig.stopSequences.length) {
             delete generationConfig.stopSequences;
         }
 
-        const useMultiModal = requestImages && ['gemini-2.0-flash-exp', 'gemini-2.0-flash-exp-image-generation'].includes(model);
-        if (useMultiModal) {
+        const enableImageModality = requestImages && imageGenerationModels.includes(model);
+        if (enableImageModality) {
             generationConfig.responseModalities = ['text', 'image'];
         }
 
-        const useSystemPrompt = !useMultiModal && (
-            model.includes('gemini-2.5-pro') ||
-            model.includes('gemini-2.5-flash') ||
-            model.includes('gemini-2.0-pro') ||
-            model.includes('gemini-2.0-flash') ||
-            model.includes('gemini-1.5-pro') ||
-            model.includes('gemini-1.5-flash') ||
-            model.includes('learnlm') ||
-            model.startsWith('gemini-exp')
-        ) && request.body.use_makersuite_sysprompt;
+        const useSystemPrompt = !enableImageModality && !isGemma && request.body.use_makersuite_sysprompt;
 
         const tools = [];
         const prompt = convertGooglePrompt(request.body.messages, model, useSystemPrompt, getPromptNames(request));
         let safetySettings = GEMINI_SAFETY;
 
         // These models do not support setting the threshold to OFF at all.
-        if (['gemini-1.5-pro-001', 'gemini-1.5-flash-001', 'gemini-1.5-flash-8b-exp-0827', 'gemini-1.5-flash-8b-exp-0924'].includes(model)) {
+        if (blockNoneModels.includes(model)) {
             safetySettings = GEMINI_SAFETY.map(setting => ({ ...setting, threshold: 'BLOCK_NONE' }));
         }
 
-        if (enableWebSearch && !useMultiModal && !isGemma && !isLearnLM && !model.includes('gemini-2.0-flash-lite')) {
-            const searchTool = model.includes('1.5') || model.includes('1.0')
+        if (enableWebSearch && !enableImageModality && !isGemma && !isLearnLM && !model.includes('gemini-2.0-flash-lite')) {
+            const searchTool = model.includes('1.5')
                 ? ({ google_search_retrieval: {} })
                 : ({ google_search: {} });
             tools.push(searchTool);
         }
 
-        if (Array.isArray(request.body.tools) && request.body.tools.length > 0 && !useMultiModal && !isGemma) {
+        if (Array.isArray(request.body.tools) && request.body.tools.length > 0 && !enableImageModality && !isGemma) {
             const functionDeclarations = [];
             for (const tool of request.body.tools) {
                 if (tool.type === 'function') {
@@ -410,11 +418,6 @@ async function sendMakerSuiteRequest(request, response) {
             }
             tools.push({ function_declarations: functionDeclarations });
         }
-
-        // One more models list to maintain, yay
-        const thinkingBudgetModels = [
-            'gemini-2.5-flash-preview-04-17',
-        ];
 
         if (thinkingBudgetModels.includes(model)) {
             const thinkingBudget = calculateGoogleBudgetTokens(generationConfig.maxOutputTokens, reasoningEffort);
@@ -451,7 +454,7 @@ async function sendMakerSuiteRequest(request, response) {
             controller.abort();
         });
 
-        const apiVersion = isThinking ? 'v1alpha' : 'v1beta';
+        const apiVersion = getConfigValue('gemini.apiVersion', 'v1beta');
         const responseType = (stream ? 'streamGenerateContent' : 'generateContent');
 
         const generateResponse = await fetch(`${apiUrl.toString().replace(/\/$/, '')}/${apiVersion}/models/${model}:${responseType}?key=${apiKey}${stream ? '&alt=sse' : ''}`, {
