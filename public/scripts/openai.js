@@ -4483,7 +4483,7 @@ async function onModelChange() {
             $('#openai_max_context').attr('max', max_2mil);
         } else if (value.includes('gemini-1.5-pro')) {
             $('#openai_max_context').attr('max', max_2mil);
-        } else if (value.includes('gemini-1.5-flash') || value.includes('gemini-2.0-flash') || value.includes('gemini-2.0-pro') || value.includes('gemini-2.5-flash') || value.includes('gemini-2.5-pro') || value.includes('learnlm-2.0-flash')) {
+        } else if (value.includes('gemini-1.5-flash') || value.includes('gemini-2.0-flash') || value.includes('gemini-2.0-pro') || value.includes('gemini-exp') || value.includes('gemini-2.5-flash') || value.includes('gemini-2.5-pro') || value.includes('learnlm-2.0-flash')) {
             $('#openai_max_context').attr('max', max_1mil);
         } else if (value.includes('gemma-3-27b-it')) {
             $('#openai_max_context').attr('max', max_128k);
