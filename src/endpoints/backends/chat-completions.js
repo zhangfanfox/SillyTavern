@@ -465,7 +465,7 @@ async function sendMakerSuiteRequest(request, response) {
             },
             signal: controller.signal,
         });
-        // have to do this because of their busted ass streaming endpoint
+
         if (stream) {
             try {
                 // Pipe remote SSE stream to Express response
