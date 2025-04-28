@@ -1061,7 +1061,7 @@ async function getExtensionVersion(extensionName, abortSignal) {
  * @param {boolean} global Is the extension global?
  * @returns {Promise<void>}
  */
-export async function installExtension(url, global) {
+export async function installExtension(url, global, branch = '') {
     console.debug('Extension installation started', url);
 
     toastr.info(t`Please wait...`, t`Installing extension`);
@@ -1072,6 +1072,7 @@ export async function installExtension(url, global) {
         body: JSON.stringify({
             url,
             global,
+            branch,
         }),
     });
 
@@ -1406,9 +1407,17 @@ export async function openThirdPartyExtensionMenu(suggestUrl = '') {
             await popup.complete(POPUP_RESULT.AFFIRMATIVE);
         },
     };
+    /** @type {import('./popup.js').CustomPopupInput} */
+    const branchNameInput = {
+        id: 'extension_branch_name',
+        label: t`Branch name (optional)`,
+        type: 'text',
+        tooltip: 'e.g. main, master, dev',
+    };
 
     const customButtons = isCurrentUserAdmin ? [installForAllButton] : [];
-    const popup = new Popup(html, POPUP_TYPE.INPUT, suggestUrl ?? '', { okButton, customButtons });
+    const customInputs = [branchNameInput];
+    const popup = new Popup(html, POPUP_TYPE.INPUT, suggestUrl ?? '', { okButton, customButtons, customInputs });
     const input = await popup.show();
 
     if (!input) {
@@ -1417,7 +1426,8 @@ export async function openThirdPartyExtensionMenu(suggestUrl = '') {
     }
 
     const url = String(input).trim();
-    await installExtension(url, global);
+    const branchName = String(popup.inputResults.get('extension_branch_name') ?? '').trim();
+    await installExtension(url, global, branchName);
 }
 
 export async function initExtensions() {

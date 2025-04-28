@@ -76,7 +76,7 @@ router.post('/install', async (request, response) => {
             fs.mkdirSync(PUBLIC_DIRECTORIES.globalExtensions);
         }
 
-        const { url, global } = request.body;
+        const { url, global, branch } = request.body;
 
         if (global && !request.user.profile.admin) {
             console.error(`User ${request.user.profile.handle} does not have permission to install global extensions.`);
@@ -90,8 +90,12 @@ router.post('/install', async (request, response) => {
             return response.status(409).send(`Directory already exists at ${extensionPath}`);
         }
 
-        await git.clone(url, extensionPath, { '--depth': 1 });
-        console.info(`Extension has been cloned at ${extensionPath}`);
+        const cloneOptions = { '--depth': 1 };
+        if (branch) {
+            cloneOptions['--branch'] = branch;
+        }
+        await git.clone(url, extensionPath, cloneOptions);
+        console.info(`Extension has been cloned to ${extensionPath} from ${url} at ${branch || '(default)'} branch`);
 
         const { version, author, display_name } = await getManifest(extensionPath);
 
