@@ -143,6 +143,7 @@ import {
     getHordeModels,
     adjustHordeGenerationParams,
     MIN_LENGTH,
+    initHorde
 } from './scripts/horde.js';
 
 import {
@@ -175,6 +176,7 @@ import {
     saveBase64AsFile,
     uuidv4,
     equalsIgnoreCaseAndAccents,
+    localizePagination
 } from './scripts/utils.js';
 import { debounce_timeout, IGNORE_SYMBOL } from './scripts/constants.js';
 
@@ -229,7 +231,7 @@ import {
     instruct_presets,
     selectContextPreset,
 } from './scripts/instruct-mode.js';
-import { initLocales, t } from './scripts/i18n.js';
+import { initLocales, t, translate } from './scripts/i18n.js';
 import { getFriendlyTokenizerName, getTokenCount, getTokenCountAsync, initTokenizers, saveTokenCache, TOKENIZER_SUPPORTED_KEY } from './scripts/tokenizers.js';
 import {
     user_avatar,
@@ -994,6 +996,7 @@ async function firstLoadInit() {
     initAuthorsNote();
     await initPersonas();
     initWorldInfo();
+    initHorde();
     initRossMods();
     initStats();
     initCfg();
@@ -1425,13 +1428,13 @@ function getBackBlock() {
 
 function getEmptyBlock() {
     const icons = ['fa-dragon', 'fa-otter', 'fa-kiwi-bird', 'fa-crow', 'fa-frog'];
-    const texts = ['Here be dragons', 'Otterly empty', 'Kiwibunga', 'Pump-a-Rum', 'Croak it'];
+    const texts = [t`Here be dragons`, t`Otterly empty`, t`Kiwibunga`, t`Pump-a-Rum`, t`Croak it`];
     const roll = new Date().getMinutes() % icons.length;
     const emptyBlock = `
     <div class="text_block empty_block">
         <i class="fa-solid ${icons[roll]} fa-4x"></i>
         <h1>${texts[roll]}</h1>
-        <p>There are no items to display.</p>
+        <p>` + t`There are no items to display.` + `</p>
     </div>`;
     return $(emptyBlock);
 }
@@ -1443,7 +1446,7 @@ function getHiddenBlock(hidden) {
     const hiddenBlock = `
     <div class="text_block hidden_block">
         <small>
-            <p>${hidden} ${hidden > 1 ? 'characters' : 'character'} hidden.</p>
+            <p>` + t`${hidden} ${hidden > 1 ? 'characters' : 'character'} hidden.` + `</p>
             <div class="fa-solid fa-circle-info opacity50p" data-i18n="[title]Characters and groups hidden by filters or closed folders" title="Characters and groups hidden by filters or closed folders"></div>
         </small>
     </div>`;
@@ -1568,6 +1571,7 @@ export async function printCharacters(fullRefresh = false) {
             if (hidden > 0 && entitiesFilter.hasAnyFilter()) {
                 $(listId).append(getHiddenBlock(hidden));
             }
+            localizePagination($('#rm_print_characters_pagination'));
 
             eventSource.emit(event_types.CHARACTER_PAGE_LOADED);
         },
@@ -8429,7 +8433,7 @@ export function callPopup(text, type, inputValue = '', { okButton, rows, wide, w
         } else if (['delete_extension'].includes(popup_type)) {
             return okButton ?? 'Ok';
         } else if (['new_chat', 'confirm'].includes(popup_type)) {
-            return okButton ?? 'Yes';
+            return okButton ?? t`Yes`;
         } else if (['input'].includes(popup_type)) {
             return okButton ?? t`Save`;
         }

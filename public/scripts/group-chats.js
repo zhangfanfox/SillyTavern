@@ -13,6 +13,7 @@ import {
     getBase64Async,
     resetScrollHeight,
     initScrollHeight,
+    localizePagination
 } from './utils.js';
 import { RA_CountCharTokens, humanizedDateTime, dragElement, favsToHotswap, getMessageTimeStamp } from './RossAscends-mods.js';
 import { power_user, loadMovingUIState, sortEntitiesList } from './power-user.js';
@@ -1394,6 +1395,7 @@ function printGroupCandidates() {
             for (const i of data) {
                 $('#rm_group_add_members').append(getGroupCharacterBlock(i.item));
             }
+            localizePagination($('#rm_group_add_members_pagination'));
         },
     });
 }
@@ -1401,6 +1403,7 @@ function printGroupCandidates() {
 function printGroupMembers() {
     const storageKey = 'GroupMembers_PerPage';
     $('.rm_group_members_pagination').each(function () {
+        let that = this;
         $(this).pagination({
             dataSource: getGroupCharacters({ doFilter: false, onlyMembers: true }),
             pageRange: 1,
@@ -1421,6 +1424,7 @@ function printGroupMembers() {
                 for (const i of data) {
                     $('.rm_group_members').append(getGroupCharacterBlock(i.item));
                 }
+                localizePagination($(that));
             },
         });
     });
@@ -1804,7 +1808,7 @@ async function createGroup() {
     const memberNames = characters.filter(x => members.includes(x.avatar)).map(x => x.name).join(', ');
 
     if (!name) {
-        name = `Group: ${memberNames}`;
+        name = t`Group:` + ` ${memberNames}`;
     }
 
     const avatar_url = $('#group_avatar_preview img').attr('src');

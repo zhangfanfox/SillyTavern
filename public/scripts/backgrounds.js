@@ -291,7 +291,7 @@ async function onDeleteBackgroundClick(e) {
     const bgToDelete = $(this).closest('.bg_example');
     const url = bgToDelete.data('url');
     const isCustom = bgToDelete.attr('custom') === 'true';
-    const confirm = await callPopup('<h3>Delete the background?</h3>', 'confirm');
+    const confirm = await callPopup('<h3>' + t`Delete the background?` + '</h3>', 'confirm');
     const bg = bgToDelete.attr('bgfile');
 
     if (confirm) {

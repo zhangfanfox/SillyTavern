@@ -22,12 +22,12 @@ import {
 } from '../script.js';
 import { persona_description_positions, power_user } from './power-user.js';
 import { getTokenCountAsync } from './tokenizers.js';
-import { PAGINATION_TEMPLATE, clearInfoBlock, debounce, delay, download, ensureImageFormatSupported, flashHighlight, getBase64Async, getCharIndex, isFalseBoolean, isTrueBoolean, onlyUnique, parseJsonFile, setInfoBlock } from './utils.js';
+import { PAGINATION_TEMPLATE, clearInfoBlock, debounce, delay, download, ensureImageFormatSupported, flashHighlight, getBase64Async, getCharIndex, isFalseBoolean, isTrueBoolean, onlyUnique, parseJsonFile, setInfoBlock, localizePagination } from './utils.js';
 import { debounce_timeout } from './constants.js';
 import { FILTER_TYPES, FilterHelper } from './filters.js';
 import { groups, selected_group } from './group-chats.js';
 import { POPUP_TYPE, Popup, callGenericPopup } from './popup.js';
-import { t } from './i18n.js';
+import { t, translate } from './i18n.js';
 import { openWorldInfoEditor, world_names } from './world-info.js';
 import { renderTemplateAsync } from './templates.js';
 import { saveMetadataDebounced } from './extensions.js';
@@ -263,6 +263,7 @@ export async function getUserAvatars(doRender = true, openPageAt = '') {
             prevText: '<',
             nextText: '>',
             formatNavigator: PAGINATION_TEMPLATE,
+            afterRender: function(a) {console.log(a)},
             showNavigator: true,
             callback: function (data) {
                 $(listId).empty();
@@ -270,6 +271,7 @@ export async function getUserAvatars(doRender = true, openPageAt = '') {
                     $(listId).append(getUserAvatarBlock(item));
                 }
                 updatePersonaUIStates();
+                localizePagination($('#persona_pagination_container'));
             },
             afterSizeSelectorChange: function (e) {
                 accountStorage.setItem(storageKey, e.target.value);

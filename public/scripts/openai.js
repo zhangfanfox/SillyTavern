@@ -3851,7 +3851,7 @@ function createLogitBiasListItem(entry) {
 }
 
 async function createNewLogitBiasPreset() {
-    const name = await callPopup('Preset name:', 'input');
+    const name = await callPopup(t`Preset name:`, 'input');
 
     if (!name) {
         return;

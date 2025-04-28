@@ -14,13 +14,39 @@ import { Popup, POPUP_RESULT, POPUP_TYPE } from './popup.js';
 import { SlashCommandClosure } from './slash-commands/SlashCommandClosure.js';
 import { getTagsList } from './tags.js';
 import { groups, selected_group } from './group-chats.js';
-import { getCurrentLocale, t } from './i18n.js';
+import { getCurrentLocale, t, translate } from './i18n.js';
 
 /**
- * Pagination status string template.
- * @type {string}
+ * Function returning pagination status string template.
+ * @type {function}
  */
-export const PAGINATION_TEMPLATE = '<%= rangeStart %>-<%= rangeEnd %> of <%= totalNumber %>';
+export const PAGINATION_TEMPLATE = function() {
+    let translated_of;
+    try {
+        translated_of = translate('pagination_of');
+        if (translated_of == 'pagination_of') {
+            translated_of = 'of';
+        }
+    } catch (e) {
+        translated_of = 'of';
+    }
+    return `<%= rangeStart %>-<%= rangeEnd %> ${translated_of} <%= totalNumber %>`
+};
+
+export const localizePagination = function(container) {
+    let options = container.find('option');
+    for (let option of options) {
+        option = $(option);
+        try {
+            option.text(option.text().replace('/ page', translate('/ page')));
+        } catch (e) {
+            console.error(e);
+            break;
+        }
+    }
+    container.find("[title='Next page']").attr('title', translate('Next page'));
+    container.find("[title='Previous page']").attr('title', translate('Previous page'));
+}
 
 /**
  * Navigation options for pagination.
