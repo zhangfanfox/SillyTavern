@@ -2131,6 +2131,86 @@ export function initDefaultSlashCommands() {
             </div>
         `,
     }));
+    SlashCommandParser.addCommandObject(SlashCommand.fromProps({
+        name: 'test',
+        callback: (({ pattern }, text) => {
+            if (pattern === '') {
+                throw new Error('Argument of \'pattern=\' cannot be empty');
+            }
+            let re = regexFromString(pattern.toString());
+            return JSON.stringify(re.test(text.toString()));
+        }),
+        returns: 'true | false',
+        namedArgumentList: [
+            new SlashCommandNamedArgument(
+                'pattern', 'pattern to find', [ARGUMENT_TYPE.STRING], true, false,
+            ),
+        ],
+        unnamedArgumentList: [
+            new SlashCommandArgument(
+                'text to test', [ARGUMENT_TYPE.STRING], true, false,
+            ),
+        ],
+        helpString: `
+            <div>
+                Tests text for a regular expression match.
+            </div>
+            <div>
+                Returns <code>true</code> if the match is found, <code>false</code> otherwise.
+            </div>
+            <div>
+                <strong>Example:</strong>
+                <pre>/let x Blue house and green car                         ||</pre>
+                <pre>/test pattern="green" {{var::x}}    | /echo  |/# true   ||</pre>
+                <pre>/test pattern="blue" {{var::x}}     | /echo  |/# false  ||</pre>
+                <pre>/test pattern="/blue/i" {{var::x}}  | /echo  |/# true   ||</pre>
+            </div>
+        `,
+    }));
+    SlashCommandParser.addCommandObject(SlashCommand.fromProps({
+        name: 'match',
+        callback: (({ pattern }, text) => {
+            if (pattern === '') {
+                throw new Error('Argument of \'pattern=\' cannot be empty');
+            }
+            let re = regexFromString(pattern.toString());
+            if (re.flags.includes('g')) {
+                return JSON.stringify([...text.toString().matchAll(re)]);
+            } else {
+                return JSON.stringify(text.toString().match(re));
+            }
+        }),
+        returns: 'group array for each match',
+        namedArgumentList: [
+            new SlashCommandNamedArgument(
+                'pattern', 'pattern to find', [ARGUMENT_TYPE.STRING], true, false,
+            ),
+        ],
+        unnamedArgumentList: [
+            new SlashCommandArgument(
+                'text to match against', [ARGUMENT_TYPE.STRING], true, false,
+            ),
+        ],
+        helpString: `
+            <div>
+                Retrieves regular expression matches in the given text
+            </div>
+            <div>
+                Returns an array of groups (with the first group being the full match). If the regex contains the global flag (i.e. <code>/g</code>),
+                multiple nested arrays are returned for each match. If the regex is global, returns <code>[]</code> if no matches are found,
+                otherwise it returns null.
+            </div>
+            <div>
+                <strong>Example:</strong>
+                <pre>/let x color_green green lamp color_blue                                                                            ||</pre>
+                <pre>/match pattern="green" {{var::x}}            | /echo  |/# [ "green" ]                                               ||</pre>
+                <pre>/match pattern="color_(\\w+)" {{var::x}}     | /echo  |/# [ "color_green", "green" ]                                ||</pre>
+                <pre>/match pattern="/color_(\\w+)/g" {{var::x}}  | /echo  |/# [ [ "color_green", "green" ], [ "color_blue", "blue" ] ]  ||</pre>
+                <pre>/match pattern="orange" {{var::x}}           | /echo  |/# null                                                      ||</pre>
+                <pre>/match pattern="/orange/g" {{var::x}}        | /echo  |/# []                                                        ||</pre>
+            </div>
+        `,
+    }));
 
     SlashCommandParser.addCommandObject(SlashCommand.fromProps({
         name: 'chat-jump',
