@@ -661,6 +661,7 @@ function generateExtensionHtml(name, manifest, isActive, isDisabled, isExternal,
     let deleteButton = isExternal ? `<button class="btn_delete menu_button" data-name="${externalId}" data-i18n="[title]Delete" title="Delete"><i class="fa-fw fa-solid fa-trash-can"></i></button>` : '';
     let updateButton = isExternal ? `<button class="btn_update menu_button displayNone" data-name="${externalId}" title="Update available"><i class="fa-solid fa-download fa-fw"></i></button>` : '';
     let moveButton = isExternal && isUserAdmin ? `<button class="btn_move menu_button" data-name="${externalId}" data-i18n="[title]Move" title="Move"><i class="fa-solid fa-folder-tree fa-fw"></i></button>` : '';
+    let branchButton = isExternal && isUserAdmin ? `<button class="btn_branch menu_button" data-name="${externalId}" data-i18n="[title]Switch branch" title="Switch branch"><i class="fa-solid fa-code-branch fa-fw"></i></button>` : '';
     let modulesInfo = '';
 
     if (isActive && Array.isArray(manifest.optional)) {
@@ -701,6 +702,7 @@ function generateExtensionHtml(name, manifest, isActive, isDisabled, isExternal,
 
             <div class="extension_actions flex-container alignItemsCenter">
                 ${updateButton}
+                ${branchButton}
                 ${moveButton}
                 ${deleteButton}
             </div>
@@ -944,6 +946,44 @@ async function onDeleteClick() {
     }
 }
 
+async function onBranchClick() {
+    const extensionName = $(this).data('name');
+    const isCurrentUserAdmin = isAdmin();
+    const isGlobal = getExtensionType(extensionName) === 'global';
+    if (isGlobal && !isCurrentUserAdmin) {
+        toastr.error(t`You don't have permission to switch branch.`);
+        return;
+    }
+
+    let newBranch = '';
+
+    const branches = await getExtensionBranches(extensionName, isGlobal);
+    const selectElement = document.createElement('select');
+    selectElement.classList.add('text_pole', 'wide100p');
+    selectElement.addEventListener('change', function () {
+        newBranch = this.value;
+    });
+    for (const branch of branches) {
+        const option = document.createElement('option');
+        option.value = branch.name;
+        option.textContent = `${branch.name} (${branch.commit}) [${branch.label}]`;
+        option.selected = branch.current;
+        selectElement.appendChild(option);
+    }
+
+    const popup = new Popup(selectElement, POPUP_TYPE.CONFIRM, '', {
+        okButton: t`Switch`,
+        cancelButton: t`Cancel`,
+    });
+    const popupResult = await popup.show();
+
+    if (!popupResult || !newBranch) {
+        return;
+    }
+
+    await switchExtensionBranch(extensionName, isGlobal, newBranch);
+}
+
 async function onMoveClick() {
     const extensionName = $(this).data('name');
     const isCurrentUserAdmin = isAdmin();
@@ -1050,6 +1090,76 @@ async function getExtensionVersion(extensionName, abortSignal) {
 
         const data = await response.json();
         return data;
+    } catch (error) {
+        console.error('Error:', error);
+    }
+}
+
+/**
+ * Gets the list of branches for a specific extension.
+ * @param {string} extensionName The name of the extension
+ * @param {boolean} isGlobal Whether the extension is global or not
+ * @returns {Promise<ExtensionBranch[]>} List of branches for the extension
+ * @typedef {object} ExtensionBranch
+ * @property {string} name The name of the branch
+ * @property {string} commit The commit hash of the branch
+ * @property {boolean} current Whether this branch is the current one
+ * @property {string} label The commit label of the branch
+ */
+async function getExtensionBranches(extensionName, isGlobal) {
+    try {
+        const response = await fetch('/api/extensions/branches', {
+            method: 'POST',
+            headers: getRequestHeaders(),
+            body: JSON.stringify({
+                extensionName,
+                global: isGlobal,
+            }),
+        });
+
+        if (!response.ok) {
+            const text = await response.text();
+            toastr.error(text || response.statusText, t`Extension branches fetch failed`);
+            console.error('Extension branches fetch failed', response.status, response.statusText, text);
+            return [];
+        }
+
+        return await response.json();
+    } catch (error) {
+        console.error('Error:', error);
+        return [];
+    }
+}
+
+/**
+ * Switches the branch of an extension.
+ * @param {string} extensionName The name of the extension
+ * @param {boolean} isGlobal If the extension is global
+ * @param {string} branch Branch name to switch to
+ * @returns {Promise<void>}
+ */
+async function switchExtensionBranch(extensionName, isGlobal, branch) {
+    try {
+        const response = await fetch('/api/extensions/switch', {
+            method: 'POST',
+            headers: getRequestHeaders(),
+            body: JSON.stringify({
+                extensionName,
+                branch,
+                global: isGlobal,
+            }),
+        });
+
+        if (!response.ok) {
+            const text = await response.text();
+            toastr.error(text || response.statusText, t`Extension branch switch failed`);
+            console.error('Extension branch switch failed', response.status, response.statusText, text);
+            return;
+        }
+
+        toastr.success(t`Extension ${extensionName} switched to ${branch}`);
+        await loadExtensionSettings({}, false, false);
+        void showExtensionsDetails();
     } catch (error) {
         console.error('Error:', error);
     }
@@ -1443,6 +1553,7 @@ export async function initExtensions() {
     $(document).on('click', '.extensions_info .extension_block .btn_update', onUpdateClick);
     $(document).on('click', '.extensions_info .extension_block .btn_delete', onDeleteClick);
     $(document).on('click', '.extensions_info .extension_block .btn_move', onMoveClick);
+    $(document).on('click', '.extensions_info .extension_block .btn_branch', onBranchClick);
 
     /**
      * Handles the click event for the third-party extension import button.
