@@ -28,6 +28,7 @@ export const PAGINATION_TEMPLATE = function() {
             translated_of = 'of';
         }
     } catch (e) {
+        console.error(e);
         translated_of = 'of';
     }
     return `<%= rangeStart %>-<%= rangeEnd %> ${translated_of} <%= totalNumber %>`;
@@ -40,8 +41,9 @@ export const localizePagination = function(container) {
         try {
             option.text(option.text().replace('/ page', translate('/ page')));
         } catch (e) {
+            // means that i18n facilities aren't ready, so there's no point doing anything
             console.error(e);
-            break;
+            return;
         }
     }
     container.find('[title="Next page"]').attr('title', translate('Next page'));
