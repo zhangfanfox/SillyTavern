@@ -169,10 +169,9 @@ router.post('/branches', async (request, response) => {
         }
 
         if (global && !request.user.profile.admin) {
-            console.error(`User ${request.user.profile.handle} does not have permission to update global extensions.`);
-            return response.status(403).send('Forbidden: No permission to update global extensions.');
+            console.error(`User ${request.user.profile.handle} does not have permission to list branches of global extensions.`);
+            return response.status(403).send('Forbidden: No permission to list branches of global extensions.');
         }
-
 
         const basePath = global ? PUBLIC_DIRECTORIES.globalExtensions : request.user.directories.extensions;
         const extensionPath = path.join(basePath, extensionName);
@@ -216,8 +215,8 @@ router.post('/switch', async (request, response) => {
         }
 
         if (global && !request.user.profile.admin) {
-            console.error(`User ${request.user.profile.handle} does not have permission to update global extensions.`);
-            return response.status(403).send('Forbidden: No permission to update global extensions.');
+            console.error(`User ${request.user.profile.handle} does not have permission to switch branches of global extensions.`);
+            return response.status(403).send('Forbidden: No permission to switch branches of global extensions.');
         }
 
         const basePath = global ? PUBLIC_DIRECTORIES.globalExtensions : request.user.directories.extensions;
