@@ -44,8 +44,8 @@ export const localizePagination = function(container) {
             break;
         }
     }
-    container.find("[title='Next page']").attr('title', translate('Next page'));
-    container.find("[title='Previous page']").attr('title', translate('Previous page'));
+    container.find('[title="Next page"]').attr('title', translate('Next page'));
+    container.find('[title="Previous page"]').attr('title', translate('Previous page'));
 };
 
 /**
