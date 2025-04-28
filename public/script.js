@@ -143,7 +143,7 @@ import {
     getHordeModels,
     adjustHordeGenerationParams,
     MIN_LENGTH,
-    initHorde
+    initHorde,
 } from './scripts/horde.js';
 
 import {
@@ -176,7 +176,7 @@ import {
     saveBase64AsFile,
     uuidv4,
     equalsIgnoreCaseAndAccents,
-    localizePagination
+    localizePagination,
 } from './scripts/utils.js';
 import { debounce_timeout, IGNORE_SYMBOL } from './scripts/constants.js';
 
@@ -231,7 +231,7 @@ import {
     instruct_presets,
     selectContextPreset,
 } from './scripts/instruct-mode.js';
-import { initLocales, t, translate } from './scripts/i18n.js';
+import { initLocales, t } from './scripts/i18n.js';
 import { getFriendlyTokenizerName, getTokenCount, getTokenCountAsync, initTokenizers, saveTokenCache, TOKENIZER_SUPPORTED_KEY } from './scripts/tokenizers.js';
 import {
     user_avatar,

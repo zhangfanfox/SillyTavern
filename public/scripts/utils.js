@@ -30,7 +30,7 @@ export const PAGINATION_TEMPLATE = function() {
     } catch (e) {
         translated_of = 'of';
     }
-    return `<%= rangeStart %>-<%= rangeEnd %> ${translated_of} <%= totalNumber %>`
+    return `<%= rangeStart %>-<%= rangeEnd %> ${translated_of} <%= totalNumber %>`;
 };
 
 export const localizePagination = function(container) {
@@ -46,7 +46,7 @@ export const localizePagination = function(container) {
     }
     container.find("[title='Next page']").attr('title', translate('Next page'));
     container.find("[title='Previous page']").attr('title', translate('Previous page'));
-}
+};
 
 /**
  * Navigation options for pagination.

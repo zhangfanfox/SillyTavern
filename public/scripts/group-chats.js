@@ -13,7 +13,7 @@ import {
     getBase64Async,
     resetScrollHeight,
     initScrollHeight,
-    localizePagination
+    localizePagination,
 } from './utils.js';
 import { RA_CountCharTokens, humanizedDateTime, dragElement, favsToHotswap, getMessageTimeStamp } from './RossAscends-mods.js';
 import { power_user, loadMovingUIState, sortEntitiesList } from './power-user.js';

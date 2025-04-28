@@ -451,5 +451,5 @@ export function initHorde () {
             templateResult: getHordeModelTemplate,
         });
     }
-};
+}
 

@@ -27,7 +27,7 @@ import { debounce_timeout } from './constants.js';
 import { FILTER_TYPES, FilterHelper } from './filters.js';
 import { groups, selected_group } from './group-chats.js';
 import { POPUP_TYPE, Popup, callGenericPopup } from './popup.js';
-import { t, translate } from './i18n.js';
+import { t } from './i18n.js';
 import { openWorldInfoEditor, world_names } from './world-info.js';
 import { renderTemplateAsync } from './templates.js';
 import { saveMetadataDebounced } from './extensions.js';
@@ -263,7 +263,6 @@ export async function getUserAvatars(doRender = true, openPageAt = '') {
             prevText: '<',
             nextText: '>',
             formatNavigator: PAGINATION_TEMPLATE,
-            afterRender: function(a) {console.log(a)},
             showNavigator: true,
             callback: function (data) {
                 $(listId).empty();
