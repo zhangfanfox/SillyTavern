@@ -1656,7 +1656,7 @@ async function onTagDeleteClick() {
     const tag = tags.find(x => x.id === id);
     const otherTags = sortTags(tags.filter(x => x.id !== id).map(x => ({ id: x.id, name: x.name })));
 
-    const popupContent = $(await renderTemplateAsync('deleteTag', {otherTags}));
+    const popupContent = $(await renderTemplateAsync('deleteTag', { otherTags }));
 
     appendTagToList(popupContent.find('#tag_to_delete'), tag);
 
