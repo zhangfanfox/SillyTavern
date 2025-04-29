@@ -2177,14 +2177,15 @@ export function initDefaultSlashCommands() {
             if (!pattern) {
                 throw new Error('Argument of \'pattern=\' cannot be empty');
             }
-            let re = regexFromString(pattern.toString());
+            const re = regexFromString(pattern.toString());
             if (!re) {
                 throw new Error('The value of \'pattern\' argument is not a valid regular expression.');
             }
             if (re.flags.includes('g')) {
                 return JSON.stringify([...text.toString().matchAll(re)]);
             } else {
-                return JSON.stringify(text.toString().match(re));
+                const match = text.toString().match(re);
+                return match ? JSON.stringify(match) : '';
             }
         }),
         returns: 'group array for each match',
@@ -2205,7 +2206,7 @@ export function initDefaultSlashCommands() {
             <div>
                 Returns an array of groups (with the first group being the full match). If the regex contains the global flag (i.e. <code>/g</code>),
                 multiple nested arrays are returned for each match. If the regex is global, returns <code>[]</code> if no matches are found,
-                otherwise it returns null.
+                otherwise it returns an empty string.
             </div>
             <div>
                 <strong>Example:</strong>
@@ -2213,7 +2214,7 @@ export function initDefaultSlashCommands() {
                 <pre><code class="language-stscript">/match pattern="green" {{var::x}}            | /echo  |/# [ "green" ]                                               ||</code></pre>
                 <pre><code class="language-stscript">/match pattern="color_(\\w+)" {{var::x}}      | /echo  |/# [ "color_green", "green" ]                                ||</code></pre>
                 <pre><code class="language-stscript">/match pattern="/color_(\\w+)/g" {{var::x}}   | /echo  |/# [ [ "color_green", "green" ], [ "color_blue", "blue" ] ]  ||</code></pre>
-                <pre><code class="language-stscript">/match pattern="orange" {{var::x}}           | /echo  |/# null                                                      ||</code></pre>
+                <pre><code class="language-stscript">/match pattern="orange" {{var::x}}           | /echo  |/#                                                           ||</code></pre>
                 <pre><code class="language-stscript">/match pattern="/orange/g" {{var::x}}        | /echo  |/# []                                                        ||</code></pre>
             </div>
         `,
