@@ -2079,8 +2079,9 @@ export function initDefaultSlashCommands() {
         name: 'replace',
         aliases: ['re'],
         callback: (async ({ mode = 'literal', pattern, replacer = '' }, text) => {
-            if (pattern === '')
+            if (!pattern) {
                 throw new Error('Argument of \'pattern=\' cannot be empty');
+            }
             switch (mode) {
                 case 'literal':
                     return text.replaceAll(pattern, replacer);
