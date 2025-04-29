@@ -2163,10 +2163,10 @@ export function initDefaultSlashCommands() {
             </div>
             <div>
                 <strong>Example:</strong>
-                <pre>/let x Blue house and green car                         ||</pre>
-                <pre>/test pattern="green" {{var::x}}    | /echo  |/# true   ||</pre>
-                <pre>/test pattern="blue" {{var::x}}     | /echo  |/# false  ||</pre>
-                <pre>/test pattern="/blue/i" {{var::x}}  | /echo  |/# true   ||</pre>
+                <pre><code class="language-stscript">/let x Blue house and green car                         ||</code></pre>
+                <pre><code class="language-stscript">/test pattern="green" {{var::x}}    | /echo  |/# true   ||</code></pre>
+                <pre><code class="language-stscript">/test pattern="blue" {{var::x}}     | /echo  |/# false  ||</code></pre>
+                <pre><code class="language-stscript">/test pattern="/blue/i" {{var::x}}  | /echo  |/# true   ||</code></pre>
             </div>
         `,
     }));
@@ -2208,12 +2208,12 @@ export function initDefaultSlashCommands() {
             </div>
             <div>
                 <strong>Example:</strong>
-                <pre>/let x color_green green lamp color_blue                                                                            ||</pre>
-                <pre>/match pattern="green" {{var::x}}            | /echo  |/# [ "green" ]                                               ||</pre>
-                <pre>/match pattern="color_(\\w+)" {{var::x}}     | /echo  |/# [ "color_green", "green" ]                                ||</pre>
-                <pre>/match pattern="/color_(\\w+)/g" {{var::x}}  | /echo  |/# [ [ "color_green", "green" ], [ "color_blue", "blue" ] ]  ||</pre>
-                <pre>/match pattern="orange" {{var::x}}           | /echo  |/# null                                                      ||</pre>
-                <pre>/match pattern="/orange/g" {{var::x}}        | /echo  |/# []                                                        ||</pre>
+                <pre><code class="language-stscript">/let x color_green green lamp color_blue                                                                            ||</code></pre>
+                <pre><code class="language-stscript">/match pattern="green" {{var::x}}            | /echo  |/# [ "green" ]                                               ||</code></pre>
+                <pre><code class="language-stscript">/match pattern="color_(\\w+)" {{var::x}}      | /echo  |/# [ "color_green", "green" ]                                ||</code></pre>
+                <pre><code class="language-stscript">/match pattern="/color_(\\w+)/g" {{var::x}}   | /echo  |/# [ [ "color_green", "green" ], [ "color_blue", "blue" ] ]  ||</code></pre>
+                <pre><code class="language-stscript">/match pattern="orange" {{var::x}}           | /echo  |/# null                                                      ||</code></pre>
+                <pre><code class="language-stscript">/match pattern="/orange/g" {{var::x}}        | /echo  |/# []                                                        ||</code></pre>
             </div>
         `,
     }));
