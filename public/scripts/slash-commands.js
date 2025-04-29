@@ -2138,7 +2138,7 @@ export function initDefaultSlashCommands() {
             if (!pattern) {
                 throw new Error('Argument of \'pattern=\' cannot be empty');
             }
-            let re = regexFromString(pattern.toString());
+            const re = regexFromString(pattern.toString());
             if (!re) {
                 throw new Error('The value of \'pattern\' argument is not a valid regular expression.');
             }
