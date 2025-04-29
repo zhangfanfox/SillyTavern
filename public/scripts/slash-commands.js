@@ -2134,10 +2134,13 @@ export function initDefaultSlashCommands() {
     SlashCommandParser.addCommandObject(SlashCommand.fromProps({
         name: 'test',
         callback: (({ pattern }, text) => {
-            if (pattern === '') {
+            if (!pattern) {
                 throw new Error('Argument of \'pattern=\' cannot be empty');
             }
             let re = regexFromString(pattern.toString());
+            if (!re) {
+                throw new Error('The value of \'pattern\' argument is not a valid regular expression.');
+            }
             return JSON.stringify(re.test(text.toString()));
         }),
         returns: 'true | false',
@@ -2170,10 +2173,13 @@ export function initDefaultSlashCommands() {
     SlashCommandParser.addCommandObject(SlashCommand.fromProps({
         name: 'match',
         callback: (({ pattern }, text) => {
-            if (pattern === '') {
+            if (!pattern) {
                 throw new Error('Argument of \'pattern=\' cannot be empty');
             }
             let re = regexFromString(pattern.toString());
+            if (!re) {
+                throw new Error('The value of \'pattern\' argument is not a valid regular expression.');
+            }
             if (re.flags.includes('g')) {
                 return JSON.stringify([...text.toString().matchAll(re)]);
             } else {
