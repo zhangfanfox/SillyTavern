@@ -1446,7 +1446,7 @@ function getHiddenBlock(hidden) {
     const hiddenBlock = `
     <div class="text_block hidden_block">
         <small>
-            <p>` + t`${hidden} ${hidden > 1 ? 'characters' : 'character'} hidden.` + `</p>
+            <p>` + (hidden > 1 ? t`${hidden} characters hidden.` : t`${hidden} character hidden.`) + `</p>
             <div class="fa-solid fa-circle-info opacity50p" data-i18n="[title]Characters and groups hidden by filters or closed folders" title="Characters and groups hidden by filters or closed folders"></div>
         </small>
     </div>`;
@@ -8429,15 +8429,15 @@ export function callPopup(text, type, inputValue = '', { okButton, rows, wide, w
     function getOkButtonText() {
         if (['text', 'char_not_selected'].includes(popup_type)) {
             $dialoguePopupCancel.css('display', 'none');
-            return okButton ?? 'Ok';
+            return okButton ?? t`Ok`;
         } else if (['delete_extension'].includes(popup_type)) {
-            return okButton ?? 'Ok';
+            return okButton ?? t`Ok`;
         } else if (['new_chat', 'confirm'].includes(popup_type)) {
             return okButton ?? t`Yes`;
         } else if (['input'].includes(popup_type)) {
             return okButton ?? t`Save`;
         }
-        return okButton ?? 'Delete';
+        return okButton ?? t`Delete`;
     }
 
     dialogueCloseStop = true;

@@ -1808,7 +1808,7 @@ async function createGroup() {
     const memberNames = characters.filter(x => members.includes(x.avatar)).map(x => x.name).join(', ');
 
     if (!name) {
-        name = t`Group:` + ` ${memberNames}`;
+        name = t`Group: ${memberNames}`;
     }
 
     const avatar_url = $('#group_avatar_preview img').attr('src');

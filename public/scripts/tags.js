@@ -1656,14 +1656,7 @@ async function onTagDeleteClick() {
     const tag = tags.find(x => x.id === id);
     const otherTags = sortTags(tags.filter(x => x.id !== id).map(x => ({ id: x.id, name: x.name })));
 
-    const popupContent = $(`
-        <h3>` + t`Delete Tag` + `</h3>
-        <div>` + t`Do you want to delete the tag` + ` <div id="tag_to_delete" class="tags_inline inline-flex margin-r2"></div>?</div>
-        <div class="m-t-2 marginBot5">` + t`If you want to merge all references to this tag into another tag, select it below:` + `</div>
-        <select id="merge_tag_select">
-            <option value="">--- None ---</option>
-            ${otherTags.map(x => `<option value="${x.id}">${x.name}</option>`).join('')}
-        </select>`);
+    const popupContent = $(await renderTemplateAsync('deleteTag', {otherTags}));
 
     appendTagToList(popupContent.find('#tag_to_delete'), tag);
 
