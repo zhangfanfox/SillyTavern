@@ -1649,7 +1649,6 @@
     "Separators as Stop Strings": "Разделители как стоп-строки",
     "Names as Stop Strings": "Имена как стоп-строки",
     "Add Character and User names to a list of stopping strings.": "Добавлять имена персонажа и пользователя в список стоп-строк.",
-    "Allow Post-History Instructions": "Разрешить инструкции после истории",
     "context_allow_post_history_instructions": "Добавлять в конец промпта инструкции после истории. Работает только при наличии таких инструкций в карточке И при включенной опции ''Приоритет инструкциям из карточек''.\nНЕ РЕКОМЕНДУЕТСЯ ДЛЯ МОДЕЛЕЙ TEXT COMPLETION, МОЖЕТ ПОРТИТЬ ВЫХОДНОЙ ТЕКСТ.",
     "First User Prefix": "Первый префикс пользователя",
     "Inserted before the first User's message.": "Вставляется перед первым сообщением пользователя.",

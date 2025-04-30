@@ -1519,7 +1519,6 @@
     "Always": "항상 추가함",
     "Separators as Stop Strings": "구분 기호를 정지 문자열로 사용하기",
     "Names as Stop Strings": "캐릭터의 이름들을 정지 문자열로 사용하기",
-    "Allow Post-History Instructions": "Post-History 지침 허용",
     "Image Captioning": "이미지 캡셔닝",
     "Automatically caption images": "자동으로 이미지에 대한 설명 문장으로 나타내기",
     "Edit captions before saving": "저장하기 전에 이미지에 대한 설명 문장 편집하기",
