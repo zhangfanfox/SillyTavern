@@ -132,7 +132,7 @@ router.post('/update', async (request, response) => {
         }
 
         const basePath = global ? PUBLIC_DIRECTORIES.globalExtensions : request.user.directories.extensions;
-        const extensionPath = path.join(basePath, extensionName);
+        const extensionPath = path.join(basePath, sanitize(extensionName));
 
         if (!fs.existsSync(extensionPath)) {
             return response.status(404).send(`Directory does not exist at ${extensionPath}`);
@@ -174,7 +174,7 @@ router.post('/branches', async (request, response) => {
         }
 
         const basePath = global ? PUBLIC_DIRECTORIES.globalExtensions : request.user.directories.extensions;
-        const extensionPath = path.join(basePath, extensionName);
+        const extensionPath = path.join(basePath, sanitize(extensionName));
 
         if (!fs.existsSync(extensionPath)) {
             return response.status(404).send(`Directory does not exist at ${extensionPath}`);
@@ -200,7 +200,7 @@ router.post('/branches', async (request, response) => {
         return response.send(result);
     } catch (error) {
         console.error('Getting branches failed', error);
-        return response.status(500).send('Internal Server Error. Try again later.');
+        return response.status(500).send('Internal Server Error. Check the server logs for more details.');
     }
 });
 
@@ -220,7 +220,7 @@ router.post('/switch', async (request, response) => {
         }
 
         const basePath = global ? PUBLIC_DIRECTORIES.globalExtensions : request.user.directories.extensions;
-        const extensionPath = path.join(basePath, extensionName);
+        const extensionPath = path.join(basePath, sanitize(extensionName));
 
         if (!fs.existsSync(extensionPath)) {
             return response.status(404).send(`Directory does not exist at ${extensionPath}`);
@@ -304,7 +304,7 @@ router.post('/move', async (request, response) => {
         return response.sendStatus(204);
     } catch (error) {
         console.error('Moving extension failed', error);
-        return response.status(500).send('Internal Server Error. Try again later.');
+        return response.status(500).send('Internal Server Error. Check the server logs for more details.');
     }
 });
 
