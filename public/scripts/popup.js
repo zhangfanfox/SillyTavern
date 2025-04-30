@@ -284,9 +284,7 @@ export class Popup {
                 }
 
                 this.inputControls.appendChild(label);
-            }
-
-            if (input.type === 'text') {
+            } else if (input.type === 'text') {
                 const label = document.createElement('label');
                 label.classList.add('text_label', 'justifyCenter');
                 label.setAttribute('for', input.id);
@@ -306,6 +304,9 @@ export class Popup {
                 label.appendChild(inputElement);
 
                 this.inputControls.appendChild(label);
+            } else {
+                console.warn('Unknown custom input type. Only checkbox and text are supported.', input);
+                return;
             }
         });
 
