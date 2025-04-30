@@ -1520,9 +1520,9 @@ export async function openThirdPartyExtensionMenu(suggestUrl = '') {
     /** @type {import('./popup.js').CustomPopupInput} */
     const branchNameInput = {
         id: 'extension_branch_name',
-        label: t`Branch name (optional)`,
+        label: t`Branch or tag name (optional)`,
         type: 'text',
-        tooltip: 'e.g. main, master, dev',
+        tooltip: 'e.g. main, dev, v1.0.0',
     };
 
     const customButtons = isCurrentUserAdmin ? [installForAllButton] : [];
