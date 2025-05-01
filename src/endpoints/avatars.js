@@ -28,7 +28,7 @@ router.post('/delete', getFileNameValidationFunction('avatar'), function (reques
     const fileName = path.join(request.user.directories.avatars, sanitize(request.body.avatar));
 
     if (fs.existsSync(fileName)) {
-        fs.rmSync(fileName);
+        fs.unlinkSync(fileName);
         return response.send({ result: 'ok' });
     }
 

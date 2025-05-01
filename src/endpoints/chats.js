@@ -449,7 +449,7 @@ router.post('/delete', validateAvatarUrlMiddleware, function (request, response)
         return response.sendStatus(400);
     }
 
-    fs.rmSync(filePath);
+    fs.unlinkSync(filePath);
     console.info(`Deleted chat file: ${filePath}`);
     return response.send('ok');
 });
