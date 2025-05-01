@@ -720,7 +720,7 @@ function convertWorldInfoToCharacterBook(name, entries) {
  */
 async function importFromYaml(uploadPath, context, preservedFileName) {
     const fileText = fs.readFileSync(uploadPath, 'utf8');
-    fs.rmSync(uploadPath);
+    fs.unlinkSync(uploadPath);
     const yamlData = yaml.parse(fileText);
     console.info('Importing from YAML');
     yamlData.name = sanitize(yamlData.name);
@@ -754,7 +754,7 @@ async function importFromYaml(uploadPath, context, preservedFileName) {
  */
 async function importFromCharX(uploadPath, { request }, preservedFileName) {
     const data = fs.readFileSync(uploadPath).buffer;
-    fs.rmSync(uploadPath);
+    fs.unlinkSync(uploadPath);
     console.info('Importing from CharX');
     const cardBuffer = await extractFileFromZipBuffer(data, 'card.json');
 
@@ -995,7 +995,7 @@ router.post('/rename', validateAvatarUrlMiddleware, async function (request, res
         }
 
         // Remove the old character file
-        fs.rmSync(oldAvatarPath);
+        fs.unlinkSync(oldAvatarPath);
 
         // Return new avatar name to ST
         return response.send({ avatar: newAvatarName });
