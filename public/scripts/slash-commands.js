@@ -316,6 +316,11 @@ export function initDefaultSlashCommands() {
                 enumProvider: commonEnumProviders.messages({ allowIdAfter: true }),
             }),
             SlashCommandNamedArgument.fromProps({
+                name: 'name',
+                description: 'Optional custom display name to use for this system narrator message.',
+                typeList: [ARGUMENT_TYPE.STRING],
+            }),
+            SlashCommandNamedArgument.fromProps({
                 name: 'return',
                 description: 'The way how you want the return value to be provided',
                 typeList: [ARGUMENT_TYPE.STRING],
@@ -3851,7 +3856,7 @@ export async function sendMessageAs(args, text) {
 
 export async function sendNarratorMessage(args, text) {
     text = String(text ?? '');
-    const name = chat_metadata[NARRATOR_NAME_KEY] || NARRATOR_NAME_DEFAULT;
+    const name = args.name ?? (chat_metadata[NARRATOR_NAME_KEY] || NARRATOR_NAME_DEFAULT);
     // Messages that do nothing but set bias will be hidden from the context
     const bias = extractMessageBias(text);
     const isSystem = bias && !removeMacros(text).length;
