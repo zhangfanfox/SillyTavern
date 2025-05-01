@@ -5,9 +5,9 @@ import { textgenerationwebui_settings as textgen_settings, textgen_types } from 
 import { tokenizers } from './tokenizers.js';
 import { renderTemplateAsync } from './templates.js';
 import { POPUP_TYPE, callGenericPopup } from './popup.js';
-import { t, translate } from './i18n.js';
+import { t } from './i18n.js';
 import { accountStorage } from './util/AccountStorage.js';
-import { localizePagination } from './utils.js';
+import { localizePagination, PAGINATION_TEMPLATE } from './utils.js';
 
 let mancerModels = [];
 let togetherModels = [];
@@ -362,18 +362,7 @@ export async function loadFeatherlessModels(data) {
             showSizeChanger: false,
             prevText: '<',
             nextText: '>',
-            formatNavigator: function (currentPage, totalPage) {
-                let translated_of;
-                try {
-                    translated_of = translate('pagination_of');
-                    if (translated_of == 'pagination_of') {
-                        translated_of = 'of';
-                    }
-                } catch (e) {
-                    translated_of = 'of';
-                }
-                return (currentPage - 1) * perPage + 1 + ' - ' + currentPage * perPage + ` ${translated_of} ` + totalPage * perPage;
-            },
+            formatNavigator: PAGINATION_TEMPLATE,
             showNavigator: true,
             callback: function (modelsOnPage, pagination) {
                 modelCardBlock.innerHTML = '';

@@ -18,21 +18,8 @@ import { getCurrentLocale, t, translate } from './i18n.js';
 
 /**
  * Function returning pagination status string template.
- * @type {function}
  */
-export const PAGINATION_TEMPLATE = function() {
-    let translated_of;
-    try {
-        translated_of = translate('pagination_of');
-        if (translated_of == 'pagination_of') {
-            translated_of = 'of';
-        }
-    } catch (e) {
-        console.error(e);
-        translated_of = 'of';
-    }
-    return `<%= rangeStart %>-<%= rangeEnd %> ${translated_of} <%= totalNumber %>`;
-};
+export const PAGINATION_TEMPLATE = '<%= rangeStart %>-<%= rangeEnd %> .. <%= totalNumber %>';
 
 export const localizePagination = function(container) {
     let options = container.find('option');
