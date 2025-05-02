@@ -4215,7 +4215,7 @@ export async function Generate(type, { automatic_trigger, force_name2, quiet_pro
             : baseChatReplace(power_user.sysprompt.post_history, name1, name2);
 
         // Only inject the jb if there is one
-        if (jailbreak && typeof(jailbreak) != 'undefined') {
+        if (jailbreak) {
             // When continuing generation of previous output, last user message precedes the message to continue
             if (isContinue) {
                 coreChat.splice(coreChat.length - 1, 0, { mes: jailbreak, is_user: true });
