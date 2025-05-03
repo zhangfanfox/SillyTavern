@@ -33,9 +33,9 @@ export const renderPaginationDropdown = function(pageSize, sizeChangerOptions) {
         sizeChangerOptions.sort((a, b) => a - b);
     }
     for (let i = 0; i < sizeChangerOptions.length; i++) {
-        sizeSelect += `<option value="${sizeChangerOptions[i]}"${(sizeChangerOptions[i] === pageSize ? ' selected' : '')}>${sizeChangerOptions[i]} ` + t`/ page` + `</option>`;
+        sizeSelect += `<option value="${sizeChangerOptions[i]}"${(sizeChangerOptions[i] === pageSize ? ' selected' : '')}>${sizeChangerOptions[i]} ` + t`/ page` + '</option>';
     }
-    sizeSelect += `</select>`;
+    sizeSelect += '</select>';
     return sizeSelect;
 };
 
