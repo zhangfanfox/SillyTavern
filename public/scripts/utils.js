@@ -27,23 +27,23 @@ export const localizePagination = function(container) {
 };
 
 export const renderPaginationDropdown = function(pageSize, sizeChangerOptions) {
-    let sizeSelect = `<select class="J-paginationjs-size-select">`;
+    let sizeSelect = '<select class="J-paginationjs-size-select">';
     if (sizeChangerOptions.indexOf(pageSize) === -1) {
-      sizeChangerOptions.unshift(pageSize);
-      sizeChangerOptions.sort((a, b) => a - b);
+        sizeChangerOptions.unshift(pageSize);
+        sizeChangerOptions.sort((a, b) => a - b);
     }
     for (let i = 0; i < sizeChangerOptions.length; i++) {
-      sizeSelect += `<option value="${sizeChangerOptions[i]}"${(sizeChangerOptions[i] === pageSize ? ' selected' : '')}>${sizeChangerOptions[i]} ` + t`/ page` + `</option>`;
+        sizeSelect += `<option value="${sizeChangerOptions[i]}"${(sizeChangerOptions[i] === pageSize ? ' selected' : '')}>${sizeChangerOptions[i]} ` + t`/ page` + `</option>`;
     }
     sizeSelect += `</select>`;
     return sizeSelect;
-}
+};
 
 export const paginationDropdownChangeHandler = function(event, size) {
     let dropdown = $(event?.originalEvent?.currentTarget || event.delegateTarget).find('select');
     dropdown.find('[selected]').removeAttr('selected');
     dropdown.find(`[value=${size}]`).attr('selected', '');
-}
+};
 
 /**
  * Navigation options for pagination.
