@@ -22,20 +22,28 @@ import { getCurrentLocale, t, translate } from './i18n.js';
 export const PAGINATION_TEMPLATE = '<%= rangeStart %>-<%= rangeEnd %> .. <%= totalNumber %>';
 
 export const localizePagination = function(container) {
-    let options = container.find('option');
-    for (let option of options) {
-        option = $(option);
-        try {
-            option.text(option.text().replace('/ page', translate('/ page')));
-        } catch (e) {
-            // means that i18n facilities aren't ready, so there's no point doing anything
-            console.error(e);
-            return;
-        }
-    }
     container.find('[title="Next page"]').attr('title', translate('Next page'));
     container.find('[title="Previous page"]').attr('title', translate('Previous page'));
 };
+
+export const renderPaginationDropdown = function(pageSize, sizeChangerOptions) {
+    let sizeSelect = `<select class="J-paginationjs-size-select">`;
+    if (sizeChangerOptions.indexOf(pageSize) === -1) {
+      sizeChangerOptions.unshift(pageSize);
+      sizeChangerOptions.sort((a, b) => a - b);
+    }
+    for (let i = 0; i < sizeChangerOptions.length; i++) {
+      sizeSelect += `<option value="${sizeChangerOptions[i]}"${(sizeChangerOptions[i] === pageSize ? ' selected' : '')}>${sizeChangerOptions[i]} ` + t`/ page` + `</option>`;
+    }
+    sizeSelect += `</select>`;
+    return sizeSelect;
+}
+
+export const paginationDropdownChangeHandler = function(event, size) {
+    let dropdown = $(event?.originalEvent?.currentTarget || event.delegateTarget).find('select');
+    dropdown.find('[selected]').removeAttr('selected');
+    dropdown.find(`[value=${size}]`).attr('selected', '');
+}
 
 /**
  * Navigation options for pagination.

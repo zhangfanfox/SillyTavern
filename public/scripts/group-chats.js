@@ -14,6 +14,8 @@ import {
     resetScrollHeight,
     initScrollHeight,
     localizePagination,
+    renderPaginationDropdown,
+    paginationDropdownChangeHandler,
 } from './utils.js';
 import { RA_CountCharTokens, humanizedDateTime, dragElement, favsToHotswap, getMessageTimeStamp } from './RossAscends-mods.js';
 import { power_user, loadMovingUIState, sortEntitiesList } from './power-user.js';
@@ -1375,6 +1377,8 @@ function getGroupCharacters({ doFilter, onlyMembers } = {}) {
 
 function printGroupCandidates() {
     const storageKey = 'GroupCandidates_PerPage';
+    const pageSize = Number(accountStorage.getItem(storageKey)) || 5;
+    const sizeChangerOptions = [5, 10, 25, 50, 100, 200, 500, 1000];
     $('#rm_group_add_members_pagination').pagination({
         dataSource: getGroupCharacters({ doFilter: true, onlyMembers: false }),
         pageRange: 1,
@@ -1383,12 +1387,13 @@ function printGroupCandidates() {
         prevText: '<',
         nextText: '>',
         formatNavigator: PAGINATION_TEMPLATE,
+        formatSizeChanger: renderPaginationDropdown(pageSize, sizeChangerOptions),
         showNavigator: true,
         showSizeChanger: true,
-        pageSize: Number(accountStorage.getItem(storageKey)) || 5,
-        sizeChangerOptions: [5, 10, 25, 50, 100, 200, 500, 1000],
-        afterSizeSelectorChange: function (e) {
+        pageSize,
+        afterSizeSelectorChange: function (e, size) {
             accountStorage.setItem(storageKey, e.target.value);
+            paginationDropdownChangeHandler(e, size);
         },
         callback: function (data) {
             $('#rm_group_add_members').empty();
@@ -1404,6 +1409,8 @@ function printGroupMembers() {
     const storageKey = 'GroupMembers_PerPage';
     $('.rm_group_members_pagination').each(function () {
         let that = this;
+        const pageSize = Number(accountStorage.getItem(storageKey)) || 5;
+        const sizeChangerOptions = [5, 10, 25, 50, 100, 200, 500, 1000];
         $(this).pagination({
             dataSource: getGroupCharacters({ doFilter: false, onlyMembers: true }),
             pageRange: 1,
@@ -1414,10 +1421,11 @@ function printGroupMembers() {
             formatNavigator: PAGINATION_TEMPLATE,
             showNavigator: true,
             showSizeChanger: true,
-            pageSize: Number(accountStorage.getItem(storageKey)) || 5,
-            sizeChangerOptions: [5, 10, 25, 50, 100, 200, 500, 1000],
-            afterSizeSelectorChange: function (e) {
+            formatSizeChanger: renderPaginationDropdown(pageSize, sizeChangerOptions),
+            pageSize,
+            afterSizeSelectorChange: function (e, size) {
                 accountStorage.setItem(storageKey, e.target.value);
+                paginationDropdownChangeHandler(e, size);
             },
             callback: function (data) {
                 $('.rm_group_members').empty();

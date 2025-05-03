@@ -177,6 +177,8 @@ import {
     uuidv4,
     equalsIgnoreCaseAndAccents,
     localizePagination,
+    renderPaginationDropdown,
+    paginationDropdownChangeHandler,
 } from './scripts/utils.js';
 import { debounce_timeout, IGNORE_SYMBOL } from './scripts/constants.js';
 
@@ -1525,10 +1527,12 @@ export async function printCharacters(fullRefresh = false) {
 
     const entities = getEntitiesList({ doFilter: true });
 
+    const pageSize = Number(accountStorage.getItem(storageKey)) || per_page_default;
+    console.log('pageSize for characters = ' + pageSize);
+    const sizeChangerOptions = [10, 25, 50, 100, 250, 500, 1000];
     $('#rm_print_characters_pagination').pagination({
         dataSource: entities,
-        pageSize: Number(accountStorage.getItem(storageKey)) || per_page_default,
-        sizeChangerOptions: [10, 25, 50, 100, 250, 500, 1000],
+        pageSize,
         pageRange: 1,
         pageNumber: saveCharactersPage || 1,
         position: 'top',
@@ -1537,6 +1541,7 @@ export async function printCharacters(fullRefresh = false) {
         prevText: '<',
         nextText: '>',
         formatNavigator: PAGINATION_TEMPLATE,
+        formatSizeChanger: renderPaginationDropdown(pageSize, sizeChangerOptions),
         showNavigator: true,
         callback: async function (/** @type {Entity[]} */ data) {
             $(listId).empty();
@@ -1573,8 +1578,10 @@ export async function printCharacters(fullRefresh = false) {
 
             eventSource.emit(event_types.CHARACTER_PAGE_LOADED);
         },
-        afterSizeSelectorChange: function (e) {
+        afterSizeSelectorChange: function (e, size) {
             accountStorage.setItem(storageKey, e.target.value);
+            console.log('pageSize for characters after getting updated = ' + accountStorage.getItem(storageKey));
+            paginationDropdownChangeHandler(e, size);
         },
         afterPaging: function (e) {
             saveCharactersPage = e;

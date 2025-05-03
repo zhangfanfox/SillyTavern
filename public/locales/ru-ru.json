@@ -2403,7 +2403,6 @@
     "Croak it": "Только кваканье лягушек и стрёкот сверчков",
     "${0} character hidden.": "Персонажей скрыто: ${0}.",
     "${0} characters hidden.": "Персонажей скрыто: ${0}.",
-    "pagination_of": "из",
     "/ page": "/ стр.",
     "Context Length": "Размер контекста",
     "Added On": "Добавлена",
@@ -2421,5 +2420,6 @@
     "Text Completion Preset": "Пресет для режима Text Completion",
     "Update enabled": "Обновить включенные",
     "Could not connect to API": "Не удалось подключиться к API",
-    "Connected to API": "Соединение с API установлено"
+    "Connected to API": "Соединение с API установлено",
+    "Go back": "Назад"
 }
