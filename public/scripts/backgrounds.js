@@ -6,6 +6,7 @@ import { SlashCommand } from './slash-commands/SlashCommand.js';
 import { SlashCommandParser } from './slash-commands/SlashCommandParser.js';
 import { flashHighlight, stringFormat } from './utils.js';
 import { t } from './i18n.js';
+import { Popup } from './popup.js';
 
 const BG_METADATA_KEY = 'custom_background';
 const LIST_METADATA_KEY = 'chat_backgrounds';
@@ -291,7 +292,7 @@ async function onDeleteBackgroundClick(e) {
     const bgToDelete = $(this).closest('.bg_example');
     const url = bgToDelete.data('url');
     const isCustom = bgToDelete.attr('custom') === 'true';
-    const confirm = await callPopup('<h3>Delete the background?</h3>', 'confirm');
+    const confirm = await Popup.show.confirm(t`Delete the background?`, null);
     const bg = bgToDelete.attr('bgfile');
 
     if (confirm) {
