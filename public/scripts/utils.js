@@ -17,7 +17,8 @@ import { groups, selected_group } from './group-chats.js';
 import { getCurrentLocale, t } from './i18n.js';
 
 /**
- * Function returning pagination status string template.
+ * Pagination status string template.
+ * @type {string}
  */
 export const PAGINATION_TEMPLATE = '<%= rangeStart %>-<%= rangeEnd %> .. <%= totalNumber %>';
 
