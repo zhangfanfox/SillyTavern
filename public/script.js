@@ -1528,7 +1528,6 @@ export async function printCharacters(fullRefresh = false) {
     const entities = getEntitiesList({ doFilter: true });
 
     const pageSize = Number(accountStorage.getItem(storageKey)) || per_page_default;
-    console.log('pageSize for characters = ' + pageSize);
     const sizeChangerOptions = [10, 25, 50, 100, 250, 500, 1000];
     $('#rm_print_characters_pagination').pagination({
         dataSource: entities,
@@ -1580,7 +1579,6 @@ export async function printCharacters(fullRefresh = false) {
         },
         afterSizeSelectorChange: function (e, size) {
             accountStorage.setItem(storageKey, e.target.value);
-            console.log('pageSize for characters after getting updated = ' + accountStorage.getItem(storageKey));
             paginationDropdownChangeHandler(e, size);
         },
         afterPaging: function (e) {
