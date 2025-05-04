@@ -7,6 +7,7 @@ import { renderTemplateAsync } from './templates.js';
 import { POPUP_TYPE, callGenericPopup } from './popup.js';
 import { t } from './i18n.js';
 import { accountStorage } from './util/AccountStorage.js';
+import { localizePagination, PAGINATION_TEMPLATE } from './utils.js';
 
 let mancerModels = [];
 let togetherModels = [];
@@ -41,12 +42,7 @@ const OPENROUTER_PROVIDERS = [
     'Avian',
     'Lambda',
     'Azure',
-    'Modal',
-    'AnyScale',
-    'Replicate',
     'Perplexity',
-    'Recursal',
-    'OctoAI',
     'DeepSeek',
     'Infermatic',
     'AI21',
@@ -54,10 +50,12 @@ const OPENROUTER_PROVIDERS = [
     'Inflection',
     'xAI',
     'Cloudflare',
-    'SF Compute',
     'Minimax',
     'Nineteen',
     'Liquid',
+    'GMICloud',
+    'Stealth',
+    'NCompass',
     'InferenceNet',
     'Friendli',
     'AionLabs',
@@ -69,14 +67,16 @@ const OPENROUTER_PROVIDERS = [
     'Targon',
     'Ubicloud',
     'Parasail',
-    '01.AI',
-    'HuggingFace',
+    'Phala',
+    'Cent-ML',
+    'Venice',
+    'OpenInference',
+    'Atoma',
+    'Enfer',
     'Mancer',
     'Mancer 2',
     'Hyperbolic',
     'Hyperbolic 2',
-    'Lynn 2',
-    'Lynn',
     'Reflection',
 ];
 
@@ -362,9 +362,7 @@ export async function loadFeatherlessModels(data) {
             showSizeChanger: false,
             prevText: '<',
             nextText: '>',
-            formatNavigator: function (currentPage, totalPage) {
-                return (currentPage - 1) * perPage + 1 + ' - ' + currentPage * perPage + ' of ' + totalPage * perPage;
-            },
+            formatNavigator: PAGINATION_TEMPLATE,
             showNavigator: true,
             callback: function (modelsOnPage, pagination) {
                 modelCardBlock.innerHTML = '';
@@ -386,15 +384,15 @@ export async function loadFeatherlessModels(data) {
 
                     const modelClassDiv = document.createElement('div');
                     modelClassDiv.classList.add('model-class');
-                    modelClassDiv.textContent = `Class: ${model.model_class || 'N/A'}`;
+                    modelClassDiv.textContent = t`Class` + `: ${model.model_class || 'N/A'}`;
 
                     const contextLengthDiv = document.createElement('div');
                     contextLengthDiv.classList.add('model-context-length');
-                    contextLengthDiv.textContent = `Context Length: ${model.context_length}`;
+                    contextLengthDiv.textContent = t`Context Length` + `: ${model.context_length}`;
 
                     const dateAddedDiv = document.createElement('div');
                     dateAddedDiv.classList.add('model-date-added');
-                    dateAddedDiv.textContent = `Added On: ${new Date(model.created * 1000).toLocaleDateString()}`;
+                    dateAddedDiv.textContent = t`Added On` + `: ${new Date(model.created * 1000).toLocaleDateString()}`;
 
                     detailsContainer.appendChild(modelClassDiv);
                     detailsContainer.appendChild(contextLengthDiv);
@@ -418,6 +416,7 @@ export async function loadFeatherlessModels(data) {
 
                 // Update the current page value whenever the page changes
                 featherlessCurrentPage = pagination.pageNumber;
+                localizePagination(paginationContainer);
             },
             afterSizeSelectorChange: function (e) {
                 const newPerPage = e.target.value;
@@ -923,6 +922,10 @@ export function getCurrentDreamGenModelTokenizer() {
         return tokenizers.YI;
     } else if (model.id.startsWith('opus-v1-xl')) {
         return tokenizers.LLAMA;
+    } else if (model.id.startsWith('lucid-v1-medium')) {
+        return tokenizers.NEMO;
+    } else if (model.id.startsWith('lucid-v1-extra-large')) {
+        return tokenizers.LLAMA3;
     } else {
         return tokenizers.MISTRAL;
     }

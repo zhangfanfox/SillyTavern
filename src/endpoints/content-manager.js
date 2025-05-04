@@ -1,6 +1,5 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import process from 'node:process';
 import { Buffer } from 'node:buffer';
 
 import express from 'express';
@@ -8,11 +7,12 @@ import fetch from 'node-fetch';
 import sanitize from 'sanitize-filename';
 import { sync as writeFileAtomicSync } from  'write-file-atomic';
 
-import { getConfigValue, color } from '../util.js';
+import { getConfigValue, color, setPermissionsSync } from '../util.js';
 import { write } from '../character-card-parser.js';
+import { serverDirectory } from '../server-directory.js';
 
-const contentDirectory = path.join(process.cwd(), 'default/content');
-const scaffoldDirectory = path.join(process.cwd(), 'default/scaffold');
+const contentDirectory = path.join(serverDirectory, 'default/content');
+const scaffoldDirectory = path.join(serverDirectory, 'default/scaffold');
 const contentIndexPath = path.join(contentDirectory, 'index.json');
 const scaffoldIndexPath = path.join(scaffoldDirectory, 'index.json');
 
@@ -149,6 +149,7 @@ async function seedContentForUser(contentIndex, directories, forceCategories) {
         }
 
         fs.cpSync(contentPath, targetPath, { recursive: true, force: false });
+        setPermissionsSync(targetPath);
         console.info(`Content file ${contentItem.filename} copied to ${contentTarget}`);
         anyContentAdded = true;
     }
@@ -540,8 +541,20 @@ async function downloadGenericPng(url) {
 
         if (result.ok) {
             const buffer = Buffer.from(await result.arrayBuffer());
-            const fileName = sanitize(result.url.split('?')[0].split('/').reverse()[0]);
+            let fileName = sanitize(result.url.split('?')[0].split('/').reverse()[0]);
             const contentType = result.headers.get('content-type') || 'image/png'; //yoink it from AICC function lol
+
+            // The `importCharacter()` function detects the MIME (content-type) of the file
+            // using its file extension. The problem is that not all third-party APIs serve
+            // their cards with a `.png` extension. To support more third-party sites,
+            // dynamically append the `.png` extension to the filename if it doesn't
+            // already have a file extension.
+            if (contentType === 'image/png') {
+                const ext = fileName.match(/\.(\w+)$/); // Same regex used by `importCharacter()`
+                if (!ext) {
+                    fileName += '.png';
+                }
+            }
 
             return {
                 buffer: buffer,
@@ -694,10 +707,11 @@ router.post('/importURL', async (request, response) => {
             type = 'character';
             result = await downloadRisuCharacter(uuid);
         } else if (isGeneric) {
-            console.info('Downloading from generic url.');
+            console.info('Downloading from generic url:', url);
             type = 'character';
             result = await downloadGenericPng(url);
         } else {
+            console.error(`Received an import for "${getHostFromUrl(url)}", but site is not whitelisted. This domain must be added to the config key "whitelistImportDomains" to allow import from this source.`);
             return response.sendStatus(404);
         }
 

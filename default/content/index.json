@@ -540,7 +540,7 @@
         "type": "context"
     },
     {
-        "filename": "presets/context/Pygmalion.json",
+        "filename": "presets/context/Metharme.json",
         "type": "context"
     },
     {
@@ -561,6 +561,10 @@
     },
     {
         "filename": "presets/context/Llama 3 Instruct.json",
+        "type": "context"
+    },
+    {
+        "filename": "presets/context/Llama 4 Instruct.json",
         "type": "context"
     },
     {
@@ -616,10 +620,6 @@
         "type": "instruct"
     },
     {
-        "filename": "presets/instruct/Pygmalion.json",
-        "type": "instruct"
-    },
-    {
         "filename": "presets/instruct/Story.json",
         "type": "instruct"
     },
@@ -661,6 +661,10 @@
     },
     {
         "filename": "presets/instruct/Llama 3 Instruct.json",
+        "type": "instruct"
+    },
+    {
+        "filename": "presets/instruct/Llama 4 Instruct.json",
         "type": "instruct"
     },
     {
@@ -748,6 +752,10 @@
         "type": "sysprompt"
     },
     {
+        "filename": "presets/sysprompt/Lightning 1.1.json",
+        "type": "sysprompt"
+    },
+    {
         "filename": "presets/instruct/Mistral V1.json",
         "type": "instruct"
     },
@@ -785,6 +793,14 @@
     },
     {
         "filename": "presets/context/DeepSeek-V2.5.json",
+        "type": "context"
+    },
+    {
+        "filename": "presets/instruct/GLM-4.json",
+        "type": "instruct"
+    },
+    {
+        "filename": "presets/context/GLM-4.json",
         "type": "context"
     },
     {

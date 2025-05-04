@@ -702,6 +702,12 @@ function convertWorldInfoToCharacterBook(name, entries) {
                 sticky: entry.sticky ?? null,
                 cooldown: entry.cooldown ?? null,
                 delay: entry.delay ?? null,
+                match_persona_description: entry.matchPersonaDescription ?? false,
+                match_character_description: entry.matchCharacterDescription ?? false,
+                match_character_personality: entry.matchCharacterPersonality ?? false,
+                match_character_depth_prompt: entry.matchCharacterDepthPrompt ?? false,
+                match_scenario: entry.matchScenario ?? false,
+                match_creator_notes: entry.matchCreatorNotes ?? false,
             },
         };
 
@@ -720,7 +726,7 @@ function convertWorldInfoToCharacterBook(name, entries) {
  */
 async function importFromYaml(uploadPath, context, preservedFileName) {
     const fileText = fs.readFileSync(uploadPath, 'utf8');
-    fs.rmSync(uploadPath);
+    fs.unlinkSync(uploadPath);
     const yamlData = yaml.parse(fileText);
     console.info('Importing from YAML');
     yamlData.name = sanitize(yamlData.name);
@@ -754,7 +760,7 @@ async function importFromYaml(uploadPath, context, preservedFileName) {
  */
 async function importFromCharX(uploadPath, { request }, preservedFileName) {
     const data = fs.readFileSync(uploadPath).buffer;
-    fs.rmSync(uploadPath);
+    fs.unlinkSync(uploadPath);
     console.info('Importing from CharX');
     const cardBuffer = await extractFileFromZipBuffer(data, 'card.json');
 
@@ -995,7 +1001,7 @@ router.post('/rename', validateAvatarUrlMiddleware, async function (request, res
         }
 
         // Remove the old character file
-        fs.rmSync(oldAvatarPath);
+        fs.unlinkSync(oldAvatarPath);
 
         // Return new avatar name to ST
         return response.send({ avatar: newAvatarName });
@@ -1150,7 +1156,7 @@ router.post('/delete', validateAvatarUrlMiddleware, async function (request, res
         return response.sendStatus(400);
     }
 
-    fs.rmSync(avatarPath);
+    fs.unlinkSync(avatarPath);
     invalidateThumbnail(request.user.directories, 'avatar', request.body.avatar_url);
     let dir_name = (request.body.avatar_url.replace('.png', ''));
 

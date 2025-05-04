@@ -646,7 +646,7 @@
                                         <input type="number" id="openai_max_tokens" name="openai_max_tokens" class="text_pole" min="1" max="65536">
                                     </div>
                                 </div>
-                                <div class="range-block" data-source="openai,custom">
+                                <div class="range-block" data-source="openai,custom,xai">
                                     <div class="range-block-title" data-i18n="Multiple swipes per generation">
                                         Multiple swipes per generation
                                     </div>
@@ -685,7 +685,7 @@
                                         </span>
                                     </div>
                                 </div>
-                                <div class="range-block" data-source="openai,claude,windowai,openrouter,ai21,scale,makersuite,mistralai,custom,cohere,perplexity,groq,01ai,nanogpt,deepseek">
+                                <div class="range-block" data-source="openai,claude,windowai,openrouter,ai21,scale,makersuite,mistralai,custom,cohere,perplexity,groq,01ai,nanogpt,deepseek,xai">
                                     <div class="range-block-title" data-i18n="Temperature">
                                         Temperature
                                     </div>
@@ -698,7 +698,7 @@
                                         </div>
                                     </div>
                                 </div>
-                                <div class="range-block" data-source="openai,openrouter,custom,cohere,perplexity,groq,mistralai,nanogpt,deepseek">
+                                <div class="range-block" data-source="openai,openrouter,custom,cohere,perplexity,groq,mistralai,nanogpt,deepseek,xai">
                                     <div class="range-block-title" data-i18n="Frequency Penalty">
                                         Frequency Penalty
                                     </div>
@@ -711,7 +711,7 @@
                                         </div>
                                     </div>
                                 </div>
-                                <div class="range-block" data-source="openai,openrouter,custom,cohere,perplexity,groq,mistralai,nanogpt,deepseek">
+                                <div class="range-block" data-source="openai,openrouter,custom,cohere,perplexity,groq,mistralai,nanogpt,deepseek,xai">
                                     <div class="range-block-title" data-i18n="Presence Penalty">
                                         Presence Penalty
                                     </div>
@@ -737,7 +737,7 @@
                                         </div>
                                     </div>
                                 </div>
-                                <div class="range-block" data-source="openai,claude,openrouter,ai21,scale,makersuite,mistralai,custom,cohere,perplexity,groq,01ai,nanogpt,deepseek">
+                                <div class="range-block" data-source="openai,claude,openrouter,ai21,scale,makersuite,mistralai,custom,cohere,perplexity,groq,01ai,nanogpt,deepseek,xai">
                                     <div class="range-block-title" data-i18n="Top P">
                                         Top P
                                     </div>
@@ -974,7 +974,7 @@
                                         </div>
                                     </div>
                                 </div>
-                                <div class="range-block" data-source="openai,openrouter,mistralai,custom,cohere,groq,nanogpt">
+                                <div class="range-block" data-source="openai,openrouter,mistralai,custom,cohere,groq,nanogpt,xai">
                                     <div class="range-block-title justifyLeft" data-i18n="Seed">
                                         Seed
                                     </div>
@@ -1419,7 +1419,7 @@
                                         </div>
                                     </div>
 
-                                    <div data-tg-type="aphrodite, ooba, koboldcpp, tabby, llamacpp" id="dryBlock" class="wide100p">
+                                    <div data-tg-type="aphrodite, ooba, koboldcpp, tabby, llamacpp, dreamgen" id="dryBlock" class="wide100p">
                                         <h4 class="wide100p textAlignCenter" title="DRY penalizes tokens that would extend the end of the input into a sequence that has previously occurred in the input. Set multiplier to 0 to disable." data-i18n="[title]DRY_Repetition_Penalty_desc">
                                             <label data-i18n="DRY Repetition Penalty">DRY Repetition Penalty</label>
                                             <a href="https://github.com/oobabooga/text-generation-webui/pull/5677" target="_blank">
@@ -1574,7 +1574,7 @@
                                                     <div class="fa-solid fa-circle-info opacity50p " data-i18n="[title]Add the bos_token to the beginning of prompts. Disabling this can make the replies more creative" title="Add the bos_token to the beginning of prompts. Disabling this can make the replies more creative."></div>
                                                 </label>
                                             </label>
-                                            <label data-tg-type="ooba, llamacpp, tabby, koboldcpp" class="checkbox_label  flexGrow flexShrink" for="ban_eos_token_textgenerationwebui">
+                                            <label data-tg-type="ooba, llamacpp, tabby, koboldcpp, dreamgen" class="checkbox_label  flexGrow flexShrink" for="ban_eos_token_textgenerationwebui">
                                                 <input type="checkbox" id="ban_eos_token_textgenerationwebui" />
                                                 <label>
                                                     <small data-i18n="Ban EOS Token">Ban EOS Token</small>
@@ -1963,9 +1963,12 @@
                                             <span data-i18n="Use search capabilities provided by the backend.">
                                                 Use search capabilities provided by the backend.
                                             </span>
+                                            <b data-source="openrouter" data-i18n="openrouter_web_search_fee">
+                                                Not free, adds a $0.02 fee to each prompt.
+                                            </b>
                                         </div>
                                     </div>
-                                    <div class="range-block" data-source="openai,cohere,mistralai,custom,claude,openrouter,groq,deepseek,makersuite,ai21">
+                                    <div class="range-block" data-source="openai,cohere,mistralai,custom,claude,openrouter,groq,deepseek,makersuite,ai21,xai">
                                         <label for="openai_function_calling" class="checkbox_label flexWrap widthFreeExpand">
                                             <input id="openai_function_calling" type="checkbox" />
                                             <span data-i18n="Enable function calling">Enable function calling</span>
@@ -1975,7 +1978,7 @@
                                             <span data-i18n="enable_functions_desc_3">Can be utilized by various extensions to provide additional functionality.</span>
                                         </div>
                                     </div>
-                                    <div class="range-block" data-source="openai,openrouter,makersuite,claude,custom,01ai">
+                                    <div class="range-block" data-source="openai,openrouter,mistralai,makersuite,claude,custom,01ai,xai">
                                         <label for="openai_image_inlining" class="checkbox_label flexWrap widthFreeExpand">
                                             <input id="openai_image_inlining" type="checkbox" />
                                             <span data-i18n="Send inline images">Send inline images</span>
@@ -1987,7 +1990,7 @@
                                             <code><i class="fa-solid fa-wand-magic-sparkles"></i></code>
                                             <span data-i18n="image_inlining_hint_3">menu to attach an image file to the chat.</span>
                                         </div>
-                                        <div class="flex-container flexFlowColumn wide100p textAlignCenter marginTop10" data-source="openai,custom">
+                                        <div class="flex-container flexFlowColumn wide100p textAlignCenter marginTop10" data-source="openai,custom,xai">
                                             <div class="flex-container oneline-dropdown">
                                                 <label for="openai_inline_image_quality" data-i18n="Inline Image Quality">
                                                     Inline Image Quality
@@ -2022,7 +2025,7 @@
                                             <input id="use_makersuite_sysprompt" type="checkbox" />
                                             <span>
                                                 <span data-i18n="Use system prompt">Use system prompt</span>
-                                                <i class="opacity50p fa-solid fa-circle-info" title="Gemini 1.5/2.0 Pro/Flash"></i>
+                                                <i class="opacity50p fa-solid fa-circle-info" title="Gemini 1.5+, LearnLM"></i>
                                             </span>
                                         </label>
                                         <div class="toggle-description justifyLeft marginBot5">
@@ -2031,7 +2034,7 @@
                                             </span>
                                         </div>
                                     </div>
-                                    <div class="range-block" data-source="deepseek,openrouter,custom,claude">
+                                    <div class="range-block" data-source="deepseek,openrouter,custom,claude,xai">
                                         <label for="openai_show_thoughts" class="checkbox_label widthFreeExpand">
                                             <input id="openai_show_thoughts" type="checkbox" />
                                             <span>
@@ -2045,16 +2048,20 @@
                                             </span>
                                         </div>
                                     </div>
-                                    <div class="flex-container flexFlowColumn wide100p textAlignCenter marginTop10" data-source="openai,custom,claude">
-                                        <div class="flex-container oneline-dropdown" title="Constrains effort on reasoning for reasoning models.&#10;Currently supported values are low, medium, and high.&#10;Reducing reasoning effort can result in faster responses and fewer tokens used on reasoning in a response." data-i18n="[title]Constrains effort on reasoning for reasoning models.">
+                                    <div class="flex-container flexFlowColumn wide100p textAlignCenter marginTop10" data-source="openai,custom,claude,xai,makersuite,openrouter">
+                                        <div class="flex-container oneline-dropdown" title="Constrains effort on reasoning for reasoning models.&#10;Reducing reasoning effort can result in faster responses and fewer tokens used on reasoning in a response." data-i18n="[title]Constrains effort on reasoning for reasoning models.">
                                             <label for="openai_reasoning_effort">
                                                 <span data-i18n="Reasoning Effort">Reasoning Effort</span>
-                                                <i data-source="claude" class="opacity50p fa-solid fa-circle-info" title="Allocates a portion of the response length for thinking (low: 10%, medium: 25%, high: 50%), but minimum 1024 tokens."></i>
+                                                <i data-source="openai,custom,xai,openrouter" class="opacity50p fa-solid fa-circle-info" title="OpenAI-style options: low, medium, high. Minimum and maximum are aliased to low and high. Auto does not send an effort level." data-i18n="[title]OpenAI-style options: low, medium, high. Minimum and maximum are aliased to low and high. Auto does not send an effort level."></i>
+                                                <i data-source="claude,makersuite" class="opacity50p fa-solid fa-circle-info" title="Allocates a portion of the response length for thinking (low: 10%, medium: 25%, high: 50%). Other options are model-dependent." data-i18n="[title]Allocates a portion of the response length for thinking (low: 10%, medium: 25%, high: 50%). Other options are model-dependent."></i>
                                             </label>
                                             <select id="openai_reasoning_effort">
+                                                <option data-i18n="openai_reasoning_effort_auto" value="auto">Auto</option>
+                                                <option data-i18n="openai_reasoning_effort_minimum" value="min">Mininum</option>
                                                 <option data-i18n="openai_reasoning_effort_low" value="low">Low</option>
                                                 <option data-i18n="openai_reasoning_effort_medium" value="medium">Medium</option>
                                                 <option data-i18n="openai_reasoning_effort_high" value="high">High</option>
+                                                <option data-i18n="openai_reasoning_effort_maximum" value="max">Maximum</option>
                                             </select>
                                         </div>
                                     </div>
@@ -2491,8 +2498,8 @@
                                                 <option value="search" data-i18n="Search" hidden>A-Z</option>
                                                 <option value="asc">A-Z</option>
                                                 <option value="desc">Z-A</option>
-                                                <option value="date_asc">Date Asc</option>
-                                                <option value="date_desc">Date Desc</option>
+                                                <option data-i18n="Date Asc" value="date_asc">Date Asc</option>
+                                                <option data-i18n="Date Desc" value="date_desc">Date Desc</option>
                                             </select>
                                             <select id="featherless_category_selection" class="text_pole">
                                                 <option value="" disabled selected data-i18n="category">category</option>
@@ -2502,7 +2509,7 @@
                                                 <option value="All" data-i18n="All">All</option>
                                             </select>
                                             <select id="featherless_class_selection" class="text_pole">
-                                                <option value="" selected data-i18n="class">All Classes</option>
+                                                <option value="" selected data-i18n="All Classes">All Classes</option>
                                             </select>
                                             <div id="featherless_model_pagination_container" class="flex1"></div>
                                             <i id="featherless_model_grid_toggle" class="fa-solid fa-table-cells-large menu_button" data-i18n="[title]Toggle grid view" title="Toggle grid view"></i>
@@ -2615,8 +2622,8 @@
                             </div>
                             <div data-tg-type="ollama">
                                 <div class="flex-container flexFlowColumn">
-                                    <a href="https://github.com/jmorganca/ollama" target="_blank">
-                                        jmorganca/ollama
+                                    <a href="https://github.com/ollama/ollama" target="_blank">
+                                        ollama/ollama
                                     </a>
                                 </div>
                                 <div class="flex1">
@@ -2756,9 +2763,10 @@
                                 <option value="perplexity">Perplexity</option>
                                 <option value="scale">Scale</option>
                                 <option value="windowai">Window AI</option>
+                                <option value="xai">xAI (Grok)</option>
                             </optgroup>
                         </select>
-                        <div class="inline-drawer wide100p" data-source="openai,claude,mistralai,makersuite,deepseek">
+                        <div class="inline-drawer wide100p" data-source="openai,claude,mistralai,makersuite,deepseek,xai">
                             <div class="inline-drawer-toggle inline-drawer-header">
                                 <b data-i18n="Reverse Proxy">Reverse Proxy</b>
                                 <div class="fa-solid fa-circle-chevron-down inline-drawer-icon down"></div>
@@ -2821,7 +2829,7 @@
                                 </div>
                             </div>
                         </div>
-                        <div id="ReverseProxyWarningMessage" data-source="openai,claude,mistralai,makersuite,deepseek">
+                        <div id="ReverseProxyWarningMessage" data-source="openai,claude,mistralai,makersuite,deepseek,xai">
                             <div class="reverse_proxy_warning">
                                 <b>
                                     <div data-i18n="Using a proxy that you're not running yourself is a risk to your data privacy.">
@@ -2880,12 +2888,17 @@
                                     </optgroup>
                                     <optgroup label="GPT-4o mini">
                                         <option value="gpt-4o-mini">gpt-4o-mini</option>
-                                        <option value="gpt-4o-2024-11-20">gpt-4o-2024-11-20</option>
-                                        <option value="gpt-4o-2024-08-06">gpt-4o-2024-08-06</option>
-                                        <option value="gpt-4o-2024-05-13">gpt-4o-2024-05-13</option>
-                                        <option value="chatgpt-4o-latest">chatgpt-4o-latest</option>
+                                        <option value="gpt-4o-mini-2024-07-18">gpt-4o-mini-2024-07-18</option>
                                     </optgroup>
-                                    <optgroup label="o1 and o1-mini">
+                                    <optgroup label="GPT-4.1">
+                                        <option value="gpt-4.1">gpt-4.1</option>
+                                        <option value="gpt-4.1-2025-04-14">gpt-4.1-2025-04-14</option>
+                                        <option value="gpt-4.1-mini">gpt-4.1-mini</option>
+                                        <option value="gpt-4.1-mini-2025-04-14">gpt-4.1-mini-2025-04-14</option>
+                                        <option value="gpt-4.1-nano">gpt-4.1-nano</option>
+                                        <option value="gpt-4.1-nano-2025-04-14">gpt-4.1-nano-2025-04-14</option>
+                                    </optgroup>
+                                    <optgroup label="o1">
                                         <option value="o1">o1</option>
                                         <option value="o1-2024-12-17">o1-2024-12-17</option>
                                         <option value="o1-mini">o1-mini</option>
@@ -2894,8 +2907,14 @@
                                         <option value="o1-preview-2024-09-12">o1-preview-2024-09-12</option>
                                     </optgroup>
                                     <optgroup label="o3">
+                                        <option value="o3">o3</option>
+                                        <option value="o3-2025-04-16">o3-2025-04-16</option>
                                         <option value="o3-mini">o3-mini</option>
                                         <option value="o3-mini-2025-01-31">o3-mini-2025-01-31</option>
+                                    </optgroup>
+                                    <optgroup label="o4">
+                                        <option value="o4-mini">o4-mini</option>
+                                        <option value="o4-mini-2025-04-16">o4-mini-2025-04-16</option>
                                     </optgroup>
                                     <optgroup label="GPT-4.5">
                                         <option value="gpt-4.5-preview">gpt-4.5-preview</option>
@@ -3127,48 +3146,49 @@
                             <div>
                                 <h4 data-i18n="Google Model">Google Model</h4>
                                 <select id="model_google_select">
-                                    <optgroup label="Primary">
-                                        <option value="gemini-2.0-flash">Gemini 2.0 Flash</option>
-                                        <option value="gemini-1.5-pro">Gemini 1.5 Pro</option>
-                                        <option value="gemini-1.5-flash">Gemini 1.5 Flash</option>
-                                        <option value="gemini-1.0-pro">Gemini 1.0 Pro (Deprecated)</option>
-                                        <option value="gemini-pro">Gemini Pro (1.0) (Deprecated)</option>
-                                        <option value="gemini-ultra">Gemini Ultra (1.0)</option>
-                                        <option value="gemini-1.0-ultra-latest">Gemini 1.0 Ultra</option>
+                                    <optgroup label="Gemini 2.5">
+                                        <option value="gemini-2.5-pro-preview-03-25">gemini-2.5-pro-preview-03-25</option>
+                                        <option value="gemini-2.5-pro-exp-03-25">gemini-2.5-pro-exp-03-25</option>
+                                        <option value="gemini-2.5-flash-preview-04-17">gemini-2.5-flash-preview-04-17</option>
+                                    </optgroup>
+                                    <optgroup label="Gemini 2.0">
+                                        <option value="gemini-2.0-pro-exp-02-05">gemini-2.0-pro-exp-02-05 → 2.5-pro-exp-03-25</option>
+                                        <option value="gemini-2.0-pro-exp">gemini-2.0-pro-exp → 2.5-pro-exp-03-25</option>
+                                        <option value="gemini-exp-1206">gemini-exp-1206 → 2.5-pro-exp-03-25</option>
+                                        <option value="gemini-2.0-flash-001">gemini-2.0-flash-001</option>
+                                        <option value="gemini-2.0-flash-exp-image-generation">gemini-2.0-flash-exp-image-generation</option>
+                                        <option value="gemini-2.0-flash-exp">gemini-2.0-flash-exp</option>
+                                        <option value="gemini-2.0-flash">gemini-2.0-flash</option>
+                                        <option value="gemini-2.0-flash-thinking-exp-01-21">gemini-2.0-flash-thinking-exp-01-21 → 2.5-flash-preview-04-17</option>
+                                        <option value="gemini-2.0-flash-thinking-exp-1219">gemini-2.0-flash-thinking-exp-1219 → 2.5-flash-preview-04-17</option>
+                                        <option value="gemini-2.0-flash-thinking-exp">gemini-2.0-flash-thinking-exp → 2.5-flash-preview-04-17</option>
+                                        <option value="gemini-2.0-flash-lite-001">gemini-2.0-flash-lite-001</option>
+                                        <option value="gemini-2.0-flash-lite-preview-02-05">gemini-2.0-flash-lite-preview-02-05</option>
+                                        <option value="gemini-2.0-flash-lite-preview">gemini-2.0-flash-lite-preview</option>
+                                    </optgroup>
+                                    <optgroup label="Gemini 1.5">
+                                        <option value="gemini-1.5-pro-latest">gemini-1.5-pro-latest</option>
+                                        <option value="gemini-1.5-pro-002">gemini-1.5-pro-002</option>
+                                        <option value="gemini-1.5-pro-001">gemini-1.5-pro-001</option>
+                                        <option value="gemini-1.5-pro">gemini-1.5-pro</option>
+                                        <option value="gemini-1.5-flash-latest">gemini-1.5-flash-latest</option>
+                                        <option value="gemini-1.5-flash-002">gemini-1.5-flash-002</option>
+                                        <option value="gemini-1.5-flash-001">gemini-1.5-flash-001</option>
+                                        <option value="gemini-1.5-flash">gemini-1.5-flash</option>
+                                        <option value="gemini-1.5-flash-8b-001">gemini-1.5-flash-8b-001</option>
+                                        <option value="gemini-1.5-flash-8b-exp-0924">gemini-1.5-flash-8b-exp-0924</option>
+                                        <option value="gemini-1.5-flash-8b-exp-0827">gemini-1.5-flash-8b-exp-0827</option>
+                                        <option value="gemini-1.5-flash-8b">gemini-1.5-flash-8b</option>
                                     </optgroup>
                                     <optgroup label="Gemma">
-                                        <option value="gemma-3-27b-it">Gemma 3 27B</option>
+                                        <option value="gemma-3-27b-it">gemma-3-27b-it</option>
+                                        <option value="gemma-3-12b-it">gemma-3-12b-it</option>
+                                        <option value="gemma-3-4b-it">gemma-3-4b-it</option>
+                                        <option value="gemma-3-1b-it">gemma-3-1b-it</option>
                                     </optgroup>
-                                    <optgroup label="Subversions">
-                                        <option value="gemini-2.5-pro-preview-03-25">Gemini 2.5 Pro Preview 2025-03-25</option>
-                                        <option value="gemini-2.5-pro-exp-03-25">Gemini 2.5 Pro Experimental 2025-03-25</option>
-                                        <option value="gemini-2.0-pro-exp">Gemini 2.0 Pro Experimental</option>
-                                        <option value="gemini-2.0-pro-exp-02-05">Gemini 2.0 Pro Experimental 2025-02-05</option>
-                                        <option value="gemini-2.0-flash-lite-preview">Gemini 2.0 Flash-Lite Preview</option>
-                                        <option value="gemini-2.0-flash-lite-preview-02-05">Gemini 2.0 Flash-Lite Preview 2025-02-05</option>
-                                        <option value="gemini-2.0-flash-001">Gemini 2.0 Flash [001]</option>
-                                        <option value="gemini-2.0-flash-thinking-exp">Gemini 2.0 Flash Thinking Experimental</option>
-                                        <option value="gemini-2.0-flash-thinking-exp-01-21">Gemini 2.0 Flash Thinking Experimental 2025-01-21</option>
-                                        <option value="gemini-2.0-flash-thinking-exp-1219">Gemini 2.0 Flash Thinking Experimental 2024-12-19</option>
-                                        <option value="gemini-2.0-flash-exp">Gemini 2.0 Flash Experimental</option>
-                                        <option value="gemini-2.0-flash-exp-image-generation">Gemini 2.0 Flash (Image Generation) Experimental</option>
-                                        <option value="gemini-exp-1114">Gemini Experimental 2024-11-14</option>
-                                        <option value="gemini-exp-1121">Gemini Experimental 2024-11-21</option>
-                                        <option value="gemini-exp-1206">Gemini Experimental 2024-12-06</option>
-                                        <option value="gemini-1.5-pro-exp-0801">Gemini 1.5 Pro Experimental 2024-08-01</option>
-                                        <option value="gemini-1.5-pro-exp-0827">Gemini 1.5 Pro Experimental 2024-08-27</option>
-                                        <option value="gemini-1.5-pro-latest">Gemini 1.5 Pro [latest]</option>
-                                        <option value="gemini-1.5-pro-001">Gemini 1.5 Pro [001]</option>
-                                        <option value="gemini-1.5-pro-002">Gemini 1.5 Pro [002]</option>
-                                        <option value="gemini-1.5-flash-8b">Gemini 1.5 Flash 8B</option>
-                                        <option value="gemini-1.5-flash-exp-0827">Gemini 1.5 Flash Experimental 2024-08-27</option>
-                                        <option value="gemini-1.5-flash-8b-exp-0827">Gemini 1.5 Flash 8B Experimental 2024-08-27</option>
-                                        <option value="gemini-1.5-flash-8b-exp-0924">Gemini 1.5 Flash 8B Experimental 2024-09-24</option>
-                                        <option value="gemini-1.5-flash-latest">Gemini 1.5 Flash [latest]</option>
-                                        <option value="gemini-1.5-flash-001">Gemini 1.5 Flash [001]</option>
-                                        <option value="gemini-1.5-flash-002">Gemini 1.5 Flash [002]</option>
-                                        <option value="gemini-1.0-pro-latest">Gemini 1.0 Pro [latest] (Deprecated)</option>
-                                        <option value="gemini-1.0-pro-001">Gemini 1.0 Pro (Tuning) [001] (Deprecated)</option>
+                                    <optgroup label="LearnLM">
+                                        <option value="learnlm-2.0-flash-experimental">learnlm-2.0-flash-experimental</option>
+                                        <option value="learnlm-1.5-pro-experimental">learnlm-1.5-pro-experimental</option>
                                     </optgroup>
                                 </select>
                             </div>
@@ -3424,6 +3444,31 @@
                             <select id="model_01ai_select">
                             </select>
                         </div>
+                        <div id="xai_form" data-source="xai">
+                            <h4>
+                                <a data-i18n="xAI API Key" href="https://console.x.ai/" target="_blank" rel="noopener noreferrer">
+                                    xAI API Key
+                                </a>
+                            </h4>
+                            <div class="flex-container">
+                                <input id="api_key_xai" name="api_key_xai" class="text_pole flex1" value="" type="text" autocomplete="off">
+                                <div title="Clear your API key" data-i18n="[title]Clear your API key" class="menu_button fa-solid fa-circle-xmark clear-api-key" data-key="api_key_xai"></div>
+                            </div>
+                            <div data-for="api_key_xai" class="neutral_warning" data-i18n="For privacy reasons, your API key will be hidden after you reload the page.">
+                                For privacy reasons, your API key will be hidden after you reload the page.
+                            </div>
+                            <h4 data-i18n="xAI Model">xAI Model</h4>
+                            <select id="model_xai_select">
+                                <option value="grok-3-beta">grok-3-beta</option>
+                                <option value="grok-3-fast-beta">grok-3-fast-beta</option>
+                                <option value="grok-3-mini-beta">grok-3-mini-beta</option>
+                                <option value="grok-3-mini-fast-beta">grok-3-mini-fast-beta</option>
+                                <option value="grok-2-vision-1212">grok-2-vision-1212</option>
+                                <option value="grok-2-1212">grok-2-1212</option>
+                                <option value="grok-vision-beta">grok-vision-beta</option>
+                                <option value="grok-beta">grok-beta</option>
+                            </select>
+                        </div>
                         <div id="prompt_post_porcessing_form" data-source="custom,openrouter">
                             <h4 data-i18n="Prompt Post-Processing">Prompt Post-Processing</h4>
                             <select id="custom_prompt_post_processing" class="text_pole" title="Applies additional processing to the prompt before sending it to the API." data-i18n="[title]Applies additional processing to the prompt before sending it to the API.">
@@ -3458,7 +3503,7 @@
             <div class="drawer-toggle">
                 <div class="drawer-icon fa-solid fa-font fa-fw closedIcon" title="AI Response Formatting" data-i18n="[title]AI Response Formatting"></div>
             </div>
-            <div id="AdvancedFormatting" class="drawer-content">
+            <div id="AdvancedFormatting" class="drawer-content closedDrawer">
                 <div class="flex-container alignItemsBaseline">
                     <h3 class="margin0 flex1 flex-container alignItemsBaseline">
                         <span data-i18n="Advanced Formatting">
@@ -3577,11 +3622,6 @@
                                         <small data-i18n="Names as Stop Strings">Names as Stop Strings</small>
                                     </label>
                                 </div>
-
-                                <label class="checkbox_label" title="Includes Post-History Instructions at the end of the prompt, if defined in the character card AND ''Prefer Char. Instructions'' is enabled.&#10;THIS IS NOT RECOMMENDED FOR TEXT COMPLETION MODELS, CAN LEAD TO BAD OUTPUT." data-i18n="[title]context_allow_post_history_instructions">
-                                    <input id="context_allow_jailbreak" type="checkbox" />
-                                    <small data-i18n="Allow Post-History Instructions">Allow Post-History Instructions</small>
-                                </label>
                             </div>
                         </div>
                     </div>
@@ -3783,9 +3823,7 @@
                                 </label>
                             </div>
                         </h4>
-                        <div id="SystemPromptBlock">
-
-
+                        <div id="SystemPromptBlock" class="marginBot10">
                             <div class="flex-container" title="Select your current System Prompt" data-i18n="[title]Select your current System Prompt">
                                 <select id="sysprompt_select" data-preset-manager-for="sysprompt" class="flex1 text_pole"></select>
                                 <div class="flex-container margin0 justifyCenter gap3px">
@@ -3807,10 +3845,14 @@
                                 </label>
                                 <textarea id="sysprompt_content" class="text_pole textarea_compact autoSetHeight"></textarea>
                             </div>
-                        </div>
 
-                        <div>
-                            &nbsp;
+                            <div>
+                                <label for="sysprompt_post_history" class="flex-container">
+                                    <small data-i18n="Post-History Instructions">Post-History Instructions</small>
+                                    <i class="editor_maximize fa-solid fa-maximize right_menu_button" data-for="sysprompt_post_history" title="Expand the editor" data-i18n="[title]Expand the editor"></i>
+                                </label>
+                                <textarea id="sysprompt_post_history" class="text_pole textarea_compact autoSetHeight"></textarea>
+                            </div>
                         </div>
 
                         <div>
@@ -5113,7 +5155,7 @@
                                     <div id="persona_depth_position_settings" class="flex-container">
                                         <div class="flex1">
                                             <label for="persona_depth_value" data-i18n="Depth:">Depth:</label>
-                                            <input id="persona_depth_value" class="text_pole" type="number" min="0" max="999" step="1">
+                                            <input id="persona_depth_value" class="text_pole" type="number" min="0" max="9999" step="1">
                                         </div>
                                         <div class="flex1">
                                             <label for="persona_depth_role" data-i18n="Role:">Role:</label>
@@ -5489,7 +5531,7 @@
                         <div class="inline-drawer-content">
                             <div id="currentGroupMembers" name="Current Group Members" class="flex-container flexFlowColumn overflowYAuto flex1">
                                 <div id="rm_group_members_pagination" class="rm_group_members_pagination group_pagination"></div>
-                                <div id="rm_group_members" class="rm_group_members overflowYAuto flex-container"></div>
+                                <div id="rm_group_members" class="rm_group_members overflowYAuto flex-container" group_empty_text="Group is empty." data-i18n="[group_empty_text]Group is empty."></div>
                             </div>
                         </div>
                     </div>
@@ -5507,7 +5549,7 @@
                                     <div class="tags rm_tag_filter"></div>
                                 </div>
                                 <div id="rm_group_add_members_pagination" class="group_pagination"></div>
-                                <div id="rm_group_add_members" class="overflowYAuto flex-container"></div>
+                                <div id="rm_group_add_members" class="overflowYAuto flex-container" no_characters_text="No characters available" data-i18n="[no_characters_text]No characters available"></div>
                             </div>
                         </div>
                     </div>
@@ -5766,7 +5808,7 @@
                             @ Depth
                         </span>
                     </h4>
-                    <input id="depth_prompt_depth" name="depth_prompt_depth" class="text_pole textarea_compact m-t-0" type="number" min="0" max="999" value="4" form="form_create" />
+                    <input id="depth_prompt_depth" name="depth_prompt_depth" class="text_pole textarea_compact m-t-0" type="number" min="0" max="9999" value="4" form="form_create" />
                     <h4>
                         <span data-i18n="Role">
                             Role
@@ -5927,7 +5969,7 @@
                 <div class="tag_view_color_picker" data-value="color"></div>
                 <div class="tag_view_color_picker" data-value="color2"></div>
                 <div class="tag_view_name" contenteditable="true"></div>
-                <div class="tag_view_counter"><span class="tag_view_counter_value"></span>&nbsp;entries</div>
+                <div class="tag_view_counter"><span class="tag_view_counter_value"></span>&nbsp;<span data-i18n="tag_entries">entries</span></div>
                 <div title="Delete tag" class="tag_delete fa-solid fa-trash-can right_menu_button" data-i18n="[title]Delete tag"></div>
             </div>
         </div>
@@ -5987,11 +6029,11 @@
                                         </div>
                                         <div class="world_entry_form_control wi-enter-footer-text flex-container flexNoGap">
                                             <label for="depth" class="WIEntryHeaderTitleMobile" data-i18n="Depth:">Depth:</label>
-                                            <input title="Depth" class="text_pole wideMax100px margin0" type="number" name="depth" data-i18n="[title]Depth" placeholder="" min="0" max="999" />
+                                            <input title="Depth" class="text_pole wideMax100px margin0" type="number" name="depth" data-i18n="[title]Depth" placeholder="" min="0" max="9999" />
                                         </div>
                                         <div class="world_entry_form_control wi-enter-footer-text  flex-container flexNoGap">
                                             <label for="order" class="WIEntryHeaderTitleMobile" data-i18n="Order:">Order:</label>
-                                            <input title="Order" data-i18n="[title]Order" class="text_pole wideMax100px margin0" type="number" name="order" placeholder="" min="0" max="999" />
+                                            <input title="Order" data-i18n="[title]Order" class="text_pole wideMax100px margin0" type="number" name="order" placeholder="" min="0" max="9999" />
                                         </div>
                                         <div class="world_entry_form_control wi-enter-footer-text flex-container flexNoGap probabilityContainer">
                                             <label for="order" class="WIEntryHeaderTitleMobile" data-i18n="Trigger %:">Trigger %:</label>
@@ -6247,6 +6289,54 @@
                                     </label>
                                 </div>
                             </div>
+                            <div class="inline-drawer wide100p flexFlowColumn">
+                                <div class="inline-drawer-toggle inline-drawer-header inline-drawer-header-pointer userSettingsInnerExpandable">
+                                    <strong data-i18n="Additional Matching Sources">Additional Matching Sources</strong>
+                                    <div class="fa-solid fa-circle-chevron-down inline-drawer-icon down"></div>
+                                </div>
+                                <div class="inline-drawer-content flex-container flexFlowRow flexGap10 paddingBottom5px">
+                                    <small class="flex-container flex1 flexFlowColumn">
+                                        <label class="checkbox flex-container alignItemsCenter flexNoGap">
+                                            <input type="checkbox" name="matchCharacterDescription" />
+                                            <span data-i18n="Character Description">
+                                                Character Description
+                                            </span>
+                                        </label>
+                                        <label class="checkbox flex-container alignItemsCenter flexNoGap">
+                                            <input type="checkbox" name="matchCharacterPersonality" />
+                                            <span data-i18n="Character Personality">
+                                                Character Personality
+                                            </span>
+                                        </label>
+                                        <label class="checkbox flex-container alignItemsCenter flexNoGap">
+                                            <input type="checkbox" name="matchScenario" />
+                                            <span data-i18n="Scenario">
+                                                Scenario
+                                            </span>
+                                        </label>
+                                    </small>
+                                    <small class="flex-container flex1 flexFlowColumn">
+                                        <label class="checkbox flex-container alignItemsCenter flexNoGap">
+                                            <input type="checkbox" name="matchPersonaDescription" />
+                                            <span data-i18n="Persona Description">
+                                                Persona Description
+                                            </span>
+                                        </label>
+                                        <label class="checkbox flex-container alignItemsCenter flexNoGap">
+                                            <input type="checkbox" name="matchCharacterDepthPrompt" />
+                                            <span data-i18n="Character's Note">
+                                                Character's Note
+                                            </span>
+                                        </label>
+                                        <label class="checkbox flex-container alignItemsCenter flexNoGap">
+                                            <input type="checkbox" name="matchCreatorNotes" />
+                                            <span data-i18n="Creator's Notes">
+                                                Creator's Notes
+                                            </span>
+                                        </label>
+                                    </small>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </form>
@@ -6353,7 +6443,7 @@
                                     <span data-i18n="prompt_manager_depth">Depth</span>
                                 </label>
                                 <div class="text_muted" data-i18n="Injection depth. 0 = after the last message, 1 = before the last message, etc.">Injection depth. 0 = after the last message, 1 = before the last message, etc.</div>
-                                <input id="completion_prompt_manager_popup_entry_form_injection_depth" class="text_pole" type="number" name="injection_depth" min="0" max="999" value="4" />
+                                <input id="completion_prompt_manager_popup_entry_form_injection_depth" class="text_pole" type="number" name="injection_depth" min="0" max="9999" value="4" />
                             </div>
                         </div>
                         <div class="completion_prompt_manager_popup_entry_form_control">
@@ -6614,7 +6704,7 @@
                 </div>
                 <div class="flex-container wide100pLess70px character_select_container height100p alignitemscenter">
                     <div class="wide100p character_name_block">
-                        <span class="ch_name">Go back</span>
+                        <span class="ch_name" data-i18n="Go back">Go back</span>
                     </div>
                 </div>
             </div>
@@ -6713,7 +6803,7 @@
                             <label class="checkbox_label alignItemsCenter" for="extension_floating_position_depth">
                                 <input type="radio" id="extension_floating_position_depth" name="extension_floating_position" value="1" />
                                 <span data-i18n="In-chat @ Depth">In-chat @ Depth</span>
-                                <input id="extension_floating_depth" class="text_pole textarea_compact widthNatural" type="number" min="0" max="999" />
+                                <input id="extension_floating_depth" class="text_pole textarea_compact widthNatural" type="number" min="0" max="9999" />
                                 <span data-i18n="as">as</span>
                                 <select id="extension_floating_role" class="text_pole widthNatural">
                                     <option data-i18n="System" value="0">System</option>
@@ -6728,7 +6818,7 @@
                                 <span data-i18n="Insertion Frequency">Insertion Frequency</span>
                                 <small data-i18n="(0 = Disable, 1 = Always)">(0 = Disable, 1 = Always)</small>
                             </label>
-                            <input id="extension_floating_interval" class="text_pole widthUnset" type="number" min="0" max="999" />
+                            <input id="extension_floating_interval" class="text_pole widthUnset" type="number" min="0" max="9999" />
                         </div>
                         <br>
                         <span><span data-i18n="User inputs until next insertion:">User inputs until next insertion:</span> <span id="extension_floating_counter">(disabled)</span></span>
@@ -6798,7 +6888,7 @@
                             <label class="checkbox_label alignItemsCenter" for="extension_default_position_depth">
                                 <input type="radio" id="extension_default_position_depth" name="extension_default_position" value="1" />
                                 <span data-i18n="In-chat @ Depth">In-chat @ Depth</span>
-                                <input id="extension_default_depth" class="text_pole textarea_compact widthNatural" type="number" min="0" max="999" />
+                                <input id="extension_default_depth" class="text_pole textarea_compact widthNatural" type="number" min="0" max="9999" />
                                 <span data-i18n="as">as</span>
                                 <select id="extension_default_role" class="text_pole widthNatural">
                                     <option data-i18n="System" value="0">System</option>
@@ -6812,7 +6902,7 @@
                                 <span data-i18n="Insertion Frequency">Insertion Frequency</span>
                                 <small data-i18n="(0 = Disable, 1 = Always)">(0 = Disable, 1 = Always)</small>
                             </label>
-                            <input id="extension_default_interval" class="text_pole widthUnset" type="number" min="0" max="999" />
+                            <input id="extension_default_interval" class="text_pole widthUnset" type="number" min="0" max="9999" />
                         </div>
                     </div>
                 </div>

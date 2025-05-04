@@ -156,7 +156,7 @@ export const GEMINI_SAFETY = [
     },
     {
         category: 'HARM_CATEGORY_CIVIC_INTEGRITY',
-        threshold: 'BLOCK_NONE',
+        threshold: 'OFF',
     },
 ];
 
@@ -176,6 +176,7 @@ export const CHAT_COMPLETION_SOURCES = {
     ZEROONEAI: '01ai',
     NANOGPT: 'nanogpt',
     DEEPSEEK: 'deepseek',
+    XAI: 'xai',
 };
 
 /**
@@ -267,23 +268,6 @@ export const FEATHERLESS_KEYS = [
     'guided_whitespace_pattern',
 ];
 
-// https://dreamgen.com/docs/api#openai-text
-export const DREAMGEN_KEYS = [
-    'model',
-    'prompt',
-    'max_tokens',
-    'temperature',
-    'top_p',
-    'top_k',
-    'min_p',
-    'repetition_penalty',
-    'frequency_penalty',
-    'presence_penalty',
-    'stop',
-    'stream',
-    'minimum_message_content_tokens',
-];
-
 // https://docs.together.ai/reference/completions
 export const TOGETHERAI_KEYS = [
     'model',
@@ -300,7 +284,7 @@ export const TOGETHERAI_KEYS = [
     'stop',
 ];
 
-// https://github.com/jmorganca/ollama/blob/main/docs/api.md#request-with-options
+// https://github.com/ollama/ollama/blob/main/docs/api.md#request-with-options
 export const OLLAMA_KEYS = [
     'num_predict',
     'num_ctx',

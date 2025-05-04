@@ -155,6 +155,7 @@ whitelistImportDomains:
   - cdn.discordapp.com
   - files.catbox.moe
   - raw.githubusercontent.com
+  - char-archive.evulid.cc
 # API request overrides (for KoboldAI and Text Completion APIs)
 ## Note: host includes the port number if it's not the default (80 or 443)
 ## Format is an array of objects:
@@ -233,6 +234,10 @@ claude:
   # should be ideal for most use cases.
   # Any value other than a non-negative integer will be ignored and caching at depth will not be enabled.
   cachingAtDepth: -1
+# -- GOOGLE GEMINI API CONFIGURATION --
+gemini:
+  # API endpoint version ("v1beta" or "v1alpha")
+  apiVersion: 'v1beta'
 # -- SERVER PLUGIN CONFIGURATION --
 enableServerPlugins: false
 # Attempt to automatically update server plugins on startup
