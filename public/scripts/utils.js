@@ -14,7 +14,7 @@ import { Popup, POPUP_RESULT, POPUP_TYPE } from './popup.js';
 import { SlashCommandClosure } from './slash-commands/SlashCommandClosure.js';
 import { getTagsList } from './tags.js';
 import { groups, selected_group } from './group-chats.js';
-import { getCurrentLocale, t, translate } from './i18n.js';
+import { getCurrentLocale, t } from './i18n.js';
 
 /**
  * Function returning pagination status string template.
@@ -22,21 +22,36 @@ import { getCurrentLocale, t, translate } from './i18n.js';
 export const PAGINATION_TEMPLATE = '<%= rangeStart %>-<%= rangeEnd %> .. <%= totalNumber %>';
 
 export const localizePagination = function(container) {
-    container.find('[title="Next page"]').attr('title', translate('Next page'));
-    container.find('[title="Previous page"]').attr('title', translate('Previous page'));
+    container.find('[title="Next page"]').attr('title', t`Next page`);
+    container.find('[title="Previous page"]').attr('title', t`Previous page`);
 };
 
+/**
+ * Renders a dropdown for selecting page size in pagination.
+ * @param {number} pageSize Page size
+ * @param {number[]} sizeChangerOptions Array of page size options
+ * @returns {string} The rendered dropdown element as a string
+ */
 export const renderPaginationDropdown = function(pageSize, sizeChangerOptions) {
-    let sizeSelect = '<select class="J-paginationjs-size-select">';
+    const sizeSelect = document.createElement('select');
+    sizeSelect.classList.add('J-paginationjs-size-select');
+
     if (sizeChangerOptions.indexOf(pageSize) === -1) {
         sizeChangerOptions.unshift(pageSize);
         sizeChangerOptions.sort((a, b) => a - b);
     }
+
     for (let i = 0; i < sizeChangerOptions.length; i++) {
-        sizeSelect += `<option value="${sizeChangerOptions[i]}"${(sizeChangerOptions[i] === pageSize ? ' selected' : '')}>${sizeChangerOptions[i]} ` + t`/ page` + '</option>';
+        const option = document.createElement('option');
+        option.value = `${sizeChangerOptions[i]}`;
+        option.textContent = `${sizeChangerOptions[i]} ${t`/ page`}`;
+        if (sizeChangerOptions[i] === pageSize) {
+            option.setAttribute('selected', 'selected');
+        }
+        sizeSelect.appendChild(option);
     }
-    sizeSelect += '</select>';
-    return sizeSelect;
+
+    return sizeSelect.outerHTML;
 };
 
 export const paginationDropdownChangeHandler = function(event, size) {
