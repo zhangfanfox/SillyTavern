@@ -1335,8 +1335,8 @@ export async function getTextGenGenerationData(finalPrompt, maxTokens, isImperso
         'sampler_order': settings.type === textgen_types.KOBOLDCPP ? settings.sampler_order : undefined,
         'xtc_threshold': settings.xtc_threshold,
         'xtc_probability': settings.xtc_probability,
-        'nsigma': [LLAMACPP].includes(settings.type) && settings.nsigma === 0 ? -1 : settings.nsigma,
-        'top_n_sigma': [LLAMACPP].includes(settings.type) && settings.nsigma === 0 ? -1 : settings.nsigma,
+        'nsigma': settings.nsigma,
+        'top_n_sigma': settings.nsigma,
         'min_keep': settings.min_keep,
     };
     const nonAphroditeParams = {
