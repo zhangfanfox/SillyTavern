@@ -806,7 +806,7 @@ jQuery(function () {
             'dry_penalty_last_n_textgenerationwebui': 0,
             'xtc_threshold_textgenerationwebui': 0.1,
             'xtc_probability_textgenerationwebui': 0,
-            'nsigma_textgenerationwebui': [LLAMACPP].includes(settings.type) ? -0.01 : 0,
+            'nsigma_textgenerationwebui': 0,
             'min_keep_textgenerationwebui': 0,
         };
 
@@ -1335,8 +1335,8 @@ export async function getTextGenGenerationData(finalPrompt, maxTokens, isImperso
         'sampler_order': settings.type === textgen_types.KOBOLDCPP ? settings.sampler_order : undefined,
         'xtc_threshold': settings.xtc_threshold,
         'xtc_probability': settings.xtc_probability,
-        'nsigma': settings.nsigma,
-        'top_n_sigma': settings.nsigma,
+        'nsigma': [LLAMACPP].includes(settings.type) && settings.nsigma === 0 ? -1 : settings.nsigma,
+        'top_n_sigma': [LLAMACPP].includes(settings.type) && settings.nsigma === 0 ? -1 : settings.nsigma,
         'min_keep': settings.min_keep,
     };
     const nonAphroditeParams = {
