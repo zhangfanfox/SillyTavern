@@ -1357,7 +1357,6 @@ export async function getTextGenGenerationData(finalPrompt, maxTokens, isImperso
         'json_schema': [TABBY, LLAMACPP].includes(settings.type) ? settings.json_schema : undefined,
         // llama.cpp aliases. In case someone wants to use LM Studio as Text Completion API
         'repeat_penalty': settings.rep_pen,
-        'tfs_z': settings.tfs,
         'repeat_last_n': settings.rep_pen_range,
         'n_predict': maxTokens,
         'num_predict': maxTokens,
