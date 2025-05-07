@@ -459,19 +459,12 @@ async function toggleRegexCallback(args, scriptName) {
 }
 
 /**
- * Performs the import of the regex file.
- * @param {File} file Input file
+ * Performs the import of the regex object.
+ * @param {Object} regexScript Input object
  * @param {boolean} isScoped Is the script scoped to a character?
  */
-async function onRegexImportFileChange(file, isScoped) {
-    if (!file) {
-        toastr.error('No file provided.');
-        return;
-    }
-
+async function onRegexImportObjectChange(regexScript, isScoped) {
     try {
-        const fileText = await getFileText(file);
-        const regexScript = JSON.parse(fileText);
         if (!regexScript.scriptName) {
             throw new Error('No script name provided.');
         }
@@ -489,6 +482,33 @@ async function onRegexImportFileChange(file, isScoped) {
         saveSettingsDebounced();
         await loadRegexScripts();
         toastr.success(`Regex script "${regexScript.scriptName}" imported.`);
+    } catch (error) {
+        console.log(error);
+        toastr.error('Invalid regex object.');
+        return;
+    }
+}
+
+/**
+ * Performs the import of the regex file.
+ * @param {File} file Input file
+ * @param {boolean} isScoped Is the script scoped to a character?
+ */
+async function onRegexImportFileChange(file, isScoped) {
+    if (!file) {
+        toastr.error('No file provided.');
+        return;
+    }
+
+    try {
+        const regexScripts = JSON.parse(await getFileText(file));
+        if (Array.isArray(regexScripts)) {
+            for (const regexScript of regexScripts) {
+                await onRegexImportObjectChange(regexScript, isScoped);
+            }
+        } else {
+            await onRegexImportObjectChange(regexScripts, isScoped);
+        }
     } catch (error) {
         console.log(error);
         toastr.error('Invalid JSON file.');
