@@ -1459,6 +1459,10 @@ async function loadPowerUserSettings(settings, data) {
     const defaultStscript = JSON.parse(JSON.stringify(power_user.stscript));
     // Load from settings.json
     if (settings.power_user !== undefined) {
+        // Migrate old preference to a new setting
+        if (settings.power_user.click_to_edit === undefined && settings.power_user.chat_display === chat_styles.DOCUMENT) {
+            settings.power_user.click_to_edit = true;
+        }
         Object.assign(power_user, settings.power_user);
     }
 
