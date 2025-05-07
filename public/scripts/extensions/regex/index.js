@@ -12,6 +12,8 @@ import { regex_placement, runRegexScript, substitute_find_regex } from './engine
 import { t } from '../../i18n.js';
 import { accountStorage } from '../../util/AccountStorage.js';
 
+const sanitizeFileName = name => name.replace(/[\s.<>:"/\\|?*\x00-\x1F\x7F]/g, '_').toLowerCase();
+
 /**
  * @typedef {import('../../char-data.js').RegexScriptData} RegexScript
  */
@@ -167,7 +169,7 @@ async function loadRegexScripts() {
             await saveRegexScript(script, -1, true);
         });
         scriptHtml.find('.export_regex').on('click', async function () {
-            const fileName = `${script.scriptName.replace(/[\s.<>:"/\\|?*\x00-\x1F\x7F]/g, '_').toLowerCase()}.json`;
+            const fileName = `regex-${sanitizeFileName(script.scriptName)}.json`;
             const fileData = JSON.stringify(script, null, 4);
             download(fileData, fileName, 'application/json');
         });
@@ -603,6 +605,24 @@ jQuery(async () => {
     });
     $('#import_regex').on('click', function () {
         $('#import_regex_file').trigger('click');
+    });
+
+    $('#export_global_regex').on('click', async function () {
+        const regexScripts = extension_settings?.regex ?? [];
+        if (regexScripts.length) {
+            const fileName = 'regex-global.json';
+            const fileData = JSON.stringify(regexScripts, null, 4);
+            download(fileData, fileName, 'application/json');
+        }
+    });
+
+    $('#export_scoped_regex').on('click', async function () {
+        const regexScripts = characters[this_chid]?.data?.extensions?.regex_scripts ?? [];
+        if (regexScripts.length) {
+            const fileName = `regex-${sanitizeFileName(characters[this_chid].name)}.json`;
+            const fileData = JSON.stringify(regexScripts, null, 4);
+            download(fileData, fileName, 'application/json');
+        }
     });
 
     let sortableDatas = [
