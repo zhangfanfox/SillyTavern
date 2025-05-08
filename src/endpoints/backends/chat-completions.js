@@ -148,7 +148,8 @@ async function sendClaudeRequest(request, response) {
         const useSystemPrompt = (request.body.model.startsWith('claude-2') || request.body.model.startsWith('claude-3')) && request.body.claude_use_sysprompt;
         const convertedPrompt = convertClaudeMessages(request.body.messages, request.body.assistant_prefill, useSystemPrompt, useTools, getPromptNames(request));
         const useThinking = request.body.model.startsWith('claude-3-7') && Boolean(request.body.include_reasoning);
-        let voidPrefill = false;
+        const useWebSearch = /^claude-3-(5|7)/.test(request.body.model) && Boolean(request.body.enable_web_search);
+        let fixThinkingPrefill = false;
         // Add custom stop sequences
         const stopSequences = [];
         if (Array.isArray(request.body.stop)) {
@@ -183,13 +184,17 @@ async function sendClaudeRequest(request, response) {
                 .map(tool => tool.function)
                 .map(fn => ({ name: fn.name, description: fn.description, input_schema: fn.parameters }));
 
-            if (requestBody.tools.length) {
-                // No prefill when using tools
-                voidPrefill = true;
-            }
             if (enableSystemPromptCache && requestBody.tools.length) {
                 requestBody.tools[requestBody.tools.length - 1]['cache_control'] = { type: 'ephemeral' };
             }
+        }
+
+        if (useWebSearch) {
+            const webSearchTool = [{
+                'type': 'web_search_20250305',
+                'name': 'web_search',
+            }];
+            requestBody.tools = [...(requestBody.tools || []), ...webSearchTool];
         }
 
         if (cachingAtDepth !== -1) {
@@ -205,7 +210,7 @@ async function sendClaudeRequest(request, response) {
 
         if (useThinking && Number.isInteger(budgetTokens)) {
             // No prefill when thinking
-            voidPrefill = true;
+            fixThinkingPrefill = true;
             const minThinkTokens = 1024;
             if (requestBody.max_tokens <= minThinkTokens) {
                 const newValue = requestBody.max_tokens + minThinkTokens;
@@ -224,8 +229,8 @@ async function sendClaudeRequest(request, response) {
             delete requestBody.top_k;
         }
 
-        if (voidPrefill && convertedPrompt.messages.length && convertedPrompt.messages[convertedPrompt.messages.length - 1].role === 'assistant') {
-            convertedPrompt.messages.push({ role: 'user', content: [{ type: 'text', text: '\u200b' }] });
+        if (fixThinkingPrefill && convertedPrompt.messages.length && convertedPrompt.messages[convertedPrompt.messages.length - 1].role === 'assistant') {
+            convertedPrompt.messages[convertedPrompt.messages.length - 1].role = 'user';
         }
 
         if (betaHeaders.length) {
