@@ -200,11 +200,12 @@ async function sendClaudeRequest(request, response) {
             betaHeaders.push('prompt-caching-2024-07-31');
         }
 
-        if (useThinking) {
+        const reasoningEffort = request.body.reasoning_effort;
+        const budgetTokens = calculateClaudeBudgetTokens(requestBody.max_tokens, reasoningEffort, requestBody.stream);
+
+        if (useThinking && Number.isInteger(budgetTokens)) {
             // No prefill when thinking
             voidPrefill = true;
-            const reasoningEffort = request.body.reasoning_effort;
-            const budgetTokens = calculateClaudeBudgetTokens(requestBody.max_tokens, reasoningEffort, requestBody.stream);
             const minThinkTokens = 1024;
             if (requestBody.max_tokens <= minThinkTokens) {
                 const newValue = requestBody.max_tokens + minThinkTokens;
