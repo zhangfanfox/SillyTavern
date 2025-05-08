@@ -3665,6 +3665,7 @@ async function saveOpenAIPreset(name, settings, triggerUi = true) {
         perplexity_model: settings.perplexity_model,
         groq_model: settings.groq_model,
         zerooneai_model: settings.zerooneai_model,
+        xai_model: settings.xai_model,
         custom_model: settings.custom_model,
         custom_url: settings.custom_url,
         custom_include_body: settings.custom_include_body,
