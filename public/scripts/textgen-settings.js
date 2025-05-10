@@ -1439,6 +1439,17 @@ export async function getTextGenGenerationData(finalPrompt, maxTokens, isImperso
         params.dynatemp_max = params.dynatemp_high;
         delete params.dynatemp_low;
         delete params.dynatemp_high;
+        const sequenceBreakers = (() => {
+            try {
+                return JSON.parse(params.dry_sequence_breakers);
+            } catch {
+                if (typeof params.dry_sequence_breakers === 'string') {
+                    return params.dry_sequence_breakers.split(',');
+                }
+                return undefined;
+            }
+        })();
+        params.dry_sequence_breakers = sequenceBreakers;
     }
 
     if (settings.type === TABBY) {
