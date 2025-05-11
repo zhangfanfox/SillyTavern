@@ -90,7 +90,7 @@ body.bubblechat .welcomePanel {
 .welcomeRecent .recentChatList .recentChat {
     display: flex;
     flex-direction: row;
-    transition: filter 0.2s;
+    align-items: center;
     padding: 5px 10px;
     border-radius: 10px;
     cursor: pointer;
@@ -100,10 +100,6 @@ body.bubblechat .welcomePanel {
 
 .welcomeRecent .recentChatList .recentChat .avatar {
     flex: 0;
-}
-
-.welcomeRecent .recentChatList .recentChat.selected {
-    background-color: var(--cobalt30a);
 }
 
 .welcomeRecent .recentChatList .recentChat:hover {
@@ -143,9 +139,16 @@ body.bubblechat .welcomePanel {
 }
 
 .welcomeRecent .recentChatList .recentChat .chatMessageContainer .chatMessage {
-    white-space: nowrap;
-    text-overflow: ellipsis;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
     overflow: hidden;
+}
+
+body.big-avatars .welcomeRecent .recentChatList .recentChat .chatMessageContainer .chatMessage {
+    -webkit-line-clamp: 4;
+    line-clamp: 4;
 }
 
 .welcomeRecent .recentChatList .recentChat .chatStats {
