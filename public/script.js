@@ -10113,7 +10113,7 @@ async function removeCharacterFromUI() {
     saveSettingsDebounced();
 }
 
-async function newAssistantChat() {
+export async function newAssistantChat() {
     await clearChat();
     chat.splice(0, chat.length);
     chat_metadata = {};

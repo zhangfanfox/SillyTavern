@@ -6,6 +6,7 @@ import {
     getCurrentChatId,
     getRequestHeaders,
     getThumbnailUrl,
+    newAssistantChat,
     openCharacterChat,
     selectCharacterById,
     sendSystemMessage,
@@ -50,7 +51,7 @@ async function sendWelcomePanel() {
             });
         });
         fragment.querySelector('button.openTemporaryChat').addEventListener('click', () => {
-            toastr.info('This button does nothing at the moment. Try again later.');
+            void newAssistantChat();
         });
         chatElement.append(fragment.firstChild);
     } catch (error) {
