@@ -6061,12 +6061,12 @@ body:not(.movingUI) .drawer-content.maximized {
     flex-wrap: nowrap;
     justify-content: space-between;
     align-items: center;
-    gap: 10px;
-    padding: 0 2px;
+    gap: 5px;
 }
 
-.mes_text div[data-type="assistant_note"]:has(.assistant_note_export)>div:not(.assistant_note_export) {
+.mes_text div[data-type="assistant_note"]:has(.assistant_note_export) > div {
     flex: 1;
+    text-align: left;
 }
 
 .oneline-dropdown label {

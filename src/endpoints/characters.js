@@ -577,10 +577,10 @@ function charaFormatData(data, directories) {
     _.set(char, 'mes_example', data.mes_example || '');
 
     // Old ST extension fields (for backward compatibility, will be deprecated)
-    _.set(char, 'creatorcomment', data.creator_notes);
+    _.set(char, 'creatorcomment', data.creator_notes || '');
     _.set(char, 'avatar', 'none');
     _.set(char, 'chat', data.ch_name + ' - ' + humanizedISO8601DateTime());
-    _.set(char, 'talkativeness', data.talkativeness);
+    _.set(char, 'talkativeness', data.talkativeness || 0.5);
     _.set(char, 'fav', data.fav == 'true');
     _.set(char, 'tags', typeof data.tags == 'string' ? (data.tags.split(',').map(x => x.trim()).filter(x => x)) : data.tags || []);
 
@@ -604,7 +604,7 @@ function charaFormatData(data, directories) {
     _.set(char, 'data.alternate_greetings', getAlternateGreetings(data));
 
     // ST extension fields to V2 object
-    _.set(char, 'data.extensions.talkativeness', data.talkativeness);
+    _.set(char, 'data.extensions.talkativeness', data.talkativeness || 0.5);
     _.set(char, 'data.extensions.fav', data.fav == 'true');
     _.set(char, 'data.extensions.world', data.world || '');
 
@@ -1006,7 +1006,7 @@ router.post('/create', async function (request, response) {
         request.body.ch_name = sanitize(request.body.ch_name);
 
         const char = JSON.stringify(charaFormatData(request.body, request.user.directories));
-        const internalName = getPngName(request.body.ch_name, request.user.directories);
+        const internalName = request.body.file_name || getPngName(request.body.ch_name, request.user.directories);
         const avatarName = `${internalName}.png`;
         const chatsPath = path.join(request.user.directories.chats, internalName);
 

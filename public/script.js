@@ -282,7 +282,7 @@ import { deriveTemplatesFromChatTemplate } from './scripts/chat-templates.js';
 import { getContext } from './scripts/st-context.js';
 import { extractReasoningFromData, initReasoning, parseReasoningInSwipes, PromptReasoning, ReasoningHandler, removeReasoningFromString, updateReasoningUI } from './scripts/reasoning.js';
 import { accountStorage } from './scripts/util/AccountStorage.js';
-import { initWelcomeScreen } from './scripts/welcome-screen.js';
+import { initWelcomeScreen, openPermanentAssistantChat, openPermanentAssistantCard } from './scripts/welcome-screen.js';
 
 // API OBJECT FOR EXTERNAL WIRING
 globalThis.SillyTavern = {
@@ -2041,7 +2041,7 @@ export async function sendTextareaMessage() {
     }
 
     if (textareaText && !selected_group && this_chid === undefined && name2 !== neutralCharacterName) {
-        await newAssistantChat();
+        await newAssistantChat({ temporary: false });
     }
 
     Generate(generateType);
@@ -2883,7 +2883,14 @@ export async function processCommands(message) {
     return true;
 }
 
-export function sendSystemMessage(type, text, extra = {}) {
+/**
+ * Gets a system message by type.
+ * @param {string} type Type of system message
+ * @param {string} [text] Text to be sent
+ * @param {object} [extra] Additional data to be added to the message
+ * @returns {object} System message object
+ */
+export function getSystemMessageByType(type, text, extra = {}) {
     const systemMessage = system_messages[type];
 
     if (!systemMessage) {
@@ -2906,7 +2913,17 @@ export function sendSystemMessage(type, text, extra = {}) {
 
     newMessage.extra = Object.assign(newMessage.extra, extra);
     newMessage.extra.type = type;
+    return newMessage;
+}
 
+/**
+ * Sends a system message to the chat.
+ * @param {string} type Type of system message
+ * @param {string} [text] Text to be sent
+ * @param {object} [extra] Additional data to be added to the message
+ */
+export function sendSystemMessage(type, text, extra = {}) {
+    const newMessage = getSystemMessageByType(type, text, extra);
     chat.push(newMessage);
     addOneMessage(newMessage);
     is_send_press = false;
@@ -10113,8 +10130,17 @@ async function removeCharacterFromUI() {
     saveSettingsDebounced();
 }
 
-export async function newAssistantChat() {
+/**
+ * Creates a new assistant chat.
+ * @param {object} params - Parameters for the new assistant chat
+ * @param {boolean} [params.temporary=false] I need a temporary secretary
+ * @returns {Promise<void>} - A promise that resolves when the new assistant chat is created
+ */
+export async function newAssistantChat({ temporary = false } = {}) {
     await clearChat();
+    if (!temporary) {
+        return openPermanentAssistantChat();
+    }
     chat.splice(0, chat.length);
     chat_metadata = {};
     setCharacterName(neutralCharacterName);
@@ -10427,7 +10453,7 @@ jQuery(async function () {
                     if (chatId) {
                         return reject('Not in a temporary chat');
                     }
-                    await newAssistantChat();
+                    await newAssistantChat({ temporary: true });
                     return resolve('');
                 };
                 eventSource.once(event_types.CHAT_CHANGED, eventCallback);
@@ -11094,6 +11120,9 @@ jQuery(async function () {
         });
 
         if (id == 'option_select_chat') {
+            if (this_chid === undefined && !is_send_press) {
+                await openPermanentAssistantCard();
+            }
             if ((selected_group && !is_group_generating) || (this_chid !== undefined && !is_send_press) || fromSlashCommand) {
                 await displayPastChats();
                 //this is just to avoid the shadow for past chat view when using /delchat
@@ -11124,7 +11153,7 @@ jQuery(async function () {
                 await doNewChat({ deleteCurrentChat: deleteCurrentChat });
             }
             if (!selected_group && this_chid === undefined && !is_send_press) {
-                await newAssistantChat();
+                await newAssistantChat({ temporary: true });
             }
         }
 

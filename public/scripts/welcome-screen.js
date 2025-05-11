@@ -1,20 +1,27 @@
 import {
     characters,
     displayVersion,
+    doNewChat,
     event_types,
     eventSource,
+    getCharacters,
     getCurrentChatId,
     getRequestHeaders,
     getThumbnailUrl,
+    is_send_press,
+    neutralCharacterName,
     newAssistantChat,
     openCharacterChat,
     selectCharacterById,
     sendSystemMessage,
     system_message_types,
 } from '../script.js';
+import { is_group_generating } from './group-chats.js';
 import { t } from './i18n.js';
 import { renderTemplateAsync } from './templates.js';
 import { timestampToMoment } from './utils.js';
+
+const permanentAssistantAvatar = 'default_Assistant.png';
 
 export async function openWelcomeScreen() {
     const currentChatId = getCurrentChatId();
@@ -28,7 +35,7 @@ export async function openWelcomeScreen() {
 
 async function sendWelcomePanel() {
     try {
-        const chatElement =  document.getElementById('chat');
+        const chatElement = document.getElementById('chat');
         if (!chatElement) {
             console.error('Chat element not found');
             return;
@@ -36,7 +43,7 @@ async function sendWelcomePanel() {
         const chats = await getRecentChats();
         const templateData = {
             chats,
-            empty: !chats.length ,
+            empty: !chats.length,
             version: displayVersion,
         };
         const template = await renderTemplateAsync('welcomePanel', templateData);
@@ -51,7 +58,7 @@ async function sendWelcomePanel() {
             });
         });
         fragment.querySelector('button.openTemporaryChat').addEventListener('click', () => {
-            void newAssistantChat();
+            void newAssistantChat({ temporary: true });
         });
         chatElement.append(fragment.firstChild);
     } catch (error) {
@@ -114,7 +121,7 @@ async function getRecentChats() {
     /** @type {RecentChat[]} */
     const data = await response.json();
 
-    data.sort((a, b) =>  b.last_mes - a.last_mes).forEach((chat, index) => {
+    data.sort((a, b) => b.last_mes - a.last_mes).forEach((chat, index) => {
         const character = characters.find(x => x.avatar === chat.avatar);
         if (!character) {
             console.warn(`Character not found for chat: ${chat.file_name}`);
@@ -131,6 +138,72 @@ async function getRecentChats() {
     });
 
     return data;
+}
+
+export async function openPermanentAssistantChat({ tryCreate = true } = {}) {
+    const characterId = characters.findIndex(x => x.avatar === permanentAssistantAvatar);
+    if (characterId === -1) {
+        if (!tryCreate) {
+            console.error(`Character not found for avatar ID: ${permanentAssistantAvatar}. Cannot create.`);
+            return;
+        }
+
+        try {
+            console.log(`Character not found for avatar ID: ${permanentAssistantAvatar}. Creating new assistant.`);
+            await createPermanentAssistant();
+            return openPermanentAssistantChat({ tryCreate: false });
+        }
+        catch (error) {
+            console.error('Error creating permanent assistant:', error);
+            toastr.error(t`Failed to create ${neutralCharacterName}. See console for details.`);
+            return;
+        }
+    }
+
+    try {
+        await selectCharacterById(characterId);
+        await doNewChat({ deleteCurrentChat: false });
+        console.log(`Opened permanent assistant chat for ${neutralCharacterName}.`, getCurrentChatId());
+    } catch (error) {
+        console.error('Error opening permanent assistant chat:', error);
+        toastr.error(t`Failed to open permanent assistant chat. See console for details.`);
+    }
+}
+
+async function createPermanentAssistant() {
+    if (is_group_generating || is_send_press) {
+        throw new Error(t`Cannot create while generating.`);
+    }
+
+    const formData = new FormData();
+    formData.append('ch_name', neutralCharacterName);
+    formData.append('file_name', permanentAssistantAvatar.replace('.png', ''));
+
+    const headers = getRequestHeaders();
+    delete headers['Content-Type'];
+
+    const fetchResult = await fetch('/api/characters/create', {
+        method: 'POST',
+        headers: headers,
+        body: formData,
+        cache: 'no-cache',
+    });
+
+    if (!fetchResult.ok) {
+        throw new Error(t`Creation request did not succeed.`);
+    }
+
+    await getCharacters();
+}
+
+export async function openPermanentAssistantCard() {
+    const characterId = characters.findIndex(x => x.avatar === permanentAssistantAvatar);
+    if (characterId === -1) {
+        toastr.info(t`Assistant not found. Try sending a chat message.`);
+        return;
+    }
+
+    await selectCharacterById(characterId);
 }
 
 export function initWelcomeScreen() {
