@@ -282,6 +282,7 @@ import { deriveTemplatesFromChatTemplate } from './scripts/chat-templates.js';
 import { getContext } from './scripts/st-context.js';
 import { extractReasoningFromData, initReasoning, parseReasoningInSwipes, PromptReasoning, ReasoningHandler, removeReasoningFromString, updateReasoningUI } from './scripts/reasoning.js';
 import { accountStorage } from './scripts/util/AccountStorage.js';
+import { initWelcomeScreen } from './scripts/welcome-screen.js';
 
 // API OBJECT FOR EXTERNAL WIRING
 globalThis.SillyTavern = {
@@ -563,7 +564,7 @@ let chat_create_date = '';
 let firstRun = false;
 let settingsReady = false;
 let currentVersion = '0.0.0';
-let displayVersion = 'SillyTavern';
+export let displayVersion = 'SillyTavern';
 
 let generatedPromptCache = '';
 let generation_started = new Date();
@@ -983,8 +984,6 @@ async function firstLoadInit() {
     ToolManager.initToolSlashCommands();
     await initPresetManager();
     await getSystemMessages();
-    sendSystemMessage(system_message_types.WELCOME);
-    sendSystemMessage(system_message_types.WELCOME_PROMPT);
     await getSettings();
     initKeyboard();
     initDynamicStyles();
@@ -1009,6 +1008,7 @@ async function firstLoadInit() {
     initSettingsSearch();
     initBulkEdit();
     initReasoning();
+    initWelcomeScreen();
     await initScrapers();
     initCustomSelectedSamplers();
     addDebugFunctions();
@@ -11176,8 +11176,6 @@ jQuery(async function () {
                 selected_button = 'characters';
                 $('#rm_button_selected_ch').children('h2').text('');
                 select_rm_characters();
-                sendSystemMessage(system_message_types.WELCOME);
-                sendSystemMessage(system_message_types.WELCOME_PROMPT);
                 await getClientVersion();
                 await eventSource.emit(event_types.CHAT_CHANGED, getCurrentChatId());
             } else {

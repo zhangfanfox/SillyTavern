@@ -934,6 +934,69 @@ async function importFromPng(uploadPath, { request }, preservedFileName) {
     return '';
 }
 
+/**
+ * @typedef {Object} ChatInfo
+ * @property {string} [file_name] - The name of the chat file
+ * @property {string} [file_size] - The size of the chat file
+ * @property {number} [chat_items] - The number of chat items in the file
+ * @property {string} [mes] - The last message in the chat
+ * @property {number} [last_mes] - The timestamp of the last message
+ */
+
+/**
+ * Reads the information from a chat file.
+ * @param {string} pathToFile
+ * @param {object} additionalData
+ * @returns {Promise<ChatInfo>}
+ */
+async function getChatInfo(pathToFile, additionalData = {}) {
+    return new Promise(async (res) => {
+        const fileStream = fs.createReadStream(pathToFile);
+        const stats = fs.statSync(pathToFile);
+        const fileSizeInKB = `${(stats.size / 1024).toFixed(2)}kb`;
+
+        if (stats.size === 0) {
+            console.warn(`Found an empty chat file: ${pathToFile}`);
+            res({});
+            return;
+        }
+
+        const rl = readline.createInterface({
+            input: fileStream,
+            crlfDelay: Infinity,
+        });
+
+        let lastLine;
+        let itemCounter = 0;
+        rl.on('line', (line) => {
+            itemCounter++;
+            lastLine = line;
+        });
+        rl.on('close', () => {
+            rl.close();
+
+            if (lastLine) {
+                const jsonData = tryParse(lastLine);
+                if (jsonData && (jsonData.name || jsonData.character_name)) {
+                    const chatData = {};
+
+                    chatData['file_name'] = path.parse(pathToFile).base;
+                    chatData['file_size'] = fileSizeInKB;
+                    chatData['chat_items'] = itemCounter - 1;
+                    chatData['mes'] = jsonData['mes'] || '[The chat is empty]';
+                    chatData['last_mes'] = jsonData['send_date'] || Date.now();
+                    Object.assign(chatData, additionalData);
+
+                    res(chatData);
+                } else {
+                    console.warn('Found an invalid or corrupted chat file:', pathToFile);
+                    res({});
+                }
+            }
+        });
+    });
+}
+
 export const router = express.Router();
 
 router.post('/create', async function (request, response) {
@@ -1223,12 +1286,52 @@ router.post('/get', validateAvatarUrlMiddleware, async function (request, respon
     }
 });
 
+router.post('/recent', async function (request, response) {
+    try {
+        /** @type {{pngFile: string, filePath: string, mtime: number}[]} */
+        const allChatFiles = [];
+
+        const pngFiles = fs
+            .readdirSync(request.user.directories.characters, { withFileTypes: true })
+            .filter(dirent => dirent.isFile() && dirent.name.endsWith('.png'))
+            .map(dirent => dirent.name);
+
+        for (const pngFile of pngFiles) {
+            const chatsDirectory = pngFile.replace('.png', '');
+            const pathToChats = path.join(request.user.directories.chats, chatsDirectory);
+            if (fs.existsSync(pathToChats) && fs.statSync(pathToChats).isDirectory()) {
+                const chatFiles = fs.readdirSync(pathToChats);
+                const chatFilesWithDate = chatFiles
+                    .filter(file => file.endsWith('.jsonl'))
+                    .map(file => {
+                        const filePath = path.join(pathToChats, file);
+                        const stats = fs.statSync(filePath);
+                        return { pngFile, filePath, mtime: stats.mtimeMs };
+                    });
+                allChatFiles.push(...chatFilesWithDate);
+            }
+        }
+
+        const recentChats = allChatFiles.sort((a, b) => b.mtime - a.mtime).slice(0, 5);
+        const jsonFilesPromise = recentChats.map((file) => {
+            return getChatInfo(file.filePath, { avatar: file.pngFile });
+        });
+
+        const chatData = (await Promise.allSettled(jsonFilesPromise)).filter(x => x.status === 'fulfilled').map(x => x.value);
+        const validFiles = chatData.filter(i => i.file_name);
+
+        return response.send(validFiles);
+    } catch (error) {
+        console.error(error);
+        return response.sendStatus(500);
+    }
+});
+
 router.post('/chats', validateAvatarUrlMiddleware, async function (request, response) {
     try {
         if (!request.body) return response.sendStatus(400);
 
         const characterDirectory = (request.body.avatar_url).replace('.png', '');
-
         const chatsDirectory = path.join(request.user.directories.chats, characterDirectory);
 
         if (!fs.existsSync(chatsDirectory)) {
@@ -1248,54 +1351,11 @@ router.post('/chats', validateAvatarUrlMiddleware, async function (request, resp
         }
 
         const jsonFilesPromise = jsonFiles.map((file) => {
-            return new Promise(async (res) => {
-                const pathToFile = path.join(request.user.directories.chats, characterDirectory, file);
-                const fileStream = fs.createReadStream(pathToFile);
-                const stats = fs.statSync(pathToFile);
-                const fileSizeInKB = `${(stats.size / 1024).toFixed(2)}kb`;
-
-                if (stats.size === 0) {
-                    console.warn(`Found an empty chat file: ${pathToFile}`);
-                    res({});
-                    return;
-                }
-
-                const rl = readline.createInterface({
-                    input: fileStream,
-                    crlfDelay: Infinity,
-                });
-
-                let lastLine;
-                let itemCounter = 0;
-                rl.on('line', (line) => {
-                    itemCounter++;
-                    lastLine = line;
-                });
-                rl.on('close', () => {
-                    rl.close();
-
-                    if (lastLine) {
-                        const jsonData = tryParse(lastLine);
-                        if (jsonData && (jsonData.name || jsonData.character_name)) {
-                            const chatData = {};
-
-                            chatData['file_name'] = file;
-                            chatData['file_size'] = fileSizeInKB;
-                            chatData['chat_items'] = itemCounter - 1;
-                            chatData['mes'] = jsonData['mes'] || '[The chat is empty]';
-                            chatData['last_mes'] = jsonData['send_date'] || Date.now();
-
-                            res(chatData);
-                        } else {
-                            console.warn('Found an invalid or corrupted chat file:', pathToFile);
-                            res({});
-                        }
-                    }
-                });
-            });
+            const pathToFile = path.join(request.user.directories.chats, characterDirectory, file);
+            return getChatInfo(pathToFile);
         });
 
-        const chatData = await Promise.all(jsonFilesPromise);
+        const chatData = (await Promise.allSettled(jsonFilesPromise)).filter(x => x.status === 'fulfilled').map(x => x.value);
         const validFiles = chatData.filter(i => i.file_name);
 
         return response.send(validFiles);

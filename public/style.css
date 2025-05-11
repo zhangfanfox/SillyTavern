@@ -10,6 +10,7 @@
 @import url(css/accounts.css);
 @import url(css/tags.css);
 @import url(css/scrollable-button.css);
+@import url(css/welcome.css);
 
 :root {
     --doc-height: 100%;
