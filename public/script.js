@@ -738,6 +738,7 @@ async function getSystemMessages() {
             force_avatar: system_avatar,
             is_user: false,
             is_system: true,
+            uses_system_ui: true,
             mes: await renderTemplateAsync('welcomePrompt'),
             extra: {
                 isSmallSys: true,
