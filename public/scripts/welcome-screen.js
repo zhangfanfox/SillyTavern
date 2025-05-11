@@ -72,6 +72,11 @@ async function openRecentChat(avatarId, fileName) {
 
     try {
         await selectCharacterById(characterId);
+        const currentChatId = getCurrentChatId();
+        if (currentChatId === fileName) {
+            console.debug(`Chat ${fileName} is already open.`);
+            return;
+        }
         await openCharacterChat(fileName);
     } catch (error) {
         console.error('Error opening recent chat:', error);
