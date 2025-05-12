@@ -19,9 +19,26 @@ import {
 import { is_group_generating } from './group-chats.js';
 import { t } from './i18n.js';
 import { renderTemplateAsync } from './templates.js';
+import { accountStorage } from './util/AccountStorage.js';
 import { timestampToMoment } from './utils.js';
 
-const permanentAssistantAvatar = 'default_Assistant.png';
+const assistantAvatarKey = 'assistant';
+const defaultAssistantAvatar = 'default_Assistant.png';
+
+export function getPermanentAssistantAvatar() {
+    const assistantAvatar = accountStorage.getItem(assistantAvatarKey);
+    if (assistantAvatar === null) {
+        return defaultAssistantAvatar;
+    }
+
+    const character = characters.find(x => x.avatar === assistantAvatar);
+    if (character === undefined) {
+        accountStorage.removeItem(assistantAvatarKey);
+        return defaultAssistantAvatar;
+    }
+
+    return assistantAvatar;
+}
 
 export async function openWelcomeScreen() {
     const currentChatId = getCurrentChatId();
@@ -121,35 +138,32 @@ async function getRecentChats() {
     /** @type {RecentChat[]} */
     const data = await response.json();
 
-    data.sort((a, b) => b.last_mes - a.last_mes).forEach((chat, index) => {
-        const character = characters.find(x => x.avatar === chat.avatar);
-        if (!character) {
-            console.warn(`Character not found for chat: ${chat.file_name}`);
-            data.splice(index, 1);
-            return;
-        }
-
-        const chatTimestamp = timestampToMoment(chat.last_mes);
-        chat.char_name = character.name;
-        chat.date_short = chatTimestamp.format('l');
-        chat.date_long = chatTimestamp.format('LL LT');
-        chat.chat_name = chat.file_name.replace('.jsonl', '');
-        chat.char_thumbnail = getThumbnailUrl('avatar', character.avatar);
-    });
+    data.sort((a, b) => b.last_mes - a.last_mes)
+        .map(chat => ({ chat, character: characters.find(x => x.avatar === chat.avatar) }))
+        .filter(t => t.character)
+        .forEach(({ chat, character }) => {
+            const chatTimestamp = timestampToMoment(chat.last_mes);
+            chat.char_name = character.name;
+            chat.date_short = chatTimestamp.format('l');
+            chat.date_long = chatTimestamp.format('LL LT');
+            chat.chat_name = chat.file_name.replace('.jsonl', '');
+            chat.char_thumbnail = getThumbnailUrl('avatar', character.avatar);
+        });
 
     return data;
 }
 
 export async function openPermanentAssistantChat({ tryCreate = true } = {}) {
-    const characterId = characters.findIndex(x => x.avatar === permanentAssistantAvatar);
+    const avatar = getPermanentAssistantAvatar();
+    const characterId = characters.findIndex(x => x.avatar === avatar);
     if (characterId === -1) {
         if (!tryCreate) {
-            console.error(`Character not found for avatar ID: ${permanentAssistantAvatar}. Cannot create.`);
+            console.error(`Character not found for avatar ID: ${avatar}. Cannot create.`);
             return;
         }
 
         try {
-            console.log(`Character not found for avatar ID: ${permanentAssistantAvatar}. Creating new assistant.`);
+            console.log(`Character not found for avatar ID: ${avatar}. Creating new assistant.`);
             await createPermanentAssistant();
             return openPermanentAssistantChat({ tryCreate: false });
         }
@@ -177,7 +191,7 @@ async function createPermanentAssistant() {
 
     const formData = new FormData();
     formData.append('ch_name', neutralCharacterName);
-    formData.append('file_name', permanentAssistantAvatar.replace('.png', ''));
+    formData.append('file_name', defaultAssistantAvatar.replace('.png', ''));
 
     const headers = getRequestHeaders();
     delete headers['Content-Type'];
@@ -197,7 +211,8 @@ async function createPermanentAssistant() {
 }
 
 export async function openPermanentAssistantCard() {
-    const characterId = characters.findIndex(x => x.avatar === permanentAssistantAvatar);
+    const avatar = getPermanentAssistantAvatar();
+    const characterId = characters.findIndex(x => x.avatar === avatar);
     if (characterId === -1) {
         toastr.info(t`Assistant not found. Try sending a chat message.`);
         return;

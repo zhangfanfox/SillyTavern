@@ -282,7 +282,7 @@ import { deriveTemplatesFromChatTemplate } from './scripts/chat-templates.js';
 import { getContext } from './scripts/st-context.js';
 import { extractReasoningFromData, initReasoning, parseReasoningInSwipes, PromptReasoning, ReasoningHandler, removeReasoningFromString, updateReasoningUI } from './scripts/reasoning.js';
 import { accountStorage } from './scripts/util/AccountStorage.js';
-import { initWelcomeScreen, openPermanentAssistantChat, openPermanentAssistantCard } from './scripts/welcome-screen.js';
+import { initWelcomeScreen, openPermanentAssistantChat, openPermanentAssistantCard, getPermanentAssistantAvatar } from './scripts/welcome-screen.js';
 
 // API OBJECT FOR EXTERNAL WIRING
 globalThis.SillyTavern = {
@@ -1472,6 +1472,11 @@ function getCharacterBlock(item, id) {
     template.find('.ch_fav_icon').css('display', 'none');
     template.toggleClass('is_fav', item.fav || item.fav == 'true');
     template.find('.ch_fav').val(item.fav);
+
+    const isAssistant = item.avatar === getPermanentAssistantAvatar();
+    if (!isAssistant) {
+        template.find('.ch_assistant').remove();
+    }
 
     const description = item.data?.creator_notes || '';
     if (description) {
