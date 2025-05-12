@@ -37,7 +37,7 @@
         {{/if}}
         {{#each chats}}
             {{#with this}}
-            <div class="recentChat" data-file="{{chat_name}}" data-avatar="{{avatar}}">
+            <div class="recentChat {{#if hidden}}hidden{{/if}}" data-file="{{chat_name}}" data-avatar="{{avatar}}">
                 <div class="avatar" title="{{char_name}}">
                     <img src="{{char_thumbnail}}" alt="{{char_name}}">
                 </div>
@@ -66,6 +66,13 @@
             </div>
             {{/with}}
         {{/each}}
+        {{#if more}}
+            <button class="menu_button menu_button_icon showMoreChats">
+                <small data-i18n="Show more">
+                    Show more
+                </small>
+            </button>
+        {{/if}}
         </div>
     </div>
 </div>

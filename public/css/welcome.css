@@ -6,6 +6,10 @@
     width: 100%;
 }
 
+.welcomePanel:has(.showMoreChats) {
+    padding-bottom: 5px;
+}
+
 body.bubblechat .welcomePanel {
     border-radius: 10px;
     background-color: var(--SmartThemeBotMesBlurTintColor);
@@ -22,7 +26,7 @@ body.bubblechat .welcomePanel {
 
 .welcomePanel .recentChatsTitle {
     flex-grow: 1;
-    font-size: calc(var(--mainFontSize) * 1.1);
+    font-size: calc(var(--mainFontSize) * 1.15);
     font-weight: 600;
 }
 
@@ -36,7 +40,7 @@ body.bubblechat .welcomePanel {
 }
 
 .welcomePanel .welcomeHeaderVersionDisplay {
-    font-size: calc(var(--mainFontSize) * 1.2);
+    font-size: calc(var(--mainFontSize) * 1.3);
     font-weight: 600;
 }
 
@@ -172,6 +176,14 @@ body.big-avatars .welcomeRecent .recentChatList .recentChat .chatMessageContaine
     content: "|";
     color: var(--SmartThemeBorderColor);
     font-size: calc(var(--mainFontSize) * 0.95);
+}
+
+.welcomeRecent .recentChatList .recentChat.hidden {
+    display: none;
+}
+
+.welcomeRecent .recentChatList .showMoreChats {
+    align-self: center;
 }
 
 @media screen and (max-width: 1000px) {

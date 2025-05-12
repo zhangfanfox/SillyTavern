@@ -62,6 +62,7 @@ async function sendWelcomePanel() {
             chats,
             empty: !chats.length,
             version: displayVersion,
+            more: chats.some(chat => chat.hidden),
         };
         const template = await renderTemplateAsync('welcomePanel', templateData);
         const fragment = document.createRange().createContextualFragment(template);
@@ -74,8 +75,19 @@ async function sendWelcomePanel() {
                 }
             });
         });
-        fragment.querySelector('button.openTemporaryChat').addEventListener('click', () => {
-            void newAssistantChat({ temporary: true });
+        const hiddenChats = fragment.querySelectorAll('.recentChat.hidden');
+        fragment.querySelectorAll('button.showMoreChats').forEach((button) => {
+            button.addEventListener('click', () => {
+                hiddenChats.forEach((chatItem) => {
+                    chatItem.classList.remove('hidden');
+                });
+                button.remove();
+            });
+        });
+        fragment.querySelectorAll('button.openTemporaryChat').forEach((button) => {
+            button.addEventListener('click', () => {
+                void newAssistantChat({ temporary: true });
+            });
         });
         chatElement.append(fragment.firstChild);
     } catch (error) {
@@ -125,6 +137,7 @@ async function openRecentChat(avatarId, fileName) {
  * @property {string} char_name Character name
  * @property {string} date_short Date in short format
  * @property {string} date_long Date in long format
+ * @property {boolean} hidden Chat will be hidden by default
  */
 async function getRecentChats() {
     const response = await fetch('/api/characters/recent', {
@@ -141,13 +154,15 @@ async function getRecentChats() {
     data.sort((a, b) => b.last_mes - a.last_mes)
         .map(chat => ({ chat, character: characters.find(x => x.avatar === chat.avatar) }))
         .filter(t => t.character)
-        .forEach(({ chat, character }) => {
+        .forEach(({ chat, character }, index) => {
+            const DEFAULT_DISPLAYED = 5;
             const chatTimestamp = timestampToMoment(chat.last_mes);
             chat.char_name = character.name;
             chat.date_short = chatTimestamp.format('l');
             chat.date_long = chatTimestamp.format('LL LT');
             chat.chat_name = chat.file_name.replace('.jsonl', '');
             chat.char_thumbnail = getThumbnailUrl('avatar', character.avatar);
+            chat.hidden = index >= DEFAULT_DISPLAYED;
         });
 
     return data;

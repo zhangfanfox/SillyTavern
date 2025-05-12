@@ -1312,7 +1312,7 @@ router.post('/recent', async function (request, response) {
             }
         }
 
-        const recentChats = allChatFiles.sort((a, b) => b.mtime - a.mtime).slice(0, 5);
+        const recentChats = allChatFiles.sort((a, b) => b.mtime - a.mtime).slice(0, 15);
         const jsonFilesPromise = recentChats.map((file) => {
             return getChatInfo(file.filePath, { avatar: file.pngFile });
         });
