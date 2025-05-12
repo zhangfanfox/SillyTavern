@@ -1,5 +1,7 @@
 import {
+    addOneMessage,
     characters,
+    chat,
     displayVersion,
     doNewChat,
     event_types,
@@ -12,9 +14,12 @@ import {
     neutralCharacterName,
     newAssistantChat,
     openCharacterChat,
+    printCharactersDebounced,
     selectCharacterById,
     sendSystemMessage,
+    system_avatar,
     system_message_types,
+    this_chid,
 } from '../script.js';
 import { is_group_generating } from './group-chats.js';
 import { t } from './i18n.js';
@@ -47,7 +52,27 @@ export async function openWelcomeScreen() {
     }
 
     await sendWelcomePanel();
+    sendAssistantMessage();
     sendSystemMessage(system_message_types.WELCOME_PROMPT);
+}
+
+function sendAssistantMessage() {
+    const currentAssistantAvatar = getPermanentAssistantAvatar();
+    const character = characters.find(x => x.avatar === currentAssistantAvatar);
+    const name = character ? character.name : neutralCharacterName;
+    const avatar = character ? getThumbnailUrl('avatar', character.avatar) : system_avatar;
+
+    const message = {
+        name: name,
+        force_avatar: avatar,
+        mes: t`If you're connected to an API, try asking me something!`,
+        is_system: false,
+        is_user: false,
+        extra: {},
+    };
+
+    chat.push(message);
+    addOneMessage(message);
 }
 
 async function sendWelcomePanel() {
@@ -207,6 +232,15 @@ async function createPermanentAssistant() {
     const formData = new FormData();
     formData.append('ch_name', neutralCharacterName);
     formData.append('file_name', defaultAssistantAvatar.replace('.png', ''));
+    formData.append('creator_notes', t`Automatically created character. Feel free to edit.`);
+
+    try {
+        const avatarResponse = await fetch(system_avatar);
+        const avatarBlob = await avatarResponse.blob();
+        formData.append('avatar', avatarBlob, defaultAssistantAvatar);
+    } catch (error) {
+        console.warn('Error fetching system avatar. Fallback image will be used.', error);
+    }
 
     const headers = getRequestHeaders();
     delete headers['Content-Type'];
@@ -241,4 +275,40 @@ export function initWelcomeScreen() {
     for (const event of events) {
         eventSource.makeFirst(event, openWelcomeScreen);
     }
+
+    eventSource.on(event_types.CHARACTER_MANAGEMENT_DROPDOWN, (target) =>{
+        if (target !== 'set_as_assistant') {
+            return;
+        }
+        if (this_chid === undefined) {
+            return;
+        }
+        /** @type {import('./char-data.js').v1CharData} */
+        const character = characters[this_chid];
+        if (!character) {
+            return;
+        }
+
+        const currentAssistantAvatar = getPermanentAssistantAvatar();
+        if (currentAssistantAvatar === character.avatar) {
+            if (character.avatar === defaultAssistantAvatar) {
+                toastr.info(t`${character.name} is a system assistant. Choose another character.`);
+                return;
+            }
+
+            toastr.info(t`${character.name} is no longer your assistant.`);
+            accountStorage.removeItem(assistantAvatarKey);
+            return;
+        }
+
+        accountStorage.setItem(assistantAvatarKey, character.avatar);
+        printCharactersDebounced();
+        toastr.success(t`Set ${character.name} as your assistant.`);
+    });
+
+    eventSource.on(event_types.CHARACTER_RENAMED, (oldAvatar, newAvatar) => {
+        if (oldAvatar === getPermanentAssistantAvatar()) {
+            accountStorage.setItem(assistantAvatarKey, newAvatar);
+        }
+    });
 }

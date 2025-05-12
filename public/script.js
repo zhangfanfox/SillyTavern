@@ -530,6 +530,7 @@ export const event_types = {
     CONNECTION_PROFILE_UPDATED: 'connection_profile_updated',
     TOOL_CALLS_PERFORMED: 'tool_calls_performed',
     TOOL_CALLS_RENDERED: 'tool_calls_rendered',
+    CHARACTER_MANAGEMENT_DROPDOWN: 'charManagementDropdown',
 };
 
 export const eventSource = new EventEmitter([event_types.APP_READY]);
@@ -12141,7 +12142,7 @@ jQuery(async function () {
                 );
                 break;*/
             default:
-                await eventSource.emit('charManagementDropdown', target);
+                await eventSource.emit(event_types.CHARACTER_MANAGEMENT_DROPDOWN, target);
         }
         $('#char-management-dropdown').prop('selectedIndex', 0);
     });
