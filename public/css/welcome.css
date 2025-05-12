@@ -10,6 +10,13 @@
     padding-bottom: 5px;
 }
 
+.welcomePanel.recentHidden .welcomeRecent,
+.welcomePanel.recentHidden .recentChatsTitle,
+.welcomePanel.recentHidden .hideRecentChats,
+.welcomePanel:not(.recentHidden) .showRecentChats {
+    display: none;
+}
+
 body.bubblechat .welcomePanel {
     border-radius: 10px;
     background-color: var(--SmartThemeBotMesBlurTintColor);
@@ -42,6 +49,7 @@ body.bubblechat .welcomePanel {
 .welcomePanel .welcomeHeaderVersionDisplay {
     font-size: calc(var(--mainFontSize) * 1.3);
     font-weight: 600;
+    flex-grow: 1;
 }
 
 .welcomePanel .welcomeHeaderLogo {

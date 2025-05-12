@@ -94,6 +94,25 @@ async function sendWelcomePanel() {
         };
         const template = await renderTemplateAsync('welcomePanel', templateData);
         const fragment = document.createRange().createContextualFragment(template);
+        fragment.querySelectorAll('.welcomePanel').forEach((root) => {
+            const recentHiddenClass = 'recentHidden';
+            const recentHiddenKey = 'WelcomePage_RecentChatsHidden';
+            if (accountStorage.getItem(recentHiddenKey) === 'true') {
+                root.classList.add(recentHiddenClass);
+            }
+            root.querySelectorAll('.showRecentChats').forEach((button) => {
+                button.addEventListener('click', () => {
+                    root.classList.remove(recentHiddenClass);
+                    accountStorage.setItem(recentHiddenKey, 'false');
+                });
+            });
+            root.querySelectorAll('.hideRecentChats').forEach((button) => {
+                button.addEventListener('click', () =>{
+                    root.classList.add(recentHiddenClass);
+                    accountStorage.setItem(recentHiddenKey, 'true');
+                });
+            });
+        });
         fragment.querySelectorAll('.recentChat').forEach((item) => {
             item.addEventListener('click', () => {
                 const avatarId = item.getAttribute('data-avatar');
