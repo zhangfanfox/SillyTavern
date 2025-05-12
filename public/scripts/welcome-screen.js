@@ -107,10 +107,11 @@ async function sendWelcomePanel() {
         const hiddenChats = fragment.querySelectorAll('.recentChat.hidden');
         fragment.querySelectorAll('button.showMoreChats').forEach((button) => {
             button.addEventListener('click', () => {
+                const rotate = button.classList.contains('rotate');
                 hiddenChats.forEach((chatItem) => {
-                    chatItem.classList.remove('hidden');
+                    chatItem.classList.toggle('hidden', rotate);
                 });
-                button.remove();
+                button.classList.toggle('rotate', !rotate);
             });
         });
         fragment.querySelectorAll('button.openTemporaryChat').forEach((button) => {

@@ -186,6 +186,10 @@ body.big-avatars .welcomeRecent .recentChatList .recentChat .chatMessageContaine
     align-self: center;
 }
 
+.welcomeRecent .recentChatList .showMoreChats.rotate {
+    transform: rotate(180deg);
+}
+
 @media screen and (max-width: 1000px) {
     .welcomePanel .welcomeShortcuts a span {
         display: none;
