@@ -2,6 +2,7 @@ import {
     addOneMessage,
     characters,
     chat,
+    clearChat,
     displayVersion,
     doNewChat,
     event_types,
@@ -51,6 +52,8 @@ export async function openWelcomeScreen() {
         return;
     }
 
+    await clearChat();
+    chat.length = 0;
     await sendWelcomePanel();
     sendAssistantMessage();
     sendSystemMessage(system_message_types.WELCOME_PROMPT);
