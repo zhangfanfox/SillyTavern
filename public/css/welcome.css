@@ -140,7 +140,7 @@ body.bubblechat .welcomePanel {
     align-items: center;
     justify-content: space-between;
     gap: 5px;
-    font-size: calc(var(--mainFontSize) * 0.9);
+    font-size: calc(var(--mainFontSize) * 0.85);
 }
 
 .welcomeRecent .recentChatList .recentChat .chatMessageContainer .chatMessage {
