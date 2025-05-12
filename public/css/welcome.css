@@ -186,7 +186,7 @@ body.big-avatars .welcomeRecent .recentChatList .recentChat .chatMessageContaine
     align-self: center;
 }
 
-.welcomeRecent .recentChatList .showMoreChats.rotate {
+.welcomeRecent .recentChatList .showMoreChats.rotated {
     transform: rotate(180deg);
 }
 
