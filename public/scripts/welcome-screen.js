@@ -68,7 +68,7 @@ function sendAssistantMessage() {
     const message = {
         name: name,
         force_avatar: avatar,
-        mes: t`If you're connected to an API, try asking me something!`,
+        mes: t`If you're connected to an API, try asking me something!` + '\n***\n' + t`**Hint:** Set any character as your welcome page assistant from their "More..." menu.`,
         is_system: false,
         is_user: false,
         extra: {},
