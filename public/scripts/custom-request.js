@@ -242,7 +242,7 @@ export class TextCompletionService {
 
                 // Format messages using instruct formatting
                 const formattedMessages = [];
-                const prefillActive = prompt[prompt.length - 1].role === 'assistant';
+                const prefillActive = prompt.length > 0 ? prompt[prompt.length - 1].role === 'assistant' : false;
                 for (const message of prompt) {
                     let messageContent = message.content;
                     if (!message.ignoreInstruct) {
