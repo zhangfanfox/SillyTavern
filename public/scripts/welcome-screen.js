@@ -335,6 +335,37 @@ export async function openPermanentAssistantCard() {
     await selectCharacterById(characterId);
 }
 
+/**
+ * Assigns a character as the assistant.
+ * @param {string?} characterId Character ID
+ */
+export function assignCharacterAsAssistant(characterId) {
+    if (characterId === undefined) {
+        return;
+    }
+    /** @type {import('./char-data.js').v1CharData} */
+    const character = characters[characterId];
+    if (!character) {
+        return;
+    }
+
+    const currentAssistantAvatar = getPermanentAssistantAvatar();
+    if (currentAssistantAvatar === character.avatar) {
+        if (character.avatar === defaultAssistantAvatar) {
+            toastr.info(t`${character.name} is a system assistant. Choose another character.`);
+            return;
+        }
+
+        toastr.info(t`${character.name} is no longer your assistant.`);
+        accountStorage.removeItem(assistantAvatarKey);
+        return;
+    }
+
+    accountStorage.setItem(assistantAvatarKey, character.avatar);
+    printCharactersDebounced();
+    toastr.success(t`Set ${character.name} as your assistant.`);
+}
+
 export function initWelcomeScreen() {
     const events = [event_types.CHAT_CHANGED, event_types.APP_READY];
     for (const event of events) {
@@ -345,30 +376,7 @@ export function initWelcomeScreen() {
         if (target !== 'set_as_assistant') {
             return;
         }
-        if (this_chid === undefined) {
-            return;
-        }
-        /** @type {import('./char-data.js').v1CharData} */
-        const character = characters[this_chid];
-        if (!character) {
-            return;
-        }
-
-        const currentAssistantAvatar = getPermanentAssistantAvatar();
-        if (currentAssistantAvatar === character.avatar) {
-            if (character.avatar === defaultAssistantAvatar) {
-                toastr.info(t`${character.name} is a system assistant. Choose another character.`);
-                return;
-            }
-
-            toastr.info(t`${character.name} is no longer your assistant.`);
-            accountStorage.removeItem(assistantAvatarKey);
-            return;
-        }
-
-        accountStorage.setItem(assistantAvatarKey, character.avatar);
-        printCharactersDebounced();
-        toastr.success(t`Set ${character.name} as your assistant.`);
+        assignCharacterAsAssistant(this_chid);
     });
 
     eventSource.on(event_types.CHARACTER_RENAMED, (oldAvatar, newAvatar) => {
