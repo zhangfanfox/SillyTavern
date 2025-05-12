@@ -949,7 +949,7 @@ async function importFromPng(uploadPath, { request }, preservedFileName) {
  * @param {object} additionalData
  * @returns {Promise<ChatInfo>}
  */
-async function getChatInfo(pathToFile, additionalData = {}) {
+export async function getChatInfo(pathToFile, additionalData = {}, isGroup = false) {
     return new Promise(async (res) => {
         const fileStream = fs.createReadStream(pathToFile);
         const stats = fs.statSync(pathToFile);
@@ -982,9 +982,9 @@ async function getChatInfo(pathToFile, additionalData = {}) {
 
                     chatData['file_name'] = path.parse(pathToFile).base;
                     chatData['file_size'] = fileSizeInKB;
-                    chatData['chat_items'] = itemCounter - 1;
+                    chatData['chat_items'] = isGroup ? itemCounter : (itemCounter - 1);
                     chatData['mes'] = jsonData['mes'] || '[The chat is empty]';
-                    chatData['last_mes'] = jsonData['send_date'] || Date.now();
+                    chatData['last_mes'] = jsonData['send_date'] || stats.mtimeMs;
                     Object.assign(chatData, additionalData);
 
                     res(chatData);

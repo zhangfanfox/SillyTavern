@@ -6,6 +6,7 @@ import sanitize from 'sanitize-filename';
 import { sync as writeFileAtomicSync } from 'write-file-atomic';
 
 import { humanizedISO8601DateTime } from '../util.js';
+import { getChatInfo } from './characters.js';
 
 export const router = express.Router();
 
@@ -130,4 +131,42 @@ router.post('/delete', async (request, response) => {
     }
 
     return response.send({ ok: true });
+});
+
+router.post('/recent', async (request, response) => {
+    try {
+        /** @type {{groupId: string, filePath: string, mtime: number}[]} */
+        const allChatFiles = [];
+
+        const groups = fs.readdirSync(request.user.directories.groups).filter(x => path.extname(x) === '.json');
+        for (const group of groups) {
+            const groupPath = path.join(request.user.directories.groups, group);
+            const groupContents = fs.readFileSync(groupPath, 'utf8');
+            const groupData = JSON.parse(groupContents);
+
+            if (Array.isArray(groupData.chats)) {
+                for (const chat of groupData.chats) {
+                    const filePath = path.join(request.user.directories.groupChats, `${chat}.jsonl`);
+                    if (!fs.existsSync(filePath)) {
+                        continue;
+                    }
+                    const stats = fs.statSync(filePath);
+                    allChatFiles.push({ groupId: groupData.id, filePath, mtime: stats.mtimeMs });
+                }
+            }
+        }
+
+        const recentChats = allChatFiles.sort((a, b) => b.mtime - a.mtime).slice(0, 15);
+        const jsonFilesPromise = recentChats.map((file) => {
+            return getChatInfo(file.filePath, { group: file.groupId }, true);
+        });
+
+        const chatData = (await Promise.allSettled(jsonFilesPromise)).filter(x => x.status === 'fulfilled').map(x => x.value);
+        const validFiles = chatData.filter(i => i.file_name);
+
+        return response.send(validFiles);
+    } catch (error) {
+        console.error('Error while getting recent group chats', error);
+        return response.sendStatus(500);
+    }
 });

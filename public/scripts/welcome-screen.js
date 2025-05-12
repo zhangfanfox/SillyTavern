@@ -21,11 +21,11 @@ import {
     system_message_types,
     this_chid,
 } from '../script.js';
-import { is_group_generating } from './group-chats.js';
+import { getGroupAvatar, groups, is_group_generating, openGroupById, openGroupChat } from './group-chats.js';
 import { t } from './i18n.js';
 import { renderTemplateAsync } from './templates.js';
 import { accountStorage } from './util/AccountStorage.js';
-import { timestampToMoment } from './utils.js';
+import { sortMoments, timestampToMoment } from './utils.js';
 
 const assistantAvatarKey = 'assistant';
 const defaultAssistantAvatar = 'default_Assistant.png';
@@ -94,9 +94,13 @@ async function sendWelcomePanel() {
         fragment.querySelectorAll('.recentChat').forEach((item) => {
             item.addEventListener('click', () => {
                 const avatarId = item.getAttribute('data-avatar');
+                const groupId = item.getAttribute('data-group');
                 const fileName = item.getAttribute('data-file');
                 if (avatarId && fileName) {
-                    void openRecentChat(avatarId, fileName);
+                    void openRecentCharacterChat(avatarId, fileName);
+                }
+                if (groupId && fileName) {
+                    void openRecentGroupChat(groupId, fileName);
                 }
             });
         });
@@ -114,6 +118,18 @@ async function sendWelcomePanel() {
                 void newAssistantChat({ temporary: true });
             });
         });
+        fragment.querySelectorAll('.recentChat.group').forEach((groupChat) => {
+            const groupId = groupChat.getAttribute('data-group');
+            const group = groups.find(x => x.id === groupId);
+            if (group) {
+                const avatar = groupChat.querySelector('.avatar');
+                if (!avatar) {
+                    return;
+                }
+                const groupAvatar = getGroupAvatar(group);
+                $(avatar).replaceWith(groupAvatar);
+            }
+        });
         chatElement.append(fragment.firstChild);
     } catch (error) {
         console.error('Welcome screen error:', error);
@@ -121,11 +137,11 @@ async function sendWelcomePanel() {
 }
 
 /**
- * Opens a recent chat.
+ * Opens a recent character chat.
  * @param {string} avatarId Avatar file name
  * @param {string} fileName Chat file name
  */
-async function openRecentChat(avatarId, fileName) {
+async function openRecentCharacterChat(avatarId, fileName) {
     const characterId = characters.findIndex(x => x.avatar === avatarId);
     if (characterId === -1) {
         console.error(`Character not found for avatar ID: ${avatarId}`);
@@ -147,6 +163,32 @@ async function openRecentChat(avatarId, fileName) {
 }
 
 /**
+ * Opens a recent group chat.
+ * @param {string} groupId Group ID
+ * @param {string} fileName Chat file name
+ */
+async function openRecentGroupChat(groupId, fileName) {
+    const group = groups.find(x => x.id === groupId);
+    if (!group) {
+        console.error(`Group not found for ID: ${groupId}`);
+        return;
+    }
+
+    try {
+        await openGroupById(groupId);
+        const currentChatId = getCurrentChatId();
+        if (currentChatId === fileName) {
+            console.debug(`Chat ${fileName} is already open.`);
+            return;
+        }
+        await openGroupChat(groupId, fileName);
+    } catch (error) {
+        console.error('Error opening recent group chat:', error);
+        toastr.error(t`Failed to open recent group chat. See console for details.`);
+    }
+}
+
+/**
  * Gets the list of recent chats from the server.
  * @returns {Promise<RecentChat[]>} List of recent chats
  *
@@ -156,37 +198,56 @@ async function openRecentChat(avatarId, fileName) {
  * @property {string} file_size Size of the chat file
  * @property {number} chat_items Number of items in the chat
  * @property {string} mes Last message content
- * @property {number} last_mes Timestamp of the last message
+ * @property {string} last_mes Timestamp of the last message
  * @property {string} avatar Avatar URL
  * @property {string} char_thumbnail Thumbnail URL
- * @property {string} char_name Character name
+ * @property {string} char_name Character or group name
  * @property {string} date_short Date in short format
  * @property {string} date_long Date in long format
+ * @property {string} group Group ID (if applicable)
+ * @property {boolean} is_group Indicates if the chat is a group chat
  * @property {boolean} hidden Chat will be hidden by default
  */
 async function getRecentChats() {
-    const response = await fetch('/api/characters/recent', {
-        method: 'POST',
-        headers: getRequestHeaders(),
-    });
-    if (!response.ok) {
-        throw new Error('Failed to fetch recent chats');
-    }
+    const charData = async () => {
+        const response = await fetch('/api/characters/recent', {
+            method: 'POST',
+            headers: getRequestHeaders(),
+        });
+        if (!response.ok) {
+            console.warn('Failed to fetch recent character chats');
+            return [];
+        }
+        return await response.json();
+    };
+
+    const groupData = async () => {
+        const response = await fetch('/api/groups/recent', {
+            method: 'POST',
+            headers: getRequestHeaders(),
+        });
+        if (!response.ok) {
+            console.warn('Failed to fetch recent group chats');
+            return [];
+        }
+        return await response.json();
+    };
 
     /** @type {RecentChat[]} */
-    const data = await response.json();
+    const data = [...await charData(), ...await groupData()];
 
-    data.sort((a, b) => b.last_mes - a.last_mes)
-        .map(chat => ({ chat, character: characters.find(x => x.avatar === chat.avatar) }))
-        .filter(t => t.character)
-        .forEach(({ chat, character }, index) => {
+    data.sort((a, b) => sortMoments(timestampToMoment(a.last_mes), timestampToMoment(b.last_mes)))
+        .map(chat => ({ chat, character: characters.find(x => x.avatar === chat.avatar), group: groups.find(x => x.id === chat.group) }))
+        .filter(t => t.character || t.group)
+        .forEach(({ chat, character, group }, index) => {
             const DEFAULT_DISPLAYED = 5;
             const chatTimestamp = timestampToMoment(chat.last_mes);
-            chat.char_name = character.name;
+            chat.char_name = character?.name || group?.name || '';
             chat.date_short = chatTimestamp.format('l');
             chat.date_long = chatTimestamp.format('LL LT');
             chat.chat_name = chat.file_name.replace('.jsonl', '');
-            chat.char_thumbnail = getThumbnailUrl('avatar', character.avatar);
+            chat.char_thumbnail = character ? getThumbnailUrl('avatar', character.avatar) : system_avatar;
+            chat.is_group = !!group;
             chat.hidden = index >= DEFAULT_DISPLAYED;
         });
 
