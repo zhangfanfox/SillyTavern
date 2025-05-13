@@ -261,7 +261,7 @@ async function getRecentChats() {
     };
 
     /** @type {RecentChat[]} */
-    const data = [...await charData(), ...await groupData()];
+    const data = await Promise.all([charData(), groupData()]).then(res => res.flat());
 
     data.sort((a, b) => sortMoments(timestampToMoment(a.last_mes), timestampToMoment(b.last_mes)))
         .map(chat => ({ chat, character: characters.find(x => x.avatar === chat.avatar), group: groups.find(x => x.id === chat.group) }))
