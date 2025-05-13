@@ -30,6 +30,9 @@ import { sortMoments, timestampToMoment } from './utils.js';
 const assistantAvatarKey = 'assistant';
 const defaultAssistantAvatar = 'default_Assistant.png';
 
+const DEFAULT_DISPLAYED = 5;
+const MAX_DISPLAYED = 20;
+
 export function getPermanentAssistantAvatar() {
     const assistantAvatar = accountStorage.getItem(assistantAvatarKey);
     if (assistantAvatar === null) {
@@ -78,6 +81,7 @@ function sendAssistantMessage() {
 async function sendWelcomePanel() {
     try {
         const chatElement = document.getElementById('chat');
+        const sendTextArea = document.getElementById('send_textarea');
         if (!chatElement) {
             console.error('Chat element not found');
             return;
@@ -104,7 +108,7 @@ async function sendWelcomePanel() {
                 });
             });
             root.querySelectorAll('.hideRecentChats').forEach((button) => {
-                button.addEventListener('click', () =>{
+                button.addEventListener('click', () => {
                     root.classList.add(recentHiddenClass);
                     accountStorage.setItem(recentHiddenKey, 'true');
                 });
@@ -134,8 +138,11 @@ async function sendWelcomePanel() {
             });
         });
         fragment.querySelectorAll('button.openTemporaryChat').forEach((button) => {
-            button.addEventListener('click', () => {
-                void newAssistantChat({ temporary: true });
+            button.addEventListener('click', async () => {
+                await newAssistantChat({ temporary: true });
+                if (sendTextArea instanceof HTMLTextAreaElement) {
+                    sendTextArea.focus();
+                }
             });
         });
         fragment.querySelectorAll('.recentChat.group').forEach((groupChat) => {
@@ -259,8 +266,8 @@ async function getRecentChats() {
     data.sort((a, b) => sortMoments(timestampToMoment(a.last_mes), timestampToMoment(b.last_mes)))
         .map(chat => ({ chat, character: characters.find(x => x.avatar === chat.avatar), group: groups.find(x => x.id === chat.group) }))
         .filter(t => t.character || t.group)
+        .slice(0, MAX_DISPLAYED)
         .forEach(({ chat, character, group }, index) => {
-            const DEFAULT_DISPLAYED = 5;
             const chatTimestamp = timestampToMoment(chat.last_mes);
             chat.char_name = character?.name || group?.name || '';
             chat.date_short = chatTimestamp.format('l');
@@ -388,7 +395,7 @@ export function initWelcomeScreen() {
         eventSource.makeFirst(event, openWelcomeScreen);
     }
 
-    eventSource.on(event_types.CHARACTER_MANAGEMENT_DROPDOWN, (target) =>{
+    eventSource.on(event_types.CHARACTER_MANAGEMENT_DROPDOWN, (target) => {
         if (target !== 'set_as_assistant') {
             return;
         }
