@@ -281,7 +281,7 @@ async function getRecentChats() {
     return data;
 }
 
-export async function openPermanentAssistantChat({ tryCreate = true } = {}) {
+export async function openPermanentAssistantChat({ tryCreate = true, created = false } = {}) {
     const avatar = getPermanentAssistantAvatar();
     const characterId = characters.findIndex(x => x.avatar === avatar);
     if (characterId === -1) {
@@ -293,7 +293,7 @@ export async function openPermanentAssistantChat({ tryCreate = true } = {}) {
         try {
             console.log(`Character not found for avatar ID: ${avatar}. Creating new assistant.`);
             await createPermanentAssistant();
-            return openPermanentAssistantChat({ tryCreate: false });
+            return openPermanentAssistantChat({ tryCreate: false, created: true });
         }
         catch (error) {
             console.error('Error creating permanent assistant:', error);
@@ -304,7 +304,9 @@ export async function openPermanentAssistantChat({ tryCreate = true } = {}) {
 
     try {
         await selectCharacterById(characterId);
-        await doNewChat({ deleteCurrentChat: false });
+        if (!created) {
+            await doNewChat({ deleteCurrentChat: false });
+        }
         console.log(`Opened permanent assistant chat for ${neutralCharacterName}.`, getCurrentChatId());
     } catch (error) {
         console.error('Error opening permanent assistant chat:', error);
