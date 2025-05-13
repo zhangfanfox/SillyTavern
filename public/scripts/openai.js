@@ -765,7 +765,10 @@ async function populationInjectionPrompts(prompts, messages) {
         const wrap = false;
 
         // Group prompts by priority
-        const orderGroups = {};
+        const extensionPromptsOrder = '0';
+        const orderGroups = {
+            [extensionPromptsOrder]: [],
+        };
         for (const prompt of depthPrompts) {
             const order = prompt.injection_order || 0;
             if (!orderGroups[order]) {
@@ -788,7 +791,9 @@ async function populationInjectionPrompts(prompts, messages) {
                     .join(separator);
 
                 // Get extension prompt
-                const extensionPrompt = await getExtensionPrompt(extension_prompt_types.IN_CHAT, i, separator, roleTypes[role], wrap);
+                const extensionPrompt = order === extensionPromptsOrder
+                    ? await getExtensionPrompt(extension_prompt_types.IN_CHAT, i, separator, roleTypes[role], wrap)
+                    : '';
                 const jointPrompt = [rolePrompts, extensionPrompt].filter(x => x).map(x => x.trim()).join(separator);
 
                 if (jointPrompt && jointPrompt.length) {
