@@ -135,12 +135,17 @@ async function sendWelcomePanel() {
         });
         const hiddenChats = fragment.querySelectorAll('.recentChat.hidden');
         fragment.querySelectorAll('button.showMoreChats').forEach((button) => {
+            const showRecentChatsTitle = t`Show more recent chats`;
+            const hideRecentChatsTitle = t`Show less recent chats`;
+
+            button.setAttribute('title', showRecentChatsTitle);
             button.addEventListener('click', () => {
                 const rotate = button.classList.contains('rotated');
                 hiddenChats.forEach((chatItem) => {
                     chatItem.classList.toggle('hidden', rotate);
                 });
                 button.classList.toggle('rotated', !rotate);
+                button.setAttribute('title', rotate ? showRecentChatsTitle : hideRecentChatsTitle);
             });
         });
         fragment.querySelectorAll('button.openTemporaryChat').forEach((button) => {
