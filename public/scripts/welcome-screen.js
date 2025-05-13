@@ -9,6 +9,7 @@ import {
     getCharacters,
     getCurrentChatId,
     getRequestHeaders,
+    getSystemMessageByType,
     getThumbnailUrl,
     is_send_press,
     neutralCharacterName,
@@ -16,7 +17,6 @@ import {
     openCharacterChat,
     printCharactersDebounced,
     selectCharacterById,
-    sendSystemMessage,
     system_avatar,
     system_message_types,
     this_chid,
@@ -56,7 +56,7 @@ export async function openWelcomeScreen() {
 
     await sendWelcomePanel();
     sendAssistantMessage();
-    sendSystemMessage(system_message_types.WELCOME_PROMPT);
+    sendWelcomePrompt();
 }
 
 function sendAssistantMessage() {
@@ -75,7 +75,13 @@ function sendAssistantMessage() {
     };
 
     chat.push(message);
-    addOneMessage(message);
+    addOneMessage(message, { scroll: false });
+}
+
+function sendWelcomePrompt() {
+    const message = getSystemMessageByType(system_message_types.WELCOME_PROMPT);
+    chat.push(message);
+    addOneMessage(message, { scroll: false });
 }
 
 async function sendWelcomePanel() {
