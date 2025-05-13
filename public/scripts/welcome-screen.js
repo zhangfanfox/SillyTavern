@@ -2,7 +2,6 @@ import {
     addOneMessage,
     characters,
     chat,
-    clearChat,
     displayVersion,
     doNewChat,
     event_types,
@@ -48,12 +47,10 @@ export function getPermanentAssistantAvatar() {
 
 export async function openWelcomeScreen() {
     const currentChatId = getCurrentChatId();
-    if (currentChatId !== undefined) {
+    if (currentChatId !== undefined || chat.length > 0) {
         return;
     }
 
-    await clearChat();
-    chat.length = 0;
     await sendWelcomePanel();
     sendAssistantMessage();
     sendSystemMessage(system_message_types.WELCOME_PROMPT);
