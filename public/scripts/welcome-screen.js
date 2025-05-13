@@ -30,7 +30,7 @@ import { sortMoments, timestampToMoment } from './utils.js';
 const assistantAvatarKey = 'assistant';
 const defaultAssistantAvatar = 'default_Assistant.png';
 
-const DEFAULT_DISPLAYED = 5;
+const DEFAULT_DISPLAYED = 3;
 const MAX_DISPLAYED = 20;
 
 export function getPermanentAssistantAvatar() {
@@ -272,7 +272,6 @@ async function getRecentChats() {
     data.sort((a, b) => sortMoments(timestampToMoment(a.last_mes), timestampToMoment(b.last_mes)))
         .map(chat => ({ chat, character: characters.find(x => x.avatar === chat.avatar), group: groups.find(x => x.id === chat.group) }))
         .filter(t => t.character || t.group)
-        .slice(0, MAX_DISPLAYED)
         .forEach(({ chat, character, group }, index) => {
             const chatTimestamp = timestampToMoment(chat.last_mes);
             chat.char_name = character?.name || group?.name || '';
@@ -282,9 +281,11 @@ async function getRecentChats() {
             chat.char_thumbnail = character ? getThumbnailUrl('avatar', character.avatar) : system_avatar;
             chat.is_group = !!group;
             chat.hidden = index >= DEFAULT_DISPLAYED;
+            chat.avatar = chat.avatar || '';
+            chat.group = chat.group || '';
         });
 
-    return data;
+    return data.slice(0, MAX_DISPLAYED);
 }
 
 export async function openPermanentAssistantChat({ tryCreate = true, created = false } = {}) {
