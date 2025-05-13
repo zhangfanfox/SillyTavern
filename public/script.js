@@ -11212,7 +11212,6 @@ jQuery(async function () {
                 selected_button = 'characters';
                 $('#rm_button_selected_ch').children('h2').text('');
                 select_rm_characters();
-                await getClientVersion();
                 await eventSource.emit(event_types.CHAT_CHANGED, getCurrentChatId());
             } else {
                 toastr.info('Please stop the message generation first.');
