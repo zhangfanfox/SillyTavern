@@ -31,7 +31,7 @@ const assistantAvatarKey = 'assistant';
 const defaultAssistantAvatar = 'default_Assistant.png';
 
 const DEFAULT_DISPLAYED = 3;
-const MAX_DISPLAYED = 20;
+const MAX_DISPLAYED = 15;
 
 export function getPermanentAssistantAvatar() {
     const assistantAvatar = accountStorage.getItem(assistantAvatarKey);
@@ -247,32 +247,19 @@ async function openRecentGroupChat(groupId, fileName) {
  * @property {boolean} hidden Chat will be hidden by default
  */
 async function getRecentChats() {
-    const charData = async () => {
-        const response = await fetch('/api/characters/recent', {
-            method: 'POST',
-            headers: getRequestHeaders(),
-        });
-        if (!response.ok) {
-            console.warn('Failed to fetch recent character chats');
-            return [];
-        }
-        return await response.json();
-    };
+    const response = await fetch('/api/chats/recent', {
+        method: 'POST',
+        headers: getRequestHeaders(),
+        body: JSON.stringify({ max: MAX_DISPLAYED }),
+    });
 
-    const groupData = async () => {
-        const response = await fetch('/api/groups/recent', {
-            method: 'POST',
-            headers: getRequestHeaders(),
-        });
-        if (!response.ok) {
-            console.warn('Failed to fetch recent group chats');
-            return [];
-        }
-        return await response.json();
-    };
+    if (!response.ok) {
+        console.warn('Failed to fetch recent character chats');
+        return [];
+    }
 
     /** @type {RecentChat[]} */
-    const data = await Promise.all([charData(), groupData()]).then(res => res.flat());
+    const data = await response.json();
 
     data.sort((a, b) => sortMoments(timestampToMoment(a.last_mes), timestampToMoment(b.last_mes)))
         .map(chat => ({ chat, character: characters.find(x => x.avatar === chat.avatar), group: groups.find(x => x.id === chat.group) }))
@@ -290,7 +277,7 @@ async function getRecentChats() {
             chat.group = chat.group || '';
         });
 
-    return data.slice(0, MAX_DISPLAYED);
+    return data;
 }
 
 export async function openPermanentAssistantChat({ tryCreate = true, created = false } = {}) {
