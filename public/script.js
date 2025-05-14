@@ -638,6 +638,7 @@ export const system_message_types = {
     MACROS: 'macros',
     WELCOME_PROMPT: 'welcome_prompt',
     ASSISTANT_NOTE: 'assistant_note',
+    ASSISTANT_MESSAGE: 'assistant_message',
 };
 
 /**
@@ -2298,6 +2299,7 @@ function getMessageFromTemplate({
     timestamp,
     tokenCount,
     extra,
+    type,
 }) {
     const mes = messageTemplate.clone();
     mes.attr({
@@ -2309,6 +2311,7 @@ function getMessageFromTemplate({
         'bookmark_link': bookmarkLink,
         'force_avatar': !!forceAvatar,
         'timestamp': timestamp,
+        ...(type ? { type } : {}),
     });
     mes.find('.avatar img').attr('src', avatarImg);
     mes.find('.ch_name .name_text').text(characterName);
@@ -2520,6 +2523,7 @@ export function addOneMessage(mes, { type = 'normal', insertAfter = null, scroll
         timestamp: timestamp,
         extra: mes.extra,
         tokenCount: mes.extra?.token_count ?? 0,
+        type: mes.extra?.type ?? '',
         ...formatGenerationTimer(mes.gen_started, mes.gen_finished, mes.extra?.token_count, mes.extra?.reasoning_duration, mes.extra?.time_to_first_token),
     };
 
