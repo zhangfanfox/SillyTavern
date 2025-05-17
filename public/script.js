@@ -11130,7 +11130,7 @@ jQuery(async function () {
         });
 
         if (id == 'option_select_chat') {
-            if (this_chid === undefined && !is_send_press) {
+            if (this_chid === undefined && !is_send_press && !selected_group) {
                 await openPermanentAssistantCard();
             }
             if ((selected_group && !is_group_generating) || (this_chid !== undefined && !is_send_press) || fromSlashCommand) {
