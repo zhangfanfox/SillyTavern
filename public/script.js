@@ -1979,7 +1979,19 @@ export async function printMessages() {
     }
 }
 
+/**
+ * Cancels the debounced chat save if it is currently pending.
+ */
+export function cancelDebouncedChatSave() {
+    if (chatSaveTimeout) {
+        console.debug('Debounced chat save cancelled');
+        clearTimeout(chatSaveTimeout);
+        chatSaveTimeout = null;
+    }
+}
+
 export async function clearChat() {
+    cancelDebouncedChatSave();
     closeMessageEditor();
     extension_prompts = {};
     if (is_delete_mode) {
@@ -6929,11 +6941,7 @@ export function saveChatDebounced() {
     const chid = this_chid;
     const selectedGroup = selected_group;
 
-    if (chatSaveTimeout) {
-        console.debug('Clearing chat save timeout');
-        clearTimeout(chatSaveTimeout);
-        chatSaveTimeout = null;
-    }
+    cancelDebouncedChatSave();
 
     chatSaveTimeout = setTimeout(async () => {
         if (selectedGroup !== selected_group) {
@@ -8646,11 +8654,7 @@ export async function saveChatConditional() {
     }
 
     try {
-        if (chatSaveTimeout) {
-            console.debug('Debounced chat save canceled');
-            clearTimeout(chatSaveTimeout);
-            chatSaveTimeout = null;
-        }
+        cancelDebouncedChatSave();
 
         isChatSaving = true;
 
