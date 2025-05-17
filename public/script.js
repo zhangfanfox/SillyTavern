@@ -7299,6 +7299,7 @@ function getFirstMessage() {
 }
 
 export async function openCharacterChat(file_name) {
+    await waitUntilCondition(() => !isChatSaving, debounce_timeout.extended, 10);
     await clearChat();
     characters[this_chid]['chat'] = file_name;
     chat.length = 0;
