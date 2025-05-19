@@ -220,7 +220,7 @@ export async function getGroupChat(groupId, reload = false) {
     }
 
     // Run validation before any loading
-    validateGroup(group);
+    await validateGroup(group);
     await unshallowGroupMembers(groupId);
 
     const chat_id = group.chat_id;
