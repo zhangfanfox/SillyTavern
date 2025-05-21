@@ -3942,6 +3942,11 @@ body #toast-container>div {
     -ms-filter: unset;
     padding: 5px 5px 10px 50px;
     font-size: calc(var(--mainFontSize) * 0.9);
+    filter: saturate(0.8);
+}
+
+button.toast-close-button {
+padding-right: 3px
 }
 
 #dialogue_del_mes {
