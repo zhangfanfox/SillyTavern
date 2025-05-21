@@ -3139,7 +3139,7 @@ input[type=search]:focus::-webkit-search-cancel-button {
 .missing-avatar.inline_avatar {
     padding: unset;
     border-radius: var(--avatar-base-border-radius-round);
-    width: fit-content;
+    font-size: 20px;
 }
 
 /*applies to char list and mes_text char display name*/
