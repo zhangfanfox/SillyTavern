@@ -3371,7 +3371,6 @@ $(document).ready(() => {
     });
 
     $('#toastr_position').on('change', function () {
-        console.error('saw toastr position change');
         const value = $(this).find(':selected').val();
         power_user.toastr_position = String(value);
         applyToastrPosition();
