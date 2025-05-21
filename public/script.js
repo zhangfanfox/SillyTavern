@@ -313,7 +313,7 @@ await new Promise((resolve) => {
     }
 });
 
-showLoader();
+//showLoader(); <-- must wait for poweruser (called from firstinit()), so moved it in there
 
 // Configure toast library:
 toastr.options.escapeHtml = true; // Prevent raw HTML inserts
@@ -990,6 +990,7 @@ async function firstLoadInit() {
     await initPresetManager();
     await getSystemMessages();
     await getSettings();
+    showLoader();
     initKeyboard();
     initDynamicStyles();
     initTags();
@@ -7594,8 +7595,6 @@ export async function getSettings() {
 
         // Apply theme toggles from power user settings
         applyPowerUserSettings();
-
-        toastr.options.positionClass = power_user.toastr_position; // Where to position the toast container
 
         // Load character tags
         loadTagsSettings(settings);
