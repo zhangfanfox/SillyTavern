@@ -725,6 +725,7 @@ export function fixToastrForDialogs() {
     if (!toastContainer) {
         toastContainer = document.createElement('div');
         toastContainer.setAttribute('id', 'toast-container');
+        if (toastr.options.positionClass) toastContainer.classList.add(toastr.options.positionClass);
     }
 
     // Check if toastr is already a child. If not, we need to move it inside this dialog.
