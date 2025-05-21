@@ -3943,6 +3943,7 @@ body #toast-container>div {
     padding: 5px 5px 10px 50px;
     font-size: calc(var(--mainFontSize) * 0.9);
     filter: saturate(0.8);
+    width:300px;
 }
 
 button.toast-close-button {
