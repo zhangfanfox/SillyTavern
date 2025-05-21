@@ -745,7 +745,7 @@ export function fixToastrForDialogs() {
             toastContainer.remove();
         } else {
             document.body.appendChild(toastContainer);
-            toastContainer.classList.add('toast-top-center');
+            toastContainer.classList.add(toastr.options.positionClass);
         }
     }
 }
