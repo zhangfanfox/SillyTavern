@@ -3948,7 +3948,7 @@ body #toast-container>div {
     filter: unset;
     -ms-filter: unset;
     padding: 5px 5px 10px 50px;
-    font-size: calc(var(--mainFontSize) * 0.9);
+    font-size: calc(var(--mainFontSize) * 0.95);
     width: 300px;
 }
 
