@@ -3942,8 +3942,23 @@ body #toast-container>div {
     -ms-filter: unset;
     padding: 5px 5px 10px 50px;
     font-size: calc(var(--mainFontSize) * 0.9);
-    filter: saturate(0.8);
     width:300px;
+}
+
+.toast-success {
+    background-color: #5d9e5d;
+}
+
+.toast-error {
+    background-color: #a83c36;
+}
+
+.toast-info {
+    background-color: #4092aa;
+}
+
+.toast-warning {
+    background-color: #e29325;
 }
 
 button.toast-close-button {
