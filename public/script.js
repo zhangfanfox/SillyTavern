@@ -11299,6 +11299,7 @@ jQuery(async function () {
             $(`.mes[mesid="${this_del_mes}"]`).nextAll('div').remove();
             $(`.mes[mesid="${this_del_mes}"]`).remove();
             chat.length = this_del_mes;
+            chat_metadata['tainted'] = true;
             await saveChatConditional();
             chatElement.scrollTop(chatElement[0].scrollHeight);
             await eventSource.emit(event_types.MESSAGE_DELETED, chat.length);
@@ -11738,6 +11739,7 @@ jQuery(async function () {
         let startFromZero = Number(this_edit_mes_id) === 0;
 
         this_edit_mes_id = undefined;
+        chat_metadata['tainted'] = true;
 
         updateViewMessageIds(startFromZero);
         saveChatDebounced();
