@@ -5303,6 +5303,8 @@ export function isImageInliningSupported() {
         'yi-vision',
         // Claude
         'claude-3',
+        'claude-opus-4',
+        'claude-sonnet-4',
         // Cohere
         'c4ai-aya-vision',
         // Google AI Studio
