@@ -2097,9 +2097,7 @@
                                         </div>
                                         <label for="claude_use_sysprompt" class="checkbox_label widthFreeExpand">
                                             <input id="claude_use_sysprompt" type="checkbox" />
-                                            <span data-i18n="Use system prompt (Claude 2.1+ only)">
-                                                Use system prompt (Claude 2.1+ only)
-                                            </span>
+                                            <span data-i18n="Use system prompt">Use system prompt</span>
                                         </label>
                                         <div class="toggle-description justifyLeft marginBot5">
                                             <span data-i18n="Send the system prompt for supported models. If disabled, the user message is added to the beginning of the prompt.">
@@ -2985,6 +2983,10 @@
                                 <h4 data-i18n="Claude Model">Claude Model</h4>
                                 <select id="model_claude_select">
                                     <optgroup label="Versions">
+                                        <option value="claude-opus-4-0">claude-opus-4-0</option>
+                                        <option value="claude-opus-4-20250514">claude-opus-4-20250514</option>
+                                        <option value="claude-sonnet-4-0">claude-sonnet-4-0</option>
+                                        <option value="claude-sonnet-4-20250514">claude-sonnet-4-20250514</option>
                                         <option value="claude-3-7-sonnet-latest">claude-3-7-sonnet-latest</option>
                                         <option value="claude-3-7-sonnet-20250219">claude-3-7-sonnet-20250219</option>
                                         <option value="claude-3-5-sonnet-latest">claude-3-5-sonnet-latest</option>
