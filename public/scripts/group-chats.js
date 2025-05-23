@@ -1195,7 +1195,9 @@ export async function editGroup(id, immediately, reload = true) {
         return;
     }
 
-    group['chat_metadata'] = chat_metadata;
+    if (id === selected_group) {
+        group['chat_metadata'] = structuredClone(chat_metadata);
+    }
 
     if (immediately) {
         return await _save(group, reload);
