@@ -696,13 +696,14 @@ class PresetManager {
             return;
         }
 
-        $(this.select).find(`option[value="${value}"]`).remove();
-
         if (this.isKeyedApi()) {
+            $(this.select).find(`option[value="${value}"]`).remove();
             const index = preset_names.indexOf(nameToDelete);
             preset_names.splice(index, 1);
             presets.splice(index, 1);
         } else {
+            const index = preset_names[nameToDelete];
+            $(this.select).find(`option[value="${index}"]`).remove();
             delete preset_names[nameToDelete];
         }
 
