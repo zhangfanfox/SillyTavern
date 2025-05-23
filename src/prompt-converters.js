@@ -869,7 +869,7 @@ export function cachingAtDepthForClaude(messages, cachingAtDepth) {
         if (messages[i].role !== previousRoleName) {
             if (depth === cachingAtDepth || depth === cachingAtDepth + 2) {
                 const content = messages[i].content;
-                content[content.length - 1].cache_control = { type: 'ephemeral' };
+                content[content.length - 1].cache_control = { type: 'ephemeral', ttl: '1h' };
             }
 
             if (depth === cachingAtDepth + 2) {

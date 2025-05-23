@@ -174,7 +174,7 @@ async function sendClaudeRequest(request, response) {
         };
         if (useSystemPrompt) {
             if (enableSystemPromptCache && Array.isArray(convertedPrompt.systemPrompt) && convertedPrompt.systemPrompt.length) {
-                convertedPrompt.systemPrompt[convertedPrompt.systemPrompt.length - 1]['cache_control'] = { type: 'ephemeral' };
+                convertedPrompt.systemPrompt[convertedPrompt.systemPrompt.length - 1]['cache_control'] = { type: 'ephemeral', ttl: '1h' };
             }
 
             requestBody.system = convertedPrompt.systemPrompt;
@@ -190,7 +190,7 @@ async function sendClaudeRequest(request, response) {
                 .map(fn => ({ name: fn.name, description: fn.description, input_schema: fn.parameters }));
 
             if (enableSystemPromptCache && requestBody.tools.length) {
-                requestBody.tools[requestBody.tools.length - 1]['cache_control'] = { type: 'ephemeral' };
+                requestBody.tools[requestBody.tools.length - 1]['cache_control'] = { type: 'ephemeral', ttl: '1h' };
             }
         }
 
@@ -199,7 +199,7 @@ async function sendClaudeRequest(request, response) {
                 'type': 'web_search_20250305',
                 'name': 'web_search',
             }];
-            requestBody.tools = [...(requestBody.tools || []), ...webSearchTool];
+            requestBody.tools = [...webSearchTool, ...(requestBody.tools || [])];
         }
 
         if (cachingAtDepth !== -1) {
@@ -208,6 +208,7 @@ async function sendClaudeRequest(request, response) {
 
         if (enableSystemPromptCache || cachingAtDepth !== -1) {
             betaHeaders.push('prompt-caching-2024-07-31');
+            betaHeaders.push('extended-cache-ttl-2025-04-11');
         }
 
         const reasoningEffort = request.body.reasoning_effort;
