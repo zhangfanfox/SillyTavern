@@ -339,6 +339,7 @@ toastr.options = {
     'hideEasing': 'linear',
     'showMethod': 'fadeIn',
     'hideMethod': 'fadeOut',
+    'escapeHtml': true,
 };
 
 toastr.options.onHidden = () => {
