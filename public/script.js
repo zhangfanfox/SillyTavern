@@ -314,12 +314,33 @@ await new Promise((resolve) => {
 });
 
 // Configure toast library:
-toastr.options.escapeHtml = true; // Prevent raw HTML inserts
+/* toastr.options.escapeHtml = true; // Prevent raw HTML inserts
 toastr.options.timeOut = 4000; // How long the toast will display without user interaction
 toastr.options.extendedTimeOut = 10000; // How long the toast will display after a user hovers over it
-toastr.options.progressBar = true; // Visually indicate how long before a toast expires.
-toastr.options.closeButton = true; // enable a close button
+toastr.options.progressBar = false; // Visually indicate how long before a toast expires.
+toastr.options.closeButton = false; // enable a close button
+toastr.options.hideEasing = 'linear';
+toastr.options.showEasing = 'linear';
+toastr.options.showMethod = 'fadeIn';
+toastr.options.hideMethod = 'fadeOut';
+toastr.options.showDuration = 1000;
+toastr.options.hideDuration = 1000; */
 //toastr.options.positionClass = power_user.toastr_position; // Where to position the toast container
+
+
+toastr.options = {
+    'closeButton': false,
+    'progressBar': false,
+    'showDuration': 250,
+    'hideDuration': 250,
+    'timeOut': 4000,
+    'extendedTimeOut': 10000,
+    'showEasing': 'linear',
+    'hideEasing': 'linear',
+    'showMethod': 'fadeIn',
+    'hideMethod': 'fadeOut',
+};
+
 toastr.options.onHidden = () => {
     // If we have any dialog still open, the last "hidden" toastr will remove the toastr-container. We need to keep it alive inside the dialog though
     // so the toasts still show up inside there.
