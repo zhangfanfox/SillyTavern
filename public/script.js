@@ -342,10 +342,17 @@ toastr.options = {
     'escapeHtml': true,
 };
 
+
 toastr.options.onHidden = () => {
     // If we have any dialog still open, the last "hidden" toastr will remove the toastr-container. We need to keep it alive inside the dialog though
     // so the toasts still show up inside there.
     fixToastrForDialogs();
+};
+
+toastr.options.onShown = function () {
+    const $toast = $(this); // 'this' refers to the toast element
+    const message = 'Click/Tap to close';
+    $toast.attr('title', message); // Set tooltip to the notification message
 };
 
 // Allow target="_blank" in links
