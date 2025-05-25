@@ -2081,8 +2081,11 @@
                                             <div class="toggle-description justifyLeft marginBot5" data-source="openai,custom,xai,openrouter" data-i18n="OpenAI-style options: low, medium, high. Minimum and maximum are aliased to low and high. Auto does not send an effort level.">
                                                 OpenAI-style options: low, medium, high. Minimum and maximum are aliased to low and high. Auto does not send an effort level.
                                             </div>
-                                            <div class="toggle-description justifyLeft marginBot5" data-source="claude,makersuite,vertexai" data-i18n="Allocates a portion of the response length for thinking (low: 10%, medium: 25%, high: 50%). Other options are model-dependent.">
-                                                Allocates a portion of the response length for thinking (low: 10%, medium: 25%, high: 50%). Other options are model-dependent.
+                                            <div class="toggle-description justifyLeft marginBot5" data-source="claude" data-i18n="Allocates a portion of the response length for thinking (min: 1024 tokens, low: 10%, medium: 25%, high: 50%, max: 95%), but minimum 1024 tokens. Auto does not request thinking.">
+                                                Allocates a portion of the response length for thinking (min: 1024 tokens, low: 10%, medium: 25%, high: 50%, max: 95%), but minimum 1024 tokens. Auto does not request thinking.
+                                            </div>
+                                            <div class="toggle-description justifyLeft marginBot5" data-source="makersuite,vertexai" data-i18n="Allocates a portion of the response length for thinking (min: 0 tokens, low: 10%, medium: 25%, high: 50%, max: 24576 tokens). Auto lets the model decide.">
+                                                Allocates a portion of the response length for thinking (min: 0 tokens, low: 10%, medium: 25%, high: 50%, max: 24576 tokens). Auto lets the model decide.
                                             </div>
                                         </div>
                                     </div>
