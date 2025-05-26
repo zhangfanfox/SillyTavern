@@ -5538,23 +5538,15 @@ function onVertexAIAuthModeChange() {
     if (authMode === 'express') {
         $('#vertexai_express_config').show();
         $('#vertexai_full_config').hide();
-        $('#vertexai_express_models').show();
-        // Hide all full version model groups
-        $('#vertexai_full_gemini_25').hide();
-        $('#vertexai_full_gemini_20').hide();
-        $('#vertexai_full_gemini_15').hide();
-        $('#vertexai_full_gemma').hide();
-        $('#vertexai_full_learnlm').hide();
+        // Show express mode model groups and hide full version model groups
+        $('#model_vertexai_select optgroup[data-mode="express"]').show();
+        $('#model_vertexai_select optgroup[data-mode="full"]').hide();
     } else {
         $('#vertexai_express_config').hide();
         $('#vertexai_full_config').show();
-        $('#vertexai_express_models').hide();
-        // Show all full version model groups
-        $('#vertexai_full_gemini_25').show();
-        $('#vertexai_full_gemini_20').show();
-        $('#vertexai_full_gemini_15').show();
-        $('#vertexai_full_gemma').show();
-        $('#vertexai_full_learnlm').show();
+        // Hide express mode model groups and show full version model groups
+        $('#model_vertexai_select optgroup[data-mode="express"]').hide();
+        $('#model_vertexai_select optgroup[data-mode="full"]').show();
     }
 
     saveSettingsDebounced();
