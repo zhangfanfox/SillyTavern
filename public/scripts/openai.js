@@ -5567,7 +5567,7 @@ async function onVertexAIValidateServiceAccount() {
     const jsonContent = String($('#vertexai_service_account_json').val()).trim();
 
     if (!jsonContent) {
-        toastr.error('Please enter Service Account JSON content');
+        toastr.error(t`Please enter Service Account JSON content`);
         return;
     }
 
@@ -5577,14 +5577,14 @@ async function onVertexAIValidateServiceAccount() {
         const missingFields = requiredFields.filter(field => !serviceAccount[field]);
 
         if (missingFields.length > 0) {
-            toastr.error(`Missing required fields: ${missingFields.join(', ')}`);
-            updateVertexAIServiceAccountStatus(false, `Missing fields: ${missingFields.join(', ')}`);
+            toastr.error(t`Missing required fields: ${missingFields.join(', ')}`);
+            updateVertexAIServiceAccountStatus(false, t`Missing fields: ${missingFields.join(', ')}`);
             return;
         }
 
         if (serviceAccount.type !== 'service_account') {
-            toastr.error('Invalid service account type. Expected "service_account"');
-            updateVertexAIServiceAccountStatus(false, 'Invalid service account type');
+            toastr.error(t`Invalid service account type. Expected "service_account"`);
+            updateVertexAIServiceAccountStatus(false, t`Invalid service account type`);
             return;
         }
 
@@ -5598,12 +5598,12 @@ async function onVertexAIValidateServiceAccount() {
         // Show success status
         updateVertexAIServiceAccountStatus(true, `Project: ${serviceAccount.project_id}, Email: ${serviceAccount.client_email}`);
 
-        toastr.success('Service Account JSON is valid and saved securely');
+        toastr.success(t`Service Account JSON is valid and saved securely`);
         saveSettingsDebounced();
     } catch (error) {
         console.error('JSON validation error:', error);
-        toastr.error('Invalid JSON format');
-        updateVertexAIServiceAccountStatus(false, 'Invalid JSON format');
+        toastr.error(t`Invalid JSON format`);
+        updateVertexAIServiceAccountStatus(false, t`Invalid JSON format`);
     }
 }
 
@@ -5618,7 +5618,7 @@ async function onVertexAIClearServiceAccount() {
     await writeSecret(SECRET_KEYS.VERTEXAI_SERVICE_ACCOUNT, '');
 
     updateVertexAIServiceAccountStatus(false);
-    toastr.info('Service Account JSON cleared');
+    toastr.info(t`Service Account JSON cleared`);
     saveSettingsDebounced();
 }
 
@@ -5638,12 +5638,12 @@ function onVertexAIServiceAccountJsonChange() {
             const hasAllFields = requiredFields.every(field => serviceAccount[field]);
 
             if (hasAllFields && serviceAccount.type === 'service_account') {
-                updateVertexAIServiceAccountStatus(false, 'JSON appears valid - click "Validate JSON" to save');
+                updateVertexAIServiceAccountStatus(false, t`JSON appears valid - click "Validate JSON" to save`);
             } else {
-                updateVertexAIServiceAccountStatus(false, 'Incomplete or invalid JSON');
+                updateVertexAIServiceAccountStatus(false, t`Incomplete or invalid JSON`);
             }
         } catch (error) {
-            updateVertexAIServiceAccountStatus(false, 'Invalid JSON format');
+            updateVertexAIServiceAccountStatus(false, t`Invalid JSON format`);
         }
     } else {
         updateVertexAIServiceAccountStatus(false);
@@ -5665,7 +5665,7 @@ function updateVertexAIServiceAccountStatus(isValid = false, message = '') {
     // If no explicit message provided, check if we have a saved service account
     if (!message && secret_state[SECRET_KEYS.VERTEXAI_SERVICE_ACCOUNT]) {
         isValid = true;
-        message = 'Service Account JSON is saved and ready to use';
+        message = t`Service Account JSON is saved and ready to use`;
     }
 
     if (isValid && message) {
