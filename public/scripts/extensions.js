@@ -385,6 +385,7 @@ async function getManifests(names) {
  * @returns {Promise<void>}
  */
 async function activateExtensions() {
+    extensionLoadErrors.clear();
     const extensions = Object.entries(manifests).sort((a, b) => sortManifestsByOrder(a[1], b[1]));
     const extensionNames = extensions.map(x => x[0]);
     const promises = [];
