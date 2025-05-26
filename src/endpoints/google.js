@@ -11,7 +11,7 @@ const API_MAKERSUITE = 'https://generativelanguage.googleapis.com';
 const API_VERTEX_AI = 'https://us-central1-aiplatform.googleapis.com';
 
 // Vertex AI authentication helper functions
-async function getVertexAIAuth(request) {
+export async function getVertexAIAuth(request) {
     const authMode = request.body.vertexai_auth_mode || 'express';
 
     if (request.body.reverse_proxy) {
@@ -64,7 +64,7 @@ async function getVertexAIAuth(request) {
  * @param {object} serviceAccount Service account JSON object
  * @returns {Promise<string>} JWT token
  */
-async function generateJWTToken(serviceAccount) {
+export async function generateJWTToken(serviceAccount) {
     const now = Math.floor(Date.now() / 1000);
     const expiry = now + 3600; // 1 hour
 
@@ -93,7 +93,7 @@ async function generateJWTToken(serviceAccount) {
     return `${signatureInput}.${signature}`;
 }
 
-async function getAccessToken(jwtToken) {
+export async function getAccessToken(jwtToken) {
     const response = await fetch('https://oauth2.googleapis.com/token', {
         method: 'POST',
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
