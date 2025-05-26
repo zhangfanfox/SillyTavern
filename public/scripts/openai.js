@@ -235,6 +235,9 @@ const sensitiveFields = [
     'custom_include_body',
     'custom_exclude_body',
     'custom_include_headers',
+    'vertexai_project_id',
+    'vertexai_region',
+    'vertexai_service_account_json',
 ];
 
 /**
