@@ -3055,7 +3055,7 @@ export async function getWorldEntry(name, data, entry) {
 
     const roleValue = entry.position === world_info_position.atDepth ? String(entry.role ?? extension_prompt_roles.SYSTEM) : '';
     template
-        .find(`select[name="position"] option[value=${entry.position}][data-role="${roleValue}"]`)
+        .find(`select[name="position"] option[value="${entry.position}"][data-role="${roleValue}"]`)
         .prop('selected', true)
         .trigger('input');
 
@@ -4986,7 +4986,7 @@ export function checkEmbeddedWorld(chid) {
                 toastr.info(
                     'To import and use it, select "Import Card Lore" in the "More..." dropdown menu on the character panel.',
                     `${characters[chid].name} has an embedded World/Lorebook`,
-                    { timeOut: 5000, extendedTimeOut: 10000, positionClass: 'toast-top-center' },
+                    { timeOut: 5000, extendedTimeOut: 10000 },
                 );
             }
         }
