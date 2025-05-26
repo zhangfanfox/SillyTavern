@@ -72,7 +72,7 @@ async function generateJWTToken(serviceAccount) {
 
     const header = {
         alg: 'RS256',
-        typ: 'JWT'
+        typ: 'JWT',
     };
 
     const payload = {
@@ -80,7 +80,7 @@ async function generateJWTToken(serviceAccount) {
         scope: 'https://www.googleapis.com/auth/cloud-platform',
         aud: 'https://oauth2.googleapis.com/token',
         iat: now,
-        exp: expiry
+        exp: expiry,
     };
 
     const headerBase64 = Buffer.from(JSON.stringify(header)).toString('base64url');
@@ -104,12 +104,12 @@ async function getAccessToken(jwtToken) {
     const response = await fetch('https://oauth2.googleapis.com/token', {
         method: 'POST',
         headers: {
-            'Content-Type': 'application/x-www-form-urlencoded'
+            'Content-Type': 'application/x-www-form-urlencoded',
         },
         body: new URLSearchParams({
             grant_type: 'urn:ietf:params:oauth:grant-type:jwt-bearer',
-            assertion: jwtToken
-        })
+            assertion: jwtToken,
+        }),
     });
 
     if (!response.ok) {
@@ -133,7 +133,7 @@ async function getVertexAIAuth(request) {
     if (request.body.reverse_proxy) {
         return {
             authHeader: `Bearer ${request.body.proxy_password}`,
-            authType: 'proxy'
+            authType: 'proxy',
         };
     }
 
@@ -143,7 +143,7 @@ async function getVertexAIAuth(request) {
         if (apiKey) {
             return {
                 authHeader: `Bearer ${apiKey}`,
-                authType: 'express'
+                authType: 'express',
             };
         }
         throw new Error('API key is required for Vertex AI Express mode');
@@ -166,7 +166,7 @@ async function getVertexAIAuth(request) {
 
                 return {
                     authHeader: `Bearer ${accessToken}`,
-                    authType: 'full'
+                    authType: 'full',
                 };
             } catch (error) {
                 console.error('Failed to authenticate with service account:', error);
