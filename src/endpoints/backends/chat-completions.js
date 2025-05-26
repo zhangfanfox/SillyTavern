@@ -1,5 +1,6 @@
 import process from 'node:process';
 import util from 'node:util';
+import crypto from 'node:crypto';
 import express from 'express';
 import fetch from 'node-fetch';
 
@@ -59,6 +60,124 @@ const API_NANOGPT = 'https://nano-gpt.com/api/v1';
 const API_DEEPSEEK = 'https://api.deepseek.com/beta';
 const API_XAI = 'https://api.x.ai/v1';
 const API_POLLINATIONS = 'https://text.pollinations.ai/openai';
+
+/**
+ * Generates a JWT token for Google Cloud authentication using service account credentials.
+ * @param {object} serviceAccount Service account JSON object
+ * @returns {Promise<string>} JWT token
+ */
+async function generateJWTToken(serviceAccount) {
+    const now = Math.floor(Date.now() / 1000);
+    const expiry = now + 3600; // 1 hour
+
+    const header = {
+        alg: 'RS256',
+        typ: 'JWT'
+    };
+
+    const payload = {
+        iss: serviceAccount.client_email,
+        scope: 'https://www.googleapis.com/auth/cloud-platform',
+        aud: 'https://oauth2.googleapis.com/token',
+        iat: now,
+        exp: expiry
+    };
+
+    const headerBase64 = Buffer.from(JSON.stringify(header)).toString('base64url');
+    const payloadBase64 = Buffer.from(JSON.stringify(payload)).toString('base64url');
+    const signatureInput = `${headerBase64}.${payloadBase64}`;
+
+    // Create signature using private key
+    const sign = crypto.createSign('RSA-SHA256');
+    sign.update(signatureInput);
+    const signature = sign.sign(serviceAccount.private_key, 'base64url');
+
+    return `${signatureInput}.${signature}`;
+}
+
+/**
+ * Gets an access token from Google OAuth2 using JWT assertion.
+ * @param {string} jwtToken JWT token
+ * @returns {Promise<string>} Access token
+ */
+async function getAccessToken(jwtToken) {
+    const response = await fetch('https://oauth2.googleapis.com/token', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded'
+        },
+        body: new URLSearchParams({
+            grant_type: 'urn:ietf:params:oauth:grant-type:jwt-bearer',
+            assertion: jwtToken
+        })
+    });
+
+    if (!response.ok) {
+        throw new Error(`Failed to get access token: ${response.status} ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    return data.access_token;
+}
+
+/**
+ * Gets authentication for Vertex AI - either API key or service account token.
+ * @param {object} request Express request
+ * @returns {Promise<{authHeader: string, authType: string}>} Authentication header and type
+ */
+async function getVertexAIAuth(request) {
+    // Get the authentication mode from frontend
+    const authMode = request.body.vertexai_auth_mode || 'express';
+
+    // Check if using reverse proxy
+    if (request.body.reverse_proxy) {
+        return {
+            authHeader: `Bearer ${request.body.proxy_password}`,
+            authType: 'proxy'
+        };
+    }
+
+    if (authMode === 'express') {
+        // Express mode: use API key
+        const apiKey = readSecret(request.user.directories, SECRET_KEYS.VERTEXAI);
+        if (apiKey) {
+            return {
+                authHeader: `Bearer ${apiKey}`,
+                authType: 'express'
+            };
+        }
+        throw new Error('API key is required for Vertex AI Express mode');
+    } else if (authMode === 'full') {
+        // Full mode: use service account JSON
+        // First try to read from backend secret storage
+        let serviceAccountJson = readSecret(request.user.directories, SECRET_KEYS.VERTEXAI_SERVICE_ACCOUNT);
+
+        // If not found in secrets, fall back to request body (for backward compatibility)
+        if (!serviceAccountJson) {
+            serviceAccountJson = request.body.vertexai_service_account_json;
+        }
+
+        if (serviceAccountJson) {
+            try {
+                const serviceAccount = JSON.parse(serviceAccountJson);
+
+                const jwtToken = await generateJWTToken(serviceAccount);
+                const accessToken = await getAccessToken(jwtToken);
+
+                return {
+                    authHeader: `Bearer ${accessToken}`,
+                    authType: 'full'
+                };
+            } catch (error) {
+                console.error('Failed to authenticate with service account:', error);
+                throw new Error(`Service account authentication failed: ${error.message}`);
+            }
+        }
+        throw new Error('Service Account JSON is required for Vertex AI Full mode');
+    }
+
+    throw new Error(`Unsupported Vertex AI authentication mode: ${authMode}`);
+}
 
 /**
  * Applies a post-processing step to the generated messages.
@@ -348,13 +467,20 @@ async function sendMakerSuiteRequest(request, response) {
     let apiUrl;
     let apiKey;
 
+    let authHeader;
+    let authType;
+
     if (useVertexAi) {
         apiUrl = new URL(request.body.reverse_proxy || API_VERTEX_AI);
-        apiKey = request.body.reverse_proxy ? request.body.proxy_password : readSecret(request.user.directories, SECRET_KEYS.VERTEXAI);
 
-        if (!request.body.reverse_proxy && !apiKey) {
-            console.warn(`${apiName} API key is missing.`);
-            return response.status(400).send({ error: true });
+        try {
+            const auth = await getVertexAIAuth(request);
+            authHeader = auth.authHeader;
+            authType = auth.authType;
+            console.debug(`Using Vertex AI authentication type: ${authType}`);
+        } catch (error) {
+            console.warn(`${apiName} authentication failed: ${error.message}`);
+            return response.status(400).send({ error: true, message: error.message });
         }
     } else {
         apiUrl = new URL(request.body.reverse_proxy || API_MAKERSUITE);
@@ -364,6 +490,9 @@ async function sendMakerSuiteRequest(request, response) {
             console.warn(`${apiName} API key is missing.`);
             return response.status(400).send({ error: true });
         }
+
+        authHeader = `Bearer ${apiKey}`;
+        authType = 'api_key';
     }
 
     const model = String(request.body.model);
@@ -499,17 +628,39 @@ async function sendMakerSuiteRequest(request, response) {
         const responseType = (stream ? 'streamGenerateContent' : 'generateContent');
 
         let url;
+        let headers = {
+            'Content-Type': 'application/json',
+        };
+
         if (useVertexAi) {
-            url = `${apiUrl.toString().replace(/\/$/, '')}/v1/publishers/google/models/${model}:${responseType}?key=${apiKey}${stream ? '&alt=sse' : ''}`;
+            if (authType === 'express') {
+                // For Express mode (API key authentication), use the key parameter
+                const keyParam = authHeader.replace('Bearer ', '');
+                url = `${apiUrl.toString().replace(/\/$/, '')}/v1/publishers/google/models/${model}:${responseType}?key=${keyParam}${stream ? '&alt=sse' : ''}`;
+            } else if (authType === 'full') {
+                // For Full mode (service account authentication), use project-specific URL
+                const projectId = request.body.vertexai_project_id || 'your-project-id';
+                const region = request.body.vertexai_region || 'us-central1';
+                // Handle global region differently - no region prefix in hostname
+                if (region === 'global') {
+                    url = `https://aiplatform.googleapis.com/v1/projects/${projectId}/locations/${region}/publishers/google/models/${model}:${responseType}${stream ? '?alt=sse' : ''}`;
+                } else {
+                    url = `https://${region}-aiplatform.googleapis.com/v1/projects/${projectId}/locations/${region}/publishers/google/models/${model}:${responseType}${stream ? '?alt=sse' : ''}`;
+                }
+                headers['Authorization'] = authHeader;
+            } else {
+                // For proxy mode, use the original URL with Authorization header
+                url = `${apiUrl.toString().replace(/\/$/, '')}/v1/publishers/google/models/${model}:${responseType}${stream ? '?alt=sse' : ''}`;
+                headers['Authorization'] = authHeader;
+            }
         } else {
             url = `${apiUrl.toString().replace(/\/$/, '')}/${apiVersion}/models/${model}:${responseType}?key=${apiKey}${stream ? '&alt=sse' : ''}`;
         }
+
         const generateResponse = await fetch(url, {
             body: JSON.stringify(body),
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
+            headers: headers,
             signal: controller.signal,
         });
 

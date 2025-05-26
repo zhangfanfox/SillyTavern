@@ -2779,7 +2779,7 @@
                                 <option value="deepseek">DeepSeek</option>
                                 <option value="groq">Groq</option>
                                 <option value="makersuite">Google AI Studio</option>
-                                <option value="vertexai">Google Vertex AI (Express mode)</option>
+                                <option value="vertexai">Google Vertex AI</option>
                                 <option value="mistralai">MistralAI</option>
                                 <option value="nanogpt">NanoGPT</option>
                                 <option value="openrouter">OpenRouter</option>
@@ -3225,33 +3225,146 @@
                             </div>
                         </form>
                         <div id="vertexai_form" data-source="vertexai">
-                            <h4>
-                                <span data-i18n="Google Vertex AI API Key">
-                                    Google Vertex AI API Key
-                                </span>
-                                <a href="https://cloud.google.com/vertex-ai/generative-ai/docs/start/express-mode/overview" data-i18n="(Express mode keys only)" target="_blank" rel="noopener noreferrer">
-                                    (Express mode keys only)
-                                </a>
-                            </h4>
+                            <h4 data-i18n="Google Vertex AI Configuration">Google Vertex AI Configuration</h4>
+
+                            <!-- Authentication Mode Selection -->
                             <div class="flex-container">
-                                <input id="api_key_vertexai" name="api_key_vertexai" class="text_pole flex1" value="" type="text" autocomplete="off">
-                                <div title="Clear your API key" data-i18n="[title]Clear your API key" class="menu_button fa-solid fa-circle-xmark clear-api-key" data-key="api_key_vertexai"></div>
+                                <label for="vertexai_auth_mode" data-i18n="Authentication Mode">Authentication Mode:</label>
+                                <select id="vertexai_auth_mode" class="text_pole">
+                                    <option value="express" data-i18n="Express Mode (API Key)">Express Mode (API Key)</option>
+                                    <option value="full" data-i18n="Full Version (Service Account)">Full Version (Service Account)</option>
+                                </select>
                             </div>
-                            <div data-for="api_key_vertexai" class="neutral_warning" data-i18n="For privacy reasons, your API key will be hidden after you reload the page.">
-                                For privacy reasons, your API key will be hidden after you reload the page.
+
+                            <!-- Express Mode Configuration -->
+                            <div id="vertexai_express_config" class="vertexai-auth-section">
+                                <h4>
+                                    <span data-i18n="Google Vertex AI API Key">
+                                        Google Vertex AI API Key
+                                    </span>
+                                    <a href="https://cloud.google.com/vertex-ai/generative-ai/docs/start/express-mode/overview" data-i18n="(Express mode)" target="_blank" rel="noopener noreferrer">
+                                        (Express mode)
+                                    </a>
+                                </h4>
+                                <div class="flex-container">
+                                    <input id="api_key_vertexai" name="api_key_vertexai" class="text_pole flex1" value="" type="text" autocomplete="off">
+                                    <div title="Clear your API key" data-i18n="[title]Clear your API key" class="menu_button fa-solid fa-circle-xmark clear-api-key" data-key="api_key_vertexai"></div>
+                                </div>
+                                <div data-for="api_key_vertexai" class="neutral_warning" data-i18n="For privacy reasons, your API key will be hidden after you reload the page.">
+                                    For privacy reasons, your API key will be hidden after you reload the page.
+                                </div>
                             </div>
+
+                            <!-- Full Version Configuration -->
+                            <div id="vertexai_full_config" class="vertexai-auth-section" style="display: none;">
+                                <h4>
+                                    <span data-i18n="Service Account Configuration">
+                                        Service Account Configuration
+                                    </span>
+                                    <a href="https://cloud.google.com/vertex-ai/docs/authentication" target="_blank" rel="noopener noreferrer">
+                                        <i class="fa-solid fa-circle-question"></i>
+                                    </a>
+                                </h4>
+
+                                <!-- Project ID -->
+                                <div class="flex-container">
+                                    <label for="vertexai_project_id" data-i18n="Project ID">Project ID:</label>
+                                    <input id="vertexai_project_id" name="vertexai_project_id" class="text_pole flex1" value="" type="text" autocomplete="off" placeholder="your-gcp-project-id">
+                                </div>
+
+                                <!-- Region -->
+                                <div class="flex-container">
+                                    <label for="vertexai_region" data-i18n="Region">Region:</label>
+                                    <input id="vertexai_region" name="vertexai_region" class="text_pole flex1" value="us-central1" type="text" autocomplete="off" placeholder="e.g., us-central1, europe-west1, asia-northeast1">
+                                </div>
+
+                                <!-- Service Account JSON Content -->
+                                <div class="flex-container flexFlowColumn">
+                                    <label for="vertexai_service_account_json" data-i18n="Service Account JSON Content">Service Account JSON Content:</label>
+                                    <textarea id="vertexai_service_account_json" class="text_pole textarea_compact" rows="8" placeholder='Paste your Service Account JSON content here, e.g.:
+{
+  "type": "service_account",
+  "project_id": "your-project-id",
+  "private_key_id": "...",
+  "private_key": "-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----\n",
+  "client_email": "...",
+  "client_id": "...",
+  "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+  "token_uri": "https://oauth2.googleapis.com/token"
+}'></textarea>
+                                    <div class="neutral_warning" data-i18n="Paste the complete JSON content of your Google Cloud Service Account key file. The content will be stored securely.">
+                                        Paste the complete JSON content of your Google Cloud Service Account key file. The content will be stored securely.
+                                    </div>
+                                    <div class="flex-container">
+                                        <button type="button" id="vertexai_validate_service_account" class="menu_button" data-i18n="Validate JSON">Validate JSON</button>
+                                        <button type="button" id="vertexai_clear_service_account" class="menu_button" data-i18n="Clear">Clear</button>
+                                    </div>
+                                    <div id="vertexai_service_account_status" class="info-block" style="display: none;">
+                                        <span id="vertexai_service_account_info"></span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Model Selection -->
                             <div>
                                 <h4 data-i18n="Google Model">Google Model</h4>
                                 <select id="model_vertexai_select">
-                                    <optgroup label="Gemini 2.5">
+                                    <!-- Express Mode Models -->
+                                    <optgroup id="vertexai_express_models" label="Express Mode Models">
                                         <option value="gemini-2.5-pro-preview-05-06">gemini-2.5-pro-preview-05-06</option>
                                         <option value="gemini-2.5-pro-preview-03-25">gemini-2.5-pro-preview-03-25</option>
                                         <option value="gemini-2.5-flash-preview-05-20">gemini-2.5-flash-preview-05-20</option>
                                         <option value="gemini-2.5-flash-preview-04-17">gemini-2.5-flash-preview-04-17</option>
-                                    </optgroup>
-                                    <optgroup label="Gemini 2.0">
                                         <option value="gemini-2.0-flash-001">gemini-2.0-flash-001</option>
                                         <option value="gemini-2.0-flash-lite-001">gemini-2.0-flash-lite-001</option>
+                                    </optgroup>
+
+                                    <!-- Full Version Models -->
+                                    <optgroup id="vertexai_full_gemini_25" label="Gemini 2.5" style="display: none;">
+                                        <option value="gemini-2.5-pro-preview-05-06">gemini-2.5-pro-preview-05-06</option>
+                                        <option value="gemini-2.5-pro-preview-03-25">gemini-2.5-pro-preview-03-25</option>
+                                        <option value="gemini-2.5-pro-exp-03-25">gemini-2.5-pro-exp-03-25</option>
+                                        <option value="gemini-2.5-flash-preview-05-20">gemini-2.5-flash-preview-05-20</option>
+                                        <option value="gemini-2.5-flash-preview-04-17">gemini-2.5-flash-preview-04-17</option>
+                                    </optgroup>
+                                    <optgroup id="vertexai_full_gemini_20" label="Gemini 2.0" style="display: none;">
+                                        <option value="gemini-2.0-pro-exp-02-05">gemini-2.0-pro-exp-02-05 → 2.5-pro-exp-03-25</option>
+                                        <option value="gemini-2.0-pro-exp">gemini-2.0-pro-exp → 2.5-pro-exp-03-25</option>
+                                        <option value="gemini-exp-1206">gemini-exp-1206 → 2.5-pro-exp-03-25</option>
+                                        <option value="gemini-2.0-flash-001">gemini-2.0-flash-001</option>
+                                        <option value="gemini-2.0-flash-exp-image-generation">gemini-2.0-flash-exp-image-generation</option>
+                                        <option value="gemini-2.0-flash-exp">gemini-2.0-flash-exp</option>
+                                        <option value="gemini-2.0-flash">gemini-2.0-flash</option>
+                                        <option value="gemini-2.0-flash-thinking-exp-01-21">gemini-2.0-flash-thinking-exp-01-21 → 2.5-flash-preview-04-17</option>
+                                        <option value="gemini-2.0-flash-thinking-exp-1219">gemini-2.0-flash-thinking-exp-1219 → 2.5-flash-preview-04-17</option>
+                                        <option value="gemini-2.0-flash-thinking-exp">gemini-2.0-flash-thinking-exp → 2.5-flash-preview-04-17</option>
+                                        <option value="gemini-2.0-flash-lite-001">gemini-2.0-flash-lite-001</option>
+                                        <option value="gemini-2.0-flash-lite-preview-02-05">gemini-2.0-flash-lite-preview-02-05</option>
+                                        <option value="gemini-2.0-flash-lite-preview">gemini-2.0-flash-lite-preview</option>
+                                    </optgroup>
+                                    <optgroup id="vertexai_full_gemini_15" label="Gemini 1.5" style="display: none;">
+                                        <option value="gemini-1.5-pro-latest">gemini-1.5-pro-latest</option>
+                                        <option value="gemini-1.5-pro-002">gemini-1.5-pro-002</option>
+                                        <option value="gemini-1.5-pro-001">gemini-1.5-pro-001</option>
+                                        <option value="gemini-1.5-pro">gemini-1.5-pro</option>
+                                        <option value="gemini-1.5-flash-latest">gemini-1.5-flash-latest</option>
+                                        <option value="gemini-1.5-flash-002">gemini-1.5-flash-002</option>
+                                        <option value="gemini-1.5-flash-001">gemini-1.5-flash-001</option>
+                                        <option value="gemini-1.5-flash">gemini-1.5-flash</option>
+                                        <option value="gemini-1.5-flash-8b-001">gemini-1.5-flash-8b-001</option>
+                                        <option value="gemini-1.5-flash-8b-exp-0924">gemini-1.5-flash-8b-exp-0924</option>
+                                        <option value="gemini-1.5-flash-8b-exp-0827">gemini-1.5-flash-8b-exp-0827</option>
+                                        <option value="gemini-1.5-flash-8b">gemini-1.5-flash-8b</option>
+                                    </optgroup>
+                                    <optgroup id="vertexai_full_gemma" label="Gemma" style="display: none;">
+                                        <option value="gemma-3-27b-it">gemma-3-27b-it</option>
+                                        <option value="gemma-3-12b-it">gemma-3-12b-it</option>
+                                        <option value="gemma-3-4b-it">gemma-3-4b-it</option>
+                                        <option value="gemma-3-1b-it">gemma-3-1b-it</option>
+                                    </optgroup>
+                                    <optgroup id="vertexai_full_learnlm" label="LearnLM" style="display: none;">
+                                        <option value="learnlm-2.0-flash-experimental">learnlm-2.0-flash-experimental</option>
+                                        <option value="learnlm-1.5-pro-experimental">learnlm-1.5-pro-experimental</option>
                                     </optgroup>
                                 </select>
                             </div>

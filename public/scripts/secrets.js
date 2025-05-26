@@ -44,6 +44,7 @@ export const SECRET_KEYS = {
     SERPER: 'api_key_serper',
     FALAI: 'api_key_falai',
     XAI: 'api_key_xai',
+    VERTEXAI_SERVICE_ACCOUNT: 'vertexai_service_account_json',
 };
 
 const INPUT_MAP = {
