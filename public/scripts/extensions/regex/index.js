@@ -607,22 +607,67 @@ jQuery(async () => {
         $('#import_regex_file').trigger('click');
     });
 
-    $('#export_global_regex').on('click', async function () {
-        const regexScripts = extension_settings?.regex ?? [];
-        if (regexScripts.length) {
-            const fileName = 'regex-global.json';
-            const fileData = JSON.stringify(regexScripts, null, 4);
-            download(fileData, fileName, 'application/json');
+    function getSelectedScripts() {
+        const scripts = getRegexScripts();
+        const selector = '#regex_container .regex-script-label:has(.regex_bulk_checkbox:checked)';
+        const selectedIds = Array.from(document.querySelectorAll(selector)).map(e => e.getAttribute('id')).filter(id => id);
+        return scripts.filter(script => selectedIds.includes(script.id));
+    }
+
+    $('#bulk_enable_regex').on('click', async function () {
+        const scripts = getSelectedScripts().filter(script => script.disabled);
+        if (scripts.length === 0) {
+            toastr.warning(t`No regex scripts selected for enabling.`);
+            return;
         }
+        for (const script of scripts) {
+            script.disabled = false;
+        }
+        saveSettingsDebounced();
+        await loadRegexScripts();
     });
 
-    $('#export_scoped_regex').on('click', async function () {
-        const regexScripts = characters[this_chid]?.data?.extensions?.regex_scripts ?? [];
-        if (regexScripts.length) {
-            const fileName = `regex-${sanitizeFileName(characters[this_chid].name)}.json`;
-            const fileData = JSON.stringify(regexScripts, null, 4);
-            download(fileData, fileName, 'application/json');
+    $('#bulk_disable_regex').on('click', async function () {
+        const scripts = getSelectedScripts().filter(script => !script.disabled);
+        if (scripts.length === 0) {
+            toastr.warning(t`No regex scripts selected for disabling.`);
+            return;
         }
+        for (const script of scripts) {
+            script.disabled = true;
+        }
+        saveSettingsDebounced();
+        await loadRegexScripts();
+    });
+
+    $('#bulk_delete_regex').on('click', async function () {
+        const scripts = getSelectedScripts();
+        if (scripts.length === 0) {
+            toastr.warning(t`No regex scripts selected for deletion.`);
+            return;
+        }
+        const confirm = await callGenericPopup('Are you sure you want to delete the selected regex scripts?', POPUP_TYPE.CONFIRM);
+        if (!confirm) {
+            return;
+        }
+        for (const script of scripts) {
+            const isScoped = characters[this_chid]?.data?.extensions?.regex_scripts?.some(s => s.id === script.id);
+            await deleteRegexScript({ id: script.id, isScoped: isScoped });
+        }
+        await reloadCurrentChat();
+        saveSettingsDebounced();
+    });
+
+    $('#bulk_export_regex').on('click', async function () {
+        const scripts = getSelectedScripts();
+        if (scripts.length === 0) {
+            toastr.warning(t`No regex scripts selected for export.`);
+            return;
+        }
+        const fileName = `regex-${new Date().toISOString()}.json`;
+        const fileData = JSON.stringify(scripts, null, 4);
+        download(fileData, fileName, 'application/json');
+        await loadRegexScripts();
     });
 
     let sortableDatas = [
