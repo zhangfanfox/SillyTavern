@@ -235,7 +235,6 @@ const sensitiveFields = [
     'custom_include_body',
     'custom_exclude_body',
     'custom_include_headers',
-    'vertexai_project_id',
     'vertexai_region',
 ];
 
@@ -309,7 +308,6 @@ export const settingsToUpdate = {
     claude_use_sysprompt: ['#claude_use_sysprompt', 'claude_use_sysprompt', true, false],
     use_makersuite_sysprompt: ['#use_makersuite_sysprompt', 'use_makersuite_sysprompt', true, false],
     vertexai_auth_mode: ['#vertexai_auth_mode', 'vertexai_auth_mode', false, true],
-    vertexai_project_id: ['#vertexai_project_id', 'vertexai_project_id', false, true],
     vertexai_region: ['#vertexai_region', 'vertexai_region', false, true],
     use_alt_scale: ['#use_alt_scale', 'use_alt_scale', true, true],
     squash_system_messages: ['#squash_system_messages', 'squash_system_messages', true, false],
@@ -393,7 +391,6 @@ const default_settings = {
     claude_use_sysprompt: false,
     use_makersuite_sysprompt: true,
     vertexai_auth_mode: 'express',
-    vertexai_project_id: '',
     vertexai_region: 'us-central1',
     use_alt_scale: false,
     squash_system_messages: false,
@@ -480,7 +477,6 @@ const oai_settings = {
     claude_use_sysprompt: false,
     use_makersuite_sysprompt: true,
     vertexai_auth_mode: 'express',
-    vertexai_project_id: '',
     vertexai_region: 'us-central1',
     use_alt_scale: false,
     squash_system_messages: false,
@@ -2201,7 +2197,6 @@ async function sendOpenAIRequest(type, messages, signal) {
         generate_data['use_makersuite_sysprompt'] = oai_settings.use_makersuite_sysprompt;
         if (isVertexAI) {
             generate_data['vertexai_auth_mode'] = oai_settings.vertexai_auth_mode;
-            generate_data['vertexai_project_id'] = oai_settings.vertexai_project_id;
             generate_data['vertexai_region'] = oai_settings.vertexai_region;
         }
     }
@@ -3444,7 +3439,6 @@ function loadOpenAISettings(data, settings) {
     if (settings.claude_use_sysprompt !== undefined) oai_settings.claude_use_sysprompt = !!settings.claude_use_sysprompt;
     if (settings.use_makersuite_sysprompt !== undefined) oai_settings.use_makersuite_sysprompt = !!settings.use_makersuite_sysprompt;
     if (settings.vertexai_auth_mode !== undefined) oai_settings.vertexai_auth_mode = settings.vertexai_auth_mode;
-    if (settings.vertexai_project_id !== undefined) oai_settings.vertexai_project_id = settings.vertexai_project_id;
     if (settings.vertexai_region !== undefined) oai_settings.vertexai_region = settings.vertexai_region;
     if (settings.use_alt_scale !== undefined) { oai_settings.use_alt_scale = !!settings.use_alt_scale; updateScaleForm(); }
     $('#stream_toggle').prop('checked', oai_settings.stream_openai);
@@ -3502,7 +3496,8 @@ function loadOpenAISettings(data, settings) {
     $('#claude_use_sysprompt').prop('checked', oai_settings.claude_use_sysprompt);
     $('#use_makersuite_sysprompt').prop('checked', oai_settings.use_makersuite_sysprompt);
     $('#vertexai_auth_mode').val(oai_settings.vertexai_auth_mode);
-    $('#vertexai_project_id').val(oai_settings.vertexai_project_id);
+    // Don't display Project ID in input - it's stored in backend secrets
+    $('#vertexai_project_id').val('');
     $('#vertexai_region').val(oai_settings.vertexai_region);
     // Don't display Service Account JSON in textarea - it's stored in backend secrets
     $('#vertexai_service_account_json').val('');
@@ -3830,7 +3825,6 @@ async function saveOpenAIPreset(name, settings, triggerUi = true) {
         claude_use_sysprompt: settings.claude_use_sysprompt,
         use_makersuite_sysprompt: settings.use_makersuite_sysprompt,
         vertexai_auth_mode: settings.vertexai_auth_mode,
-        vertexai_project_id: settings.vertexai_project_id,
         vertexai_region: settings.vertexai_region,
         use_alt_scale: settings.use_alt_scale,
         squash_system_messages: settings.squash_system_messages,
@@ -5021,9 +5015,18 @@ async function onConnectButtonClick(e) {
             }
         } else {
             // Full version - use service account
-            if (!oai_settings.vertexai_project_id.trim()) {
-                toastr.error('Project ID is required for Vertex AI full version');
+            // Check if we have a saved project ID, otherwise use the input value
+            const savedProjectId = secret_state[SECRET_KEYS.VERTEXAI_PROJECT_ID];
+            const inputProjectId = String($('#vertexai_project_id').val()).trim();
+
+            if (!savedProjectId && !inputProjectId) {
+                toastr.error(t`Project ID is required for Vertex AI full version`);
                 return;
+            }
+
+            // Save project ID to secrets if we have an input value
+            if (inputProjectId.length) {
+                await writeSecret(SECRET_KEYS.VERTEXAI_PROJECT_ID, inputProjectId);
             }
 
             // Check if service account JSON is saved in backend
@@ -6128,10 +6131,6 @@ export function initOpenAI() {
     $('#model_google_select').on('change', onModelChange);
     $('#model_vertexai_select').on('change', onModelChange);
     $('#vertexai_auth_mode').on('change', onVertexAIAuthModeChange);
-    $('#vertexai_project_id').on('input', function () {
-        oai_settings.vertexai_project_id = String($(this).val());
-        saveSettingsDebounced();
-    });
     $('#vertexai_region').on('input', function () {
         oai_settings.vertexai_region = String($(this).val());
         saveSettingsDebounced();

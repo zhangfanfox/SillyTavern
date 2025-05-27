@@ -527,7 +527,12 @@ async function sendMakerSuiteRequest(request, response) {
                 url = `${apiUrl.toString().replace(/\/$/, '')}/v1/publishers/google/models/${model}:${responseType}?key=${keyParam}${stream ? '&alt=sse' : ''}`;
             } else if (authType === 'full') {
                 // For Full mode (service account authentication), use project-specific URL
-                const projectId = request.body.vertexai_project_id || 'your-project-id';
+                // Only use project ID from secrets
+                const projectId = readSecret(request.user.directories, SECRET_KEYS.VERTEXAI_PROJECT_ID);
+                if (!projectId) {
+                    console.warn('Vertex AI project ID is missing.');
+                    return response.status(400).send({ error: true });
+                }
                 const region = request.body.vertexai_region || 'us-central1';
                 // Handle global region differently - no region prefix in hostname
                 if (region === 'global') {

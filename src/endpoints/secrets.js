@@ -54,6 +54,7 @@ export const SECRET_KEYS = {
     DEEPSEEK: 'api_key_deepseek',
     SERPER: 'api_key_serper',
     XAI: 'api_key_xai',
+    VERTEXAI_PROJECT_ID: 'vertexai_project_id',
     VERTEXAI_SERVICE_ACCOUNT: 'vertexai_service_account_json',
 };
 

@@ -133,7 +133,11 @@ router.post('/caption-image', async (request, response) => {
                 url = `${apiUrl.origin}/v1/publishers/google/models/${model}:generateContent?key=${keyParam}`;
             } else if (authType === 'full') {
                 // Full mode: use project-specific URL with Authorization header
-                const projectId = request.body.vertexai_project_id || 'your-project-id';
+                const projectId = readSecret(request.user.directories, SECRET_KEYS.VERTEXAI_PROJECT_ID);
+                if (!projectId) {
+                    console.warn('Vertex AI project ID is missing.');
+                    return response.status(400).send({ error: true });
+                }
                 const region = request.body.vertexai_region || 'us-central1';
                 // Handle global region differently - no region prefix in hostname
                 if (region === 'global') {

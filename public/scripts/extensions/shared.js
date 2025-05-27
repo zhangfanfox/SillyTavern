@@ -59,7 +59,6 @@ export async function getMultimodalCaption(base64Img, prompt) {
     // Add Vertex AI specific parameters if using Vertex AI
     if (extension_settings.caption.multimodal_api === 'vertexai') {
         requestBody.vertexai_auth_mode = oai_settings.vertexai_auth_mode;
-        requestBody.vertexai_project_id = oai_settings.vertexai_project_id;
         requestBody.vertexai_region = oai_settings.vertexai_region;
     }
 
@@ -185,7 +184,7 @@ function throwIfInvalidModel(useReverseProxy) {
             if (!secret_state[SECRET_KEYS.VERTEXAI_SERVICE_ACCOUNT]) {
                 throw new Error('Service Account JSON is required for Vertex AI Full mode. Please validate and save your Service Account JSON.');
             }
-            if (!oai_settings.vertexai_project_id) {
+            if (!secret_state[SECRET_KEYS.VERTEXAI_PROJECT_ID]) {
                 throw new Error('Project ID is required for Vertex AI Full mode.');
             }
             if (!oai_settings.vertexai_region) {
