@@ -237,7 +237,6 @@ const sensitiveFields = [
     'custom_include_headers',
     'vertexai_project_id',
     'vertexai_region',
-    'vertexai_service_account_json',
 ];
 
 /**
@@ -312,7 +311,6 @@ export const settingsToUpdate = {
     vertexai_auth_mode: ['#vertexai_auth_mode', 'vertexai_auth_mode', false, true],
     vertexai_project_id: ['#vertexai_project_id', 'vertexai_project_id', false, true],
     vertexai_region: ['#vertexai_region', 'vertexai_region', false, true],
-    vertexai_service_account_json: ['#vertexai_service_account_json', 'vertexai_service_account_json', false, true],
     use_alt_scale: ['#use_alt_scale', 'use_alt_scale', true, true],
     squash_system_messages: ['#squash_system_messages', 'squash_system_messages', true, false],
     image_inlining: ['#openai_image_inlining', 'image_inlining', true, false],
@@ -397,7 +395,6 @@ const default_settings = {
     vertexai_auth_mode: 'express',
     vertexai_project_id: '',
     vertexai_region: 'us-central1',
-    vertexai_service_account_json: '',
     use_alt_scale: false,
     squash_system_messages: false,
     image_inlining: false,
@@ -485,7 +482,6 @@ const oai_settings = {
     vertexai_auth_mode: 'express',
     vertexai_project_id: '',
     vertexai_region: 'us-central1',
-    vertexai_service_account_json: '',
     use_alt_scale: false,
     squash_system_messages: false,
     image_inlining: false,
@@ -3836,7 +3832,6 @@ async function saveOpenAIPreset(name, settings, triggerUi = true) {
         vertexai_auth_mode: settings.vertexai_auth_mode,
         vertexai_project_id: settings.vertexai_project_id,
         vertexai_region: settings.vertexai_region,
-        vertexai_service_account_json: settings.vertexai_service_account_json,
         use_alt_scale: settings.use_alt_scale,
         squash_system_messages: settings.squash_system_messages,
         image_inlining: settings.image_inlining,
@@ -5586,10 +5581,6 @@ async function onVertexAIValidateServiceAccount() {
         // Save to backend secret storage
         await writeSecret(SECRET_KEYS.VERTEXAI_SERVICE_ACCOUNT, jsonContent);
 
-        // Clear the textarea and update settings
-        $('#vertexai_service_account_json').val('');
-        oai_settings.vertexai_service_account_json = '';
-
         // Show success status
         updateVertexAIServiceAccountStatus(true, `Project: ${serviceAccount.project_id}, Email: ${serviceAccount.client_email}`);
 
@@ -5607,7 +5598,6 @@ async function onVertexAIValidateServiceAccount() {
  */
 async function onVertexAIClearServiceAccount() {
     $('#vertexai_service_account_json').val('');
-    oai_settings.vertexai_service_account_json = '';
 
     // Clear from backend secret storage
     await writeSecret(SECRET_KEYS.VERTEXAI_SERVICE_ACCOUNT, '');
@@ -5622,8 +5612,6 @@ async function onVertexAIClearServiceAccount() {
  */
 function onVertexAIServiceAccountJsonChange() {
     const jsonContent = String($(this).val()).trim();
-    // Don't save to settings automatically - only save when validated
-    // oai_settings.vertexai_service_account_json = jsonContent;
 
     if (jsonContent) {
         // Auto-validate when content is pasted

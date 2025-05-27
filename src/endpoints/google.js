@@ -31,13 +31,8 @@ export async function getVertexAIAuth(request) {
         }
         throw new Error('API key is required for Vertex AI Express mode');
     } else if (authMode === 'full') {
-        // Try to get service account JSON from backend storage first
-        let serviceAccountJson = readSecret(request.user.directories, SECRET_KEYS.VERTEXAI_SERVICE_ACCOUNT);
-
-        // If not found in backend storage, try from request body (for backward compatibility)
-        if (!serviceAccountJson) {
-            serviceAccountJson = request.body.vertexai_service_account_json;
-        }
+        // Get service account JSON from backend storage
+        const serviceAccountJson = readSecret(request.user.directories, SECRET_KEYS.VERTEXAI_SERVICE_ACCOUNT);
 
         if (serviceAccountJson) {
             try {
