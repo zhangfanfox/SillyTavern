@@ -10,6 +10,7 @@ import { sync as writeFileAtomicSync } from  'write-file-atomic';
 import { getConfigValue, color, setPermissionsSync } from '../util.js';
 import { write } from '../character-card-parser.js';
 import { serverDirectory } from '../server-directory.js';
+import { DEFAULT_AVATAR_PATH } from '../constants.js';
 
 const contentDirectory = path.join(serverDirectory, 'default/content');
 const scaffoldDirectory = path.join(serverDirectory, 'default/scaffold');
@@ -711,7 +712,7 @@ async function downloadSoulkynCharacter(slug) {
 
             // Fallback to default avatar
             if (!avatarBuffer) {
-                const defaultAvatarPath = path.join(serverDirectory, 'public', 'img', 'ai4.png');
+                const defaultAvatarPath = path.join(serverDirectory, DEFAULT_AVATAR_PATH);
                 avatarBuffer = fs.readFileSync(defaultAvatarPath);
             }
 
