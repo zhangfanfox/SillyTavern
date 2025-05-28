@@ -3282,6 +3282,9 @@
                                 <!-- Service Account JSON Content -->
                                 <div class="flex-container flexFlowColumn">
                                     <label for="vertexai_service_account_json" data-i18n="Service Account JSON Content">Service Account JSON Content:</label>
+                                    <div id="vertexai_service_account_status" class="info-block marginTopBot5" style="display: none;">
+                                        <span id="vertexai_service_account_info"></span>
+                                    </div>
                                     <textarea id="vertexai_service_account_json" class="text_pole textarea_compact" rows="4" placeholder='Paste your Service Account JSON content here, e.g.:
 {
   "type": "service_account",
@@ -3299,9 +3302,6 @@
                                     <div class="flex-container">
                                         <button type="button" id="vertexai_validate_service_account" class="menu_button menu_button_icon" data-i18n="Validate JSON">Validate JSON</button>
                                         <button type="button" id="vertexai_clear_service_account" class="menu_button menu_button_icon" data-i18n="Clear">Clear</button>
-                                    </div>
-                                    <div id="vertexai_service_account_status" class="info-block" style="display: none;">
-                                        <span id="vertexai_service_account_info"></span>
                                     </div>
                                 </div>
                             </div>
