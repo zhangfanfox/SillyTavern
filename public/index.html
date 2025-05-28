@@ -3267,12 +3267,16 @@
                                 </h4>
 
                                 <!-- Region -->
-                                <div class="flex-container">
-                                    <label for="vertexai_region" data-i18n="Region">Region:</label>
+                                <div class="flex-container flexFlowColumn">
+                                    <label for="vertexai_region">
+                                        <span data-i18n="Region">
+                                            Region:
+                                        </span>
+                                        <a href="https://cloud.google.com/vertex-ai/generative-ai/docs/learn/locations" target="_blank" rel="noopener noreferrer" title="View available regions and models" data-i18n="[title]View available regions and models" class="notes-link">
+                                            <span class="fa-solid fa-circle-question note-link-span"></span>
+                                        </a>
+                                    </label>
                                     <input id="vertexai_region" name="vertexai_region" class="text_pole flex1" value="us-central1" type="text" autocomplete="off" placeholder="e.g., global, us-central1, europe-west1, asia-northeast1">
-                                    <a href="https://cloud.google.com/vertex-ai/generative-ai/docs/learn/locations" target="_blank" rel="noopener noreferrer" title="View available regions and models" data-i18n="[title]View available regions and models" class="notes-link">
-                                        <span class="fa-solid fa-circle-question note-link-span"></span>
-                                    </a>
                                 </div>
 
                                 <!-- Service Account JSON Content -->
