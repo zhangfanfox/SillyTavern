@@ -180,12 +180,9 @@ function throwIfInvalidModel(useReverseProxy) {
                 throw new Error('Google Vertex AI API key is not set for Express mode.');
             }
         } else if (authMode === 'full') {
-            // Full mode requires Service Account JSON and project settings
+            // Full mode requires Service Account JSON and region settings
             if (!secret_state[SECRET_KEYS.VERTEXAI_SERVICE_ACCOUNT]) {
                 throw new Error('Service Account JSON is required for Vertex AI Full mode. Please validate and save your Service Account JSON.');
-            }
-            if (!secret_state[SECRET_KEYS.VERTEXAI_PROJECT_ID]) {
-                throw new Error('Project ID is required for Vertex AI Full mode.');
             }
             if (!oai_settings.vertexai_region) {
                 throw new Error('Region is required for Vertex AI Full mode.');

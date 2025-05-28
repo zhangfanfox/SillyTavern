@@ -43,7 +43,7 @@ import {
     webTokenizers,
     getWebTokenizer,
 } from '../tokenizers.js';
-import { getVertexAIAuth } from '../google.js';
+import { getVertexAIAuth, getProjectIdFromServiceAccount } from '../google.js';
 
 const API_OPENAI = 'https://api.openai.com/v1';
 const API_CLAUDE = 'https://api.anthropic.com/v1';
@@ -528,10 +528,19 @@ async function sendMakerSuiteRequest(request, response) {
                 url = `${apiUrl.toString().replace(/\/$/, '')}/v1/publishers/google/models/${model}:${responseType}?key=${keyParam}${stream ? '&alt=sse' : ''}`;
             } else if (authType === 'full') {
                 // For Full mode (service account authentication), use project-specific URL
-                // Only use project ID from secrets
-                const projectId = readSecret(request.user.directories, SECRET_KEYS.VERTEXAI_PROJECT_ID);
-                if (!projectId) {
-                    console.warn('Vertex AI project ID is missing.');
+                // Get project ID from Service Account JSON
+                const serviceAccountJson = readSecret(request.user.directories, SECRET_KEYS.VERTEXAI_SERVICE_ACCOUNT);
+                if (!serviceAccountJson) {
+                    console.warn('Vertex AI Service Account JSON is missing.');
+                    return response.status(400).send({ error: true });
+                }
+
+                let projectId;
+                try {
+                    const serviceAccount = JSON.parse(serviceAccountJson);
+                    projectId = getProjectIdFromServiceAccount(serviceAccount);
+                } catch (error) {
+                    console.error('Failed to extract project ID from Service Account JSON:', error);
                     return response.status(400).send({ error: true });
                 }
                 const region = request.body.vertexai_region || 'us-central1';

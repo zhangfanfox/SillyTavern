@@ -107,6 +107,25 @@ export async function getAccessToken(jwtToken) {
     return data.access_token;
 }
 
+/**
+ * Extracts the project ID from a Service Account JSON object.
+ * @param {object} serviceAccount Service account JSON object
+ * @returns {string} Project ID
+ * @throws {Error} If project ID is not found in the service account
+ */
+export function getProjectIdFromServiceAccount(serviceAccount) {
+    if (!serviceAccount || typeof serviceAccount !== 'object') {
+        throw new Error('Invalid service account object');
+    }
+
+    const projectId = serviceAccount.project_id;
+    if (!projectId || typeof projectId !== 'string') {
+        throw new Error('Project ID not found in service account JSON');
+    }
+
+    return projectId;
+}
+
 export const router = express.Router();
 
 router.post('/caption-image', async (request, response) => {
@@ -133,9 +152,19 @@ router.post('/caption-image', async (request, response) => {
                 url = `${apiUrl.origin}/v1/publishers/google/models/${model}:generateContent?key=${keyParam}`;
             } else if (authType === 'full') {
                 // Full mode: use project-specific URL with Authorization header
-                const projectId = readSecret(request.user.directories, SECRET_KEYS.VERTEXAI_PROJECT_ID);
-                if (!projectId) {
-                    console.warn('Vertex AI project ID is missing.');
+                // Get project ID from Service Account JSON
+                const serviceAccountJson = readSecret(request.user.directories, SECRET_KEYS.VERTEXAI_SERVICE_ACCOUNT);
+                if (!serviceAccountJson) {
+                    console.warn('Vertex AI Service Account JSON is missing.');
+                    return response.status(400).send({ error: true });
+                }
+
+                let projectId;
+                try {
+                    const serviceAccount = JSON.parse(serviceAccountJson);
+                    projectId = getProjectIdFromServiceAccount(serviceAccount);
+                } catch (error) {
+                    console.error('Failed to extract project ID from Service Account JSON:', error);
                     return response.status(400).send({ error: true });
                 }
                 const region = request.body.vertexai_region || 'us-central1';

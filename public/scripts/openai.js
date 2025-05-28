@@ -3496,8 +3496,6 @@ function loadOpenAISettings(data, settings) {
     $('#claude_use_sysprompt').prop('checked', oai_settings.claude_use_sysprompt);
     $('#use_makersuite_sysprompt').prop('checked', oai_settings.use_makersuite_sysprompt);
     $('#vertexai_auth_mode').val(oai_settings.vertexai_auth_mode);
-    // Don't display Project ID in input - it's stored in backend secrets
-    $('#vertexai_project_id').val('');
     $('#vertexai_region').val(oai_settings.vertexai_region);
     // Don't display Service Account JSON in textarea - it's stored in backend secrets
     $('#vertexai_service_account_json').val('');
@@ -5015,19 +5013,7 @@ async function onConnectButtonClick(e) {
             }
         } else {
             // Full version - use service account
-            // Check if we have a saved project ID, otherwise use the input value
-            const savedProjectId = secret_state[SECRET_KEYS.VERTEXAI_PROJECT_ID];
-            const inputProjectId = String($('#vertexai_project_id').val()).trim();
-
-            if (!savedProjectId && !inputProjectId) {
-                toastr.error(t`Project ID is required for Vertex AI full version`);
-                return;
-            }
-
-            // Save project ID to secrets if we have an input value
-            if (inputProjectId.length) {
-                await writeSecret(SECRET_KEYS.VERTEXAI_PROJECT_ID, inputProjectId);
-            }
+            // Project ID will be extracted from the Service Account JSON
 
             // Check if service account JSON is saved in backend
             if (!secret_state[SECRET_KEYS.VERTEXAI_SERVICE_ACCOUNT]) {
