@@ -5521,20 +5521,11 @@ function onVertexAIAuthModeChange() {
     const authMode = String($(this).val());
     oai_settings.vertexai_auth_mode = authMode;
 
-    // Show/hide appropriate configuration sections
-    if (authMode === 'express') {
-        $('#vertexai_express_config').show();
-        $('#vertexai_full_config').hide();
-        // Show express mode model groups and hide full version model groups
-        $('#model_vertexai_select optgroup[data-mode="express"]').show();
-        $('#model_vertexai_select optgroup[data-mode="full"]').hide();
-    } else {
-        $('#vertexai_express_config').hide();
-        $('#vertexai_full_config').show();
-        // Hide express mode model groups and show full version model groups
-        $('#model_vertexai_select optgroup[data-mode="express"]').hide();
-        $('#model_vertexai_select optgroup[data-mode="full"]').show();
-    }
+    $('#vertexai_form [data-mode]').each(function () {
+        const mode = $(this).data('mode');
+        $(this).toggle(mode === authMode);
+        $(this).find('option').toggle(mode === authMode);
+    });
 
     saveSettingsDebounced();
 }

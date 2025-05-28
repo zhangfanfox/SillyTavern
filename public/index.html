@@ -3237,7 +3237,7 @@
                             </div>
 
                             <!-- Express Mode Configuration -->
-                            <div id="vertexai_express_config" class="vertexai-auth-section">
+                            <div id="vertexai_express_config" class="vertexai-auth-section" data-mode="express">
                                 <h4>
                                     <span data-i18n="Google Vertex AI API Key">
                                         Google Vertex AI API Key
@@ -3256,7 +3256,7 @@
                             </div>
 
                             <!-- Full Version Configuration -->
-                            <div id="vertexai_full_config" class="vertexai-auth-section" style="display: none;">
+                            <div id="vertexai_full_config" class="vertexai-auth-section" data-mode="full">
                                 <h4>
                                     <span data-i18n="Service Account Configuration">
                                         Service Account Configuration
@@ -3293,8 +3293,8 @@
                                         Paste the complete JSON content of your Google Cloud Service Account key file. The content will be stored securely.
                                     </div>
                                     <div class="flex-container">
-                                        <button type="button" id="vertexai_validate_service_account" class="menu_button" data-i18n="Validate JSON">Validate JSON</button>
-                                        <button type="button" id="vertexai_clear_service_account" class="menu_button" data-i18n="Clear">Clear</button>
+                                        <button type="button" id="vertexai_validate_service_account" class="menu_button menu_button_icon" data-i18n="Validate JSON">Validate JSON</button>
+                                        <button type="button" id="vertexai_clear_service_account" class="menu_button menu_button_icon" data-i18n="Clear">Clear</button>
                                     </div>
                                     <div id="vertexai_service_account_status" class="info-block" style="display: none;">
                                         <span id="vertexai_service_account_info"></span>
@@ -3317,14 +3317,14 @@
                                     </optgroup>
 
                                     <!-- Full Version Models -->
-                                    <optgroup id="vertexai_full_gemini_25" label="Gemini 2.5" data-mode="full" style="display: none;">
+                                    <optgroup id="vertexai_full_gemini_25" label="Gemini 2.5" data-mode="full">
                                         <option value="gemini-2.5-pro-preview-05-06">gemini-2.5-pro-preview-05-06</option>
                                         <option value="gemini-2.5-pro-preview-03-25">gemini-2.5-pro-preview-03-25</option>
                                         <option value="gemini-2.5-pro-exp-03-25">gemini-2.5-pro-exp-03-25</option>
                                         <option value="gemini-2.5-flash-preview-05-20">gemini-2.5-flash-preview-05-20</option>
                                         <option value="gemini-2.5-flash-preview-04-17">gemini-2.5-flash-preview-04-17</option>
                                     </optgroup>
-                                    <optgroup id="vertexai_full_gemini_20" label="Gemini 2.0" data-mode="full" style="display: none;">
+                                    <optgroup id="vertexai_full_gemini_20" label="Gemini 2.0" data-mode="full">
                                         <option value="gemini-2.0-flash-001">gemini-2.0-flash-001</option>
                                         <option value="gemini-2.0-flash-exp">gemini-2.0-flash-exp</option>
                                         <option value="gemini-2.0-flash-preview-image-generation">gemini-2.0-flash-preview-image-generation</option>
