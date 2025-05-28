@@ -61,12 +61,6 @@ const API_DEEPSEEK = 'https://api.deepseek.com/beta';
 const API_XAI = 'https://api.x.ai/v1';
 const API_POLLINATIONS = 'https://text.pollinations.ai/openai';
 
-
-
-
-
-
-
 /**
  * Applies a post-processing step to the generated messages.
  * @param {object[]} messages Messages to post-process
