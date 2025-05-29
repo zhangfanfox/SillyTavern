@@ -436,7 +436,6 @@ export function getGroupDepthPrompts(groupId, characterId) {
  * @returns {{description: string, personality: string, scenario: string, mesExamples: string}} Group character cards combined
  */
 export function getGroupCharacterCards(groupId, characterId) {
-    console.debug('getGroupCharacterCards entered for group: ', groupId);
     const group = groups.find(x => x.id === groupId);
 
     if (!group || !group?.generation_mode || !Array.isArray(group.members) || !group.members.length) {
@@ -507,7 +506,6 @@ export function getGroupCharacterCards(groupId, characterId) {
         }
 
         if (group.disabled_members.includes(member) && characterId !== index && group.generation_mode !== group_generation_mode.APPEND_DISABLED) {
-            console.debug(`Skipping disabled group member: ${member}`);
             continue;
         }
 
