@@ -1880,6 +1880,52 @@ async function delChat(chatfile) {
     }
 }
 
+/**
+ * Deletes a character chat by its name.
+ * @param {string} characterId Character ID to delete chat for
+ * @param {string} fileName Name of the chat file to delete (without .jsonl extension)
+ * @returns {Promise<void>} A promise that resolves when the chat is deleted.
+ */
+export async function deleteCharacterChatByName(characterId, fileName) {
+    // Make sure all the data is loaded.
+    await unshallowCharacter(characterId);
+
+    /** @type {import('./scripts/char-data.js').v1CharData} */
+    const character = characters[characterId];
+    if (!character) {
+        console.warn(`Character with ID ${characterId} not found.`);
+        return;
+    }
+
+    const response = await fetch('/api/chats/delete', {
+        method: 'POST',
+        headers: getRequestHeaders(),
+        body: JSON.stringify({
+            chatfile: `${fileName}.jsonl`,
+            avatar_url: character.avatar,
+        }),
+    });
+
+    if (!response.ok) {
+        console.error('Failed to delete chat for character.');
+        return;
+    }
+
+    if (fileName === character.chat) {
+        const chatsResponse = await fetch('/api/characters/chats', {
+            method: 'POST',
+            headers: getRequestHeaders(),
+            body: JSON.stringify({ avatar_url: character.avatar }),
+        });
+        const chats = Object.values(await chatsResponse.json());
+        chats.sort((a, b) => sortMoments(timestampToMoment(a.last_mes), timestampToMoment(b.last_mes)));
+        const newChatName = chats.length && typeof chats[0] === 'object' ? chats[0].file_name.replace('.jsonl', '') : `${character.name} - ${humanizedDateTime()}`;
+        await updateRemoteChatName(characterId, newChatName);
+    }
+
+    await eventSource.emit(event_types.CHAT_DELETED, fileName);
+}
+
 export async function replaceCurrentChat() {
     await clearChat();
     chat.length = 0;
@@ -9985,16 +10031,21 @@ async function doRenameChat(_, chatName) {
 }
 
 /**
- * Renames the currently selected chat.
- * @param {string} oldFileName Old name of the chat (no JSONL extension)
- * @param {string} newName New name for the chat (no JSONL extension)
+ * Renames a group or character chat.
+ * @param {object} param Parameters for renaming chat
+ * @param {string} [param.characterId] Character ID to rename chat for
+ * @param {string} [param.groupId] Group ID to rename chat for
+ * @param {string} param.oldFileName Old name of the chat (no JSONL extension)
+ * @param {string} param.newFileName New name for the chat (no JSONL extension)
+ * @param {boolean} [param.loader=true] Whether to show loader during the operation
  */
-export async function renameChat(oldFileName, newName) {
+export async function renameGroupOrCharacterChat({ characterId, groupId, oldFileName, newFileName, loader }) {
+    const currentChatId = getCurrentChatId();
     const body = {
-        is_group: !!selected_group,
-        avatar_url: characters[this_chid]?.avatar,
+        is_group: !!groupId,
+        avatar_url: characters[characterId]?.avatar,
         original_file: `${oldFileName}.jsonl`,
-        renamed_file: `${newName.trim()}.jsonl`,
+        renamed_file: `${newFileName.trim()}.jsonl`,
     };
 
     if (body.original_file === body.renamed_file) {
@@ -10007,7 +10058,8 @@ export async function renameChat(oldFileName, newName) {
     }
 
     try {
-        showLoader();
+        loader && showLoader();
+
         const response = await fetch('/api/chats/rename', {
             method: 'POST',
             body: JSON.stringify(body),
@@ -10025,27 +10077,69 @@ export async function renameChat(oldFileName, newName) {
         }
 
         if (data.sanitizedFileName) {
-            newName = data.sanitizedFileName;
+            newFileName = data.sanitizedFileName;
         }
 
-        if (selected_group) {
-            await renameGroupChat(selected_group, oldFileName, newName);
+        if (groupId) {
+            await renameGroupChat(groupId, oldFileName, newFileName);
         }
-        else {
-            if (characters[this_chid].chat == oldFileName) {
-                characters[this_chid].chat = newName;
-                $('#selected_chat_pole').val(characters[this_chid].chat);
-                await createOrEditCharacter();
-            }
+        else if (characterId !== undefined && String(characterId) === String(this_chid) && characters[characterId]?.chat === oldFileName) {
+            characters[characterId].chat = newFileName;
+            $('#selected_chat_pole').val(characters[characterId].chat);
+            await createOrEditCharacter();
         }
 
-        await reloadCurrentChat();
+        if (currentChatId) {
+            await reloadCurrentChat();
+        }
     } catch {
-        hideLoader();
+        loader && hideLoader();
         await delay(500);
-        await callPopup('An error has occurred. Chat was not renamed.', 'text');
+        await callGenericPopup('An error has occurred. Chat was not renamed.', POPUP_TYPE.TEXT);
     } finally {
-        hideLoader();
+        loader && hideLoader();
+    }
+}
+
+/**
+ * Renames the currently selected chat.
+ * @param {string} oldFileName Old name of the chat (no JSONL extension)
+ * @param {string} newName New name for the chat (no JSONL extension)
+ */
+export async function renameChat(oldFileName, newName) {
+    return await renameGroupOrCharacterChat({
+        characterId: this_chid,
+        groupId: selected_group,
+        oldFileName: oldFileName,
+        newFileName: newName,
+        loader: true,
+    });
+}
+
+/**
+ * Forces the update of the chat name for a remote character.
+ * @param {string|number} characterId Character ID to update chat name for
+ * @param {string} newName New name for the chat
+ * @returns {Promise<void>}
+ */
+export async function updateRemoteChatName(characterId, newName) {
+    const character = characters[characterId];
+    if (!character) {
+        console.warn(`Character not found for ID: ${characterId}`);
+        return;
+    }
+    character.chat = newName;
+    const mergeRequest = {
+        avatar: character.avatar,
+        chat: newName,
+    };
+    const mergeResponse = await fetch('/api/characters/merge-attributes', {
+        method: 'POST',
+        headers: getRequestHeaders(),
+        body: JSON.stringify(mergeRequest),
+    });
+    if (!mergeResponse.ok) {
+        console.error('Failed to save extension field', mergeResponse.statusText);
     }
 }
 
