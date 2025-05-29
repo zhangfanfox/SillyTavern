@@ -3566,7 +3566,7 @@ class StreamingProcessor {
         }
 
         if (this.image) {
-            await processImageAttachment(chat[messageId], { imageUrl: this.image, parsedImage: null });
+            await processImageAttachment(chat[messageId], { imageUrl: this.image });
             appendMediaToMessage(chat[messageId], $(this.messageDom));
         }
 
@@ -6309,17 +6309,11 @@ export function cleanUpMessage({ getMessage, isImpersonate, isContinue, displayI
  * Adds an image to the message.
  * @param {object} message Message object
  * @param {object} sources Image sources
- * @param {ParsedImage} [sources.parsedImage] Parsed image
  * @param {string} [sources.imageUrl] Image URL
  *
  * @returns {Promise<void>}
  */
-async function processImageAttachment(message, { parsedImage, imageUrl }) {
-    if (parsedImage?.image) {
-        saveImageToMessage(parsedImage, message);
-        return;
-    }
-
+async function processImageAttachment(message, { imageUrl }) {
     if (!imageUrl) {
         return;
     }
@@ -6378,8 +6372,6 @@ export async function saveReply({ type, getMessage, fromStreaming = false, title
 
     let oldMessage = '';
     const generationFinished = new Date();
-    const parsedImage = extractImageFromMessage(getMessage);
-    getMessage = parsedImage.getMessage;
     if (type === 'swipe') {
         oldMessage = chat[chat.length - 1]['mes'];
         chat[chat.length - 1]['swipes'].length++;
@@ -6393,7 +6385,7 @@ export async function saveReply({ type, getMessage, fromStreaming = false, title
             chat[chat.length - 1]['extra']['model'] = getGeneratingModel();
             chat[chat.length - 1]['extra']['reasoning'] = reasoning;
             chat[chat.length - 1]['extra']['reasoning_duration'] = null;
-            await processImageAttachment(chat[chat.length - 1], { parsedImage, imageUrl });
+            await processImageAttachment(chat[chat.length - 1], { imageUrl });
             if (power_user.message_token_count_enabled) {
                 const tokenCountText = (reasoning || '') + chat[chat.length - 1]['mes'];
                 chat[chat.length - 1]['extra']['token_count'] = await getTokenCountAsync(tokenCountText, 0);
@@ -6417,7 +6409,7 @@ export async function saveReply({ type, getMessage, fromStreaming = false, title
         chat[chat.length - 1]['extra']['model'] = getGeneratingModel();
         chat[chat.length - 1]['extra']['reasoning'] = reasoning;
         chat[chat.length - 1]['extra']['reasoning_duration'] = null;
-        await processImageAttachment(chat[chat.length - 1], { parsedImage, imageUrl });
+        await processImageAttachment(chat[chat.length - 1], { imageUrl });
         if (power_user.message_token_count_enabled) {
             const tokenCountText = (reasoning || '') + chat[chat.length - 1]['mes'];
             chat[chat.length - 1]['extra']['token_count'] = await getTokenCountAsync(tokenCountText, 0);
@@ -6437,7 +6429,7 @@ export async function saveReply({ type, getMessage, fromStreaming = false, title
         chat[chat.length - 1]['extra']['api'] = getGeneratingApi();
         chat[chat.length - 1]['extra']['model'] = getGeneratingModel();
         chat[chat.length - 1]['extra']['reasoning'] += reasoning;
-        await processImageAttachment(chat[chat.length - 1], { parsedImage, imageUrl });
+        await processImageAttachment(chat[chat.length - 1], { imageUrl });
         // We don't know if the reasoning duration extended, so we don't update it here on purpose.
         if (power_user.message_token_count_enabled) {
             const tokenCountText = (reasoning || '') + chat[chat.length - 1]['mes'];
@@ -6483,7 +6475,7 @@ export async function saveReply({ type, getMessage, fromStreaming = false, title
             chat[chat.length - 1]['extra']['gen_id'] = group_generation_id;
         }
 
-        await processImageAttachment(chat[chat.length - 1], { parsedImage, imageUrl: imageUrl });
+        await processImageAttachment(chat[chat.length - 1], { imageUrl });
         const chat_id = (chat.length - 1);
 
         !fromStreaming && await eventSource.emit(event_types.MESSAGE_RECEIVED, chat_id, type);
@@ -6698,15 +6690,6 @@ function getGeneratingModel(mes) {
             break;
     }
     return model;
-}
-
-function extractImageFromMessage(getMessage) {
-    const regex = /<img src="(.*?)".*?alt="(.*?)".*?>/g;
-    const results = regex.exec(getMessage);
-    const image = results ? results[1] : '';
-    const title = results ? results[2] : '';
-    getMessage = getMessage.replace(regex, '');
-    return { getMessage, image, title, inline: true };
 }
 
 /**
