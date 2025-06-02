@@ -7,7 +7,6 @@ import { Fuse, DOMPurify } from '../lib.js';
 
 import {
     abortStatusCheck,
-    callPopup,
     characters,
     event_types,
     eventSource,
