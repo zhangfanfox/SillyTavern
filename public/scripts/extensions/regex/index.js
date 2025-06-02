@@ -1,4 +1,4 @@
-import { callPopup, characters, eventSource, event_types, getCurrentChatId, reloadCurrentChat, saveSettingsDebounced, this_chid } from '../../../script.js';
+import { characters, eventSource, event_types, getCurrentChatId, reloadCurrentChat, saveSettingsDebounced, this_chid } from '../../../script.js';
 import { extension_settings, renderExtensionTemplateAsync, writeExtensionField } from '../../extensions.js';
 import { selected_group } from '../../group-chats.js';
 import { callGenericPopup, POPUP_TYPE } from '../../popup.js';

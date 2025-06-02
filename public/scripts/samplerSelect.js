@@ -1,7 +1,6 @@
 import {
     main_api,
     saveSettingsDebounced,
-    callPopup,
 } from '../script.js';
 import { power_user } from './power-user.js';
 //import { BIAS_CACHE, displayLogitBias, getLogitBiasListResult } from './logit-bias.js';

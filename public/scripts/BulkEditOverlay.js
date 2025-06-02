@@ -2,7 +2,6 @@
 
 import {
     characterGroupOverlay,
-    callPopup,
     characters,
     event_types,
     eventSource,
