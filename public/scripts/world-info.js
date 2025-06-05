@@ -5631,9 +5631,12 @@ export function initWorldInfo() {
         select2ChoiceClickSubscribe($('#world_info'), target => {
             const name = $(target).text();
             const selectedIndex = world_names.indexOf(name);
-            if (selectedIndex !== -1) {
+            const alreadySelectedInEditor = $('#world_editor_select option:selected').text() === name;
+            if (selectedIndex !== -1 && !alreadySelectedInEditor) {
                 $('#world_editor_select').val(selectedIndex).trigger('change');
                 console.log('Quick selection of world', name);
+            } else {
+                console.warn('lets not reload an already loaded list yes?');
             }
         }, { buttonStyle: true, closeDrawer: true });
     }
