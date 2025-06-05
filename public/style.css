@@ -14,6 +14,7 @@
 @import url(css/data-maid.css);
 
 :root {
+    interpolate-size: allow-keywords;
     --doc-height: 100%;
     --transparent: rgba(0, 0, 0, 0);
 
@@ -2805,7 +2806,6 @@ input[type="file"] {
 }
 
 #rm_extensions_block {
-    display: none;
     overflow-y: auto;
 }
 
@@ -2934,7 +2934,6 @@ select option:not(:checked) {
 /*#######################################################################*/
 
 #rm_api_block {
-    display: none;
     overflow-y: auto;
 }
 
@@ -5402,6 +5401,21 @@ body:has(#character_popup.open) #top-settings-holder:has(.drawer-content.openDra
     backdrop-filter: blur(calc(var(--SmartThemeBlurStrength)));
     -webkit-backdrop-filter: blur(calc(var(--SmartThemeBlurStrength)));
     /* z-index: 1000 !important; */
+    height: 0;
+    transition-property: height, display;
+    transition-duration: var(--animation-duration);
+    transition-timing-function: ease-in-out;
+    transition-behavior: allow-discrete;
+}
+
+.drawer-content.openDrawer {
+    display: block;
+    height: auto;
+    height: calc-size(auto, size);
+
+    @starting-style {
+        height: 0;
+    }
 }
 
 body.movingUI .inline-drawer-maximize {
