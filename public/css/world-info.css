@@ -201,6 +201,10 @@
     transition: opacity 500ms;
 }
 
+.world_entry_edit {
+    display: contents;
+}
+
 .disabledWIEntry {
     opacity: 0.4;
     filter: grayscale(1);
