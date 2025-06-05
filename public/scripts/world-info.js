@@ -1943,23 +1943,20 @@ function clearEntryList() {
 
 
     if (!$list.children().length) {
-        console.warn('List already empty, skipping cleanup.');
+        console.debug('List already empty, skipping cleanup.');
         console.timeEnd('clearEntryList');
         return;
     }
 
     // Step 1: Clean all <option> elements within <select>
-    console.warn(`Before cleaning: ${$list.find('option').length} options in list`);
     $list.find('option').each(function () {
         const $option = $(this);
         $option.off();
         $.cleanData([$option[0]]);
         $option.remove();
     });
-    console.warn(`Post-clean: ${$list.find('option').length} options in list`);
 
     // Step 2: Clean all <select> elements
-    console.warn(`Before cleaning: ${$list.find('select').length} selects in list`);
     $list.find('select').each(function () {
         const $select = $(this);
         // Remove Select2-related data and container if present
@@ -1967,7 +1964,7 @@ function clearEntryList() {
             try {
                 $select.select2('destroy');
             } catch (e) {
-                console.warn('Select2 destroy failed:', e);
+                console.debug('Select2 destroy failed:', e);
             }
         }
         const $container = $select.parent();
@@ -1975,47 +1972,34 @@ function clearEntryList() {
             $container.find('*').off();
             $.cleanData($container.find('*').get());
             $container.remove();
-        } else {
-            console.warn('container not found');
-            console.warn($select.parent().html());
         }
-        // Destroy Select2 if applicable
 
         $select.off();
         $.cleanData([$select[0]]);
 
     });
-    console.warn(`Post-clean: ${$list.find('select').length} selects in list`);
 
     // Step 3: Clean <div>, <span>, <input>
-    console.warn(`Before cleaning: ${$list.find('div, span, input').length} divs, spans, inputs in list`);
     $list.find('div, span, input').each(function () {
         const $elem = $(this);
         $elem.off();
         $.cleanData([$elem[0]]);
         $elem.remove();
     });
-    console.warn(`Post-clean: ${$list.find('div, span, input').length} divs, spans, inputs in list`);
 
     // Destroy Sortable
-    console.warn(`Before cleaning: ${$list.sortable('instance') ? 1 : 0} sortable instance in list`);
     if ($list.sortable('instance')) {
         $list.sortable('destroy');
     }
-    console.warn(`Post-cleaning: ${$list.sortable('instance') ? 1 : 0} sortable instance in list`);
 
     let totalElementsOfanyKindLeftInList = $list.children().length;
 
     // Final cleanup
     if (totalElementsOfanyKindLeftInList !== 0) {
         console.time('empty');
-        console.warn(`Before .empty(): ${totalElementsOfanyKindLeftInList} elements left in list`);
         $list.empty();
         totalElementsOfanyKindLeftInList = $list.children().length;
-        console.warn(`After .empty(): ${totalElementsOfanyKindLeftInList} elements left in list`);
         console.timeEnd('empty');
-    } else {
-        console.warn('Entry List is already totally empty, no need to call .empty()');
     }
 
     console.timeEnd('clearEntryList');
