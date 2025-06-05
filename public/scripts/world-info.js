@@ -1942,7 +1942,6 @@ function clearEntryList() {
     console.time('clearEntryList');
     const $list = $('#world_popup_entries_list');
 
-
     if (!$list.children().length) {
         console.debug('List already empty, skipping cleanup.');
         console.timeEnd('clearEntryList');
@@ -1977,7 +1976,6 @@ function clearEntryList() {
 
         $select.off();
         $.cleanData([$select[0]]);
-
     });
 
     // Step 3: Clean <div>, <span>, <input>
@@ -1993,13 +1991,12 @@ function clearEntryList() {
         $list.sortable('destroy');
     }
 
-    let totalElementsOfanyKindLeftInList = $list.children().length;
+    const totalElementsOfAnyKindLeftInList = $list.children().length;
 
     // Final cleanup
-    if (totalElementsOfanyKindLeftInList !== 0) {
+    if (totalElementsOfAnyKindLeftInList) {
         console.time('empty');
         $list.empty();
-        totalElementsOfanyKindLeftInList = $list.children().length;
         console.timeEnd('empty');
     }
 
