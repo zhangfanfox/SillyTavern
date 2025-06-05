@@ -2301,7 +2301,7 @@ async function displayWorldEntries(name, data, navigation = navigation_option.no
     });
 
     worldEntriesList.css('opacity', '1');
-    //remove inline CSS on the list
+    await delay(250);
     worldEntriesList.removeAttr('style');
 
 
