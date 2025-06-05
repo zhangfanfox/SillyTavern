@@ -1960,7 +1960,7 @@ function clearEntryList() {
     $list.find('select').each(function () {
         const $select = $(this);
         // Remove Select2-related data and container if present
-        if ($select.hasClass('select2-hidden-accessible')) {
+        if ($select.data('select2')) {
             try {
                 $select.select2('destroy');
             } catch (e) {
