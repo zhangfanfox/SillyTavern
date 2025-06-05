@@ -2004,9 +2004,6 @@ async function displayWorldEntries(name, data, navigation = navigation_option.no
     updateEditor = async (navigation, flashOnNav = true) => await displayWorldEntries(name, data, navigation, flashOnNav);
 
     const worldEntriesList = $('#world_popup_entries_list');
-
-    worldEntriesList.css({ 'opacity': 0, 'transition': 'opacity 250ms ease-in-out' });
-    await delay(250);
     clearEntryList(worldEntriesList);
     worldEntriesList.show();
 
@@ -2291,11 +2288,6 @@ async function displayWorldEntries(name, data, navigation = navigation_option.no
             await saveWorldInfo(name, data);
         },
     });
-
-    worldEntriesList.css('opacity', '1');
-    await delay(250);
-    worldEntriesList.removeAttr('style');
-
 
     //$("#world_popup_entries_list").disableSelection();
 }
