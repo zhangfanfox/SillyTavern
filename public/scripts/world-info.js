@@ -85,6 +85,7 @@ const saveSettingsDebounced = debounce(() => {
 }, debounce_timeout.relaxed);
 const sortFn = (a, b) => b.order - a.order;
 let updateEditor = (navigation, flashOnNav = true) => { console.debug('Triggered WI navigation', navigation, flashOnNav); };
+let isSaveWorldInfoDisabled = false;
 
 // Do not optimize. updateEditor is a function that is updated by the displayWorldEntries with new data.
 export const worldInfoFilter = new FilterHelper(() => updateEditor());
@@ -2010,12 +2011,9 @@ async function displayWorldEntries(name, data, navigation = navigation_option.no
 
     const worldEntriesList = $('#world_popup_entries_list');
 
-    // We save costly performance by removing all events before emptying. Because we know there are no relevant event handlers reacting on removing elements
-    // This prevents jQuery from actually going through all registered events on the controls for each entry when removing it
-    //worldEntriesList.find('*').off();
     worldEntriesList.css({ 'opacity': 0, 'transition': 'opacity 250ms ease-in-out' });
     await delay(250);
-    clearEntryList(); // Use enhanced cleanup
+    clearEntryList();
     worldEntriesList.show();
 
     if (!data || !('entries' in data)) {
@@ -2109,23 +2107,39 @@ async function displayWorldEntries(name, data, navigation = navigation_option.no
         formatNavigator: PAGINATION_TEMPLATE,
         showNavigator: true,
         callback: async function (/** @type {object[]} */ page) {
-            // We save costly performance by removing all events before emptying. Because we know there are no relevant event handlers reacting on removing elements
-            // This prevents jQuery from actually going through all registered events on the controls for each entry when removing it
-            //worldEntriesList.find('*').off();
-            clearEntryList();
-            //worldEntriesList.empty();
+            try {
+                // Prevent saveWorldInfo from firing timeouts while rendering the list
+                isSaveWorldInfoDisabled = true;
+                clearEntryList();
 
-            const keywordHeaders = await renderTemplateAsync('worldInfoKeywordHeaders');
-            const blocksPromises = page.map(async (entry) => await getWorldEntry(name, data, entry)).filter(x => x);
-            const blocks = await Promise.all(blocksPromises);
-            const isCustomOrder = $('#world_info_sort_order').find(':selected').data('rule') === 'custom';
-            if (!isCustomOrder) {
-                blocks.forEach(block => {
-                    block.find('.drag-handle').remove();
-                });
+                const keywordHeaders = await renderTemplateAsync('worldInfoKeywordHeaders');
+                const blocks = [];
+
+                for (const entry of page) {
+                    try {
+                        const block = await getWorldEntry(name, data, entry);
+                        if (block) {
+                            blocks.push(block);
+                        }
+                    } catch (error) {
+                        console.error(`Error while processing entry ${entry.uid}:`, error);
+                    }
+                }
+
+                const isCustomOrder = $('#world_info_sort_order').find(':selected').data('rule') === 'custom';
+                if (!isCustomOrder) {
+                    blocks.forEach(block => {
+                        block.find('.drag-handle').remove();
+                    });
+                }
+
+                worldEntriesList.append(keywordHeaders);
+                worldEntriesList.append(blocks);
+            } catch (error) {
+                console.error('Error while rendering WI entries:', error);
+            } finally {
+                isSaveWorldInfoDisabled = false;
             }
-            worldEntriesList.append(keywordHeaders);
-            worldEntriesList.append(blocks);
         },
         afterSizeSelectorChange: function (e) {
             accountStorage.setItem(storageKey, e.target.value);
@@ -3739,6 +3753,11 @@ async function _save(name, data) {
  * @return {Promise<void>} A promise that resolves when the world info is saved
  */
 export async function saveWorldInfo(name, data, immediately = false) {
+    // Saving is temporarily disabled
+    if (isSaveWorldInfoDisabled) {
+        return;
+    }
+
     if (!name || !data) {
         return;
     }
