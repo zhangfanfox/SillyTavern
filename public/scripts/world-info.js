@@ -1,7 +1,7 @@
 import { Fuse } from '../lib.js';
 
 import { saveSettings, substituteParams, getRequestHeaders, chat_metadata, this_chid, characters, saveCharacterDebounced, menu_type, eventSource, event_types, getExtensionPromptByName, saveMetadata, getCurrentChatId, extension_prompt_roles } from '../script.js';
-import { download, debounce, initScrollHeight, resetScrollHeight, parseJsonFile, extractDataFromPng, getFileBuffer, getCharaFilename, getSortableDelay, escapeRegex, PAGINATION_TEMPLATE, navigation_option, waitUntilCondition, isTrueBoolean, setValueByPath, flashHighlight, select2ModifyOptions, getSelect2OptionId, dynamicSelect2DataViaAjax, highlightRegex, select2ChoiceClickSubscribe, isFalseBoolean, getSanitizedFilename, checkOverwriteExistingData, getStringHash, parseStringArray, cancelDebounce, findChar, onlyUnique, equalsIgnoreCaseAndAccents } from './utils.js';
+import { download, debounce, delay, initScrollHeight, resetScrollHeight, parseJsonFile, extractDataFromPng, getFileBuffer, getCharaFilename, getSortableDelay, escapeRegex, PAGINATION_TEMPLATE, navigation_option, waitUntilCondition, isTrueBoolean, setValueByPath, flashHighlight, select2ModifyOptions, getSelect2OptionId, dynamicSelect2DataViaAjax, highlightRegex, select2ChoiceClickSubscribe, isFalseBoolean, getSanitizedFilename, checkOverwriteExistingData, getStringHash, parseStringArray, cancelDebounce, findChar, onlyUnique, equalsIgnoreCaseAndAccents } from './utils.js';
 import { extension_settings, getContext } from './extensions.js';
 import { NOTE_MODULE_NAME, metadata_keys, shouldWIAddPrompt } from './authors-note.js';
 import { isMobile } from './RossAscends-mods.js';
@@ -1754,12 +1754,12 @@ function registerWorldInfoSlashCommands() {
  */
 export async function showWorldEditor(name) {
     if (!name) {
-        hideWorldEditor();
+        await hideWorldEditor();
         return;
     }
 
     const wiData = await loadWorldInfo(name);
-    displayWorldEntries(name, wiData);
+    await displayWorldEntries(name, wiData);
 }
 
 /**
@@ -1815,8 +1815,8 @@ export async function updateWorldInfoList() {
     }
 }
 
-function hideWorldEditor() {
-    displayWorldEntries(null, null);
+async function hideWorldEditor() {
+    await displayWorldEntries(null, null);
 }
 
 function getWIElement(name) {
@@ -1937,15 +1937,102 @@ function updateWorldEntryKeyOptionsCache(keyOptions, { remove = false, reset = f
     worldEntryKeyOptionsCache.sort((a, b) => b.count - a.count || a.text.localeCompare(b.text));
 }
 
-function displayWorldEntries(name, data, navigation = navigation_option.none, flashOnNav = true) {
-    updateEditor = (navigation, flashOnNav = true) => displayWorldEntries(name, data, navigation, flashOnNav);
+function clearEntryList() {
+    console.time('clearEntryList');
+    const $list = $('#world_popup_entries_list');
+
+
+    if (!$list.children().length) {
+        console.warn('List already empty, skipping cleanup.');
+        console.timeEnd('clearEntryList');
+        return;
+    }
+
+    // Step 1: Clean all <option> elements within <select>
+    console.warn(`Before cleaning: ${$list.find('option').length} options in list`);
+    $list.find('option').each(function () {
+        const $option = $(this);
+        $option.off();
+        $.cleanData([$option[0]]);
+        $option.remove();
+    });
+    console.warn(`Post-clean: ${$list.find('option').length} options in list`);
+
+    // Step 2: Clean all <select> elements
+    console.warn(`Before cleaning: ${$list.find('select').length} selects in list`);
+    $list.find('select').each(function () {
+        const $select = $(this);
+        // Remove Select2-related data and container if present
+        if ($select.hasClass('select2-hidden-accessible')) {
+            try {
+                $select.select2('destroy');
+            } catch (e) {
+                console.warn('Select2 destroy failed:', e);
+            }
+        }
+        const $container = $select.parent();
+        if ($container.length) {
+            $container.find('*').off();
+            $.cleanData($container.find('*').get());
+            $container.remove();
+        } else {
+            console.warn('container not found');
+            console.warn($select.parent().html());
+        }
+        // Destroy Select2 if applicable
+
+        $select.off();
+        $.cleanData([$select[0]]);
+
+    });
+    console.warn(`Post-clean: ${$list.find('select').length} selects in list`);
+
+    // Step 3: Clean <div>, <span>, <input>
+    console.warn(`Before cleaning: ${$list.find('div, span, input').length} divs, spans, inputs in list`);
+    $list.find('div, span, input').each(function () {
+        const $elem = $(this);
+        $elem.off();
+        $.cleanData([$elem[0]]);
+        $elem.remove();
+    });
+    console.warn(`Post-clean: ${$list.find('div, span, input').length} divs, spans, inputs in list`);
+
+    // Destroy Sortable
+    console.warn(`Before cleaning: ${$list.sortable('instance') ? 1 : 0} sortable instance in list`);
+    if ($list.sortable('instance')) {
+        $list.sortable('destroy');
+    }
+    console.warn(`Post-cleaning: ${$list.sortable('instance') ? 1 : 0} sortable instance in list`);
+
+    let totalElementsOfanyKindLeftInList = $list.children().length;
+
+    // Final cleanup
+    if (totalElementsOfanyKindLeftInList !== 0) {
+        console.time('empty');
+        console.warn(`Before .empty(): ${totalElementsOfanyKindLeftInList} elements left in list`);
+        $list.empty();
+        totalElementsOfanyKindLeftInList = $list.children().length;
+        console.warn(`After .empty(): ${totalElementsOfanyKindLeftInList} elements left in list`);
+        console.timeEnd('empty');
+    } else {
+        console.warn('Entry List is already totally empty, no need to call .empty()');
+    }
+
+    console.timeEnd('clearEntryList');
+}
+
+async function displayWorldEntries(name, data, navigation = navigation_option.none, flashOnNav = true) {
+    updateEditor = async (navigation, flashOnNav = true) => await displayWorldEntries(name, data, navigation, flashOnNav);
 
     const worldEntriesList = $('#world_popup_entries_list');
 
     // We save costly performance by removing all events before emptying. Because we know there are no relevant event handlers reacting on removing elements
     // This prevents jQuery from actually going through all registered events on the controls for each entry when removing it
-    worldEntriesList.find('*').off();
-    worldEntriesList.empty().show();
+    //worldEntriesList.find('*').off();
+    worldEntriesList.css({ 'opacity': 0, 'transition': 'opacity 250ms ease-in-out' });
+    await delay(250);
+    clearEntryList(); // Use enhanced cleanup
+    worldEntriesList.show();
 
     if (!data || !('entries' in data)) {
         $('#world_popup_new').off('click').on('click', nullWorldInfo);
@@ -2040,8 +2127,9 @@ function displayWorldEntries(name, data, navigation = navigation_option.none, fl
         callback: async function (/** @type {object[]} */ page) {
             // We save costly performance by removing all events before emptying. Because we know there are no relevant event handlers reacting on removing elements
             // This prevents jQuery from actually going through all registered events on the controls for each entry when removing it
-            worldEntriesList.find('*').off();
-            worldEntriesList.empty();
+            //worldEntriesList.find('*').off();
+            clearEntryList();
+            //worldEntriesList.empty();
 
             const keywordHeaders = await renderTemplateAsync('worldInfoKeywordHeaders');
             const blocksPromises = page.map(async (entry) => await getWorldEntry(name, data, entry)).filter(x => x);
@@ -2173,7 +2261,7 @@ function displayWorldEntries(name, data, navigation = navigation_option.none, fl
             if (selectedIndex !== -1) {
                 $('#world_editor_select').val(selectedIndex).trigger('change');
             } else {
-                hideWorldEditor();
+                await hideWorldEditor();
             }
         }
     });
@@ -2211,6 +2299,12 @@ function displayWorldEntries(name, data, navigation = navigation_option.none, fl
             await saveWorldInfo(name, data);
         },
     });
+
+    worldEntriesList.css('opacity', '1');
+    //remove inline CSS on the list
+    worldEntriesList.removeAttr('style');
+
+
     //$("#world_popup_entries_list").disableSelection();
 }
 
@@ -3266,7 +3360,7 @@ export async function getWorldEntry(name, data, entry) {
         container.appendChild(select);
 
         let selectedWorldIndex = -1;
-        select.addEventListener('change', function() {
+        select.addEventListener('change', function () {
             selectedWorldIndex = this.value === '' ? -1 : Number(this.value);
         });
 
@@ -3819,7 +3913,7 @@ export async function createNewWorldInfo(worldName, { interactive = false } = {}
     if (selectedIndex !== -1) {
         $('#world_editor_select').val(selectedIndex).trigger('change');
     } else {
-        hideWorldEditor();
+        await hideWorldEditor();
     }
 
     return true;
@@ -5385,7 +5479,7 @@ export function initWorldInfo() {
         const selectedIndex = String($('#world_editor_select').find(':selected').val());
 
         if (selectedIndex === '') {
-            hideWorldEditor();
+            await hideWorldEditor();
         } else {
             const worldName = world_names[selectedIndex];
             showWorldEditor(worldName);
