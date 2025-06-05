@@ -10317,12 +10317,50 @@ function doDrawerOpenClick() {
     doNavbarIconClick.call(drawerToggle);
 }
 
+
+// Helper for animating open/close (opacity only)
+async function animateDrawer($el, open, displayStyle = 'block', onEnd) {
+    //const slideOptions = getSlideToggleOptions();
+    const duration = 250;
+    const easing = 'swing';
+    $el.stop(true, true);
+
+    if (open) {
+        $el.css({ display: displayStyle, opacity: 0 });
+        $el.animate(
+            { opacity: 1 },
+            {
+                duration,
+                easing,
+                complete: function () {
+                    $el.css({ opacity: '', display: displayStyle });
+                    if (typeof onEnd === 'function') onEnd(this);
+                },
+            },
+        );
+    } else {
+        $el.animate(
+            { opacity: 0 },
+            {
+                duration,
+                easing,
+                complete: function () {
+                    $el.css({ display: 'none', opacity: '0' });
+                    if (typeof onEnd === 'function') onEnd(this);
+                },
+            },
+        );
+    }
+}
+
 /**
  * Event handler to open or close a navbar drawer when a navbar icon is clicked.
  * Handles click events on .drawer-toggle elements.
  * @returns {void}
  */
-function doNavbarIconClick() {
+// ...existing code...
+export async function doNavbarIconClick() {
+    //console.warn('called for, ', $(this));
     const icon = $(this).find('.drawer-icon');
     const drawer = $(this).parent().find('.drawer-content');
     if (drawer.hasClass('resizing')) { return; }
@@ -10330,72 +10368,69 @@ function doNavbarIconClick() {
     const targetDrawerID = $(this).parent().find('.drawer-content').attr('id');
     const pinnedDrawerClicked = drawer.hasClass('pinnedOpen');
 
-    if (!drawerWasOpenAlready) { //to open the drawer
-        $('.openDrawer').not('.pinnedOpen').addClass('resizing').each((_, el) => {
-            slideToggle(el, {
-                ...getSlideToggleOptions(),
-                onAnimationEnd: function (el) {
-                    el.closest('.drawer-content').classList.remove('resizing');
-                },
+    if (!drawerWasOpenAlready) { // to open the drawer
+        // Close all open drawers except pinned ones
+        const $openDrawers = $('.openDrawer:not(.pinnedOpen)');
+        for (const el of $openDrawers) {
+            $(el).addClass('resizing');
+            await animateDrawer($(el), false, undefined, function (el) {
+                $(el).closest('.drawer-content').removeClass('resizing');
             });
-        });
-        $('.openIcon').not('.drawerPinnedOpen').toggleClass('closedIcon openIcon');
-        $('.openDrawer').not('.pinnedOpen').toggleClass('closedDrawer openDrawer');
+        }
+
+        // Toggle icon and drawer classes
+        const $openIcons = $('.openIcon:not(.drawerPinnedOpen)');
+        for (const iconEl of $openIcons) {
+            $(iconEl).toggleClass('closedIcon openIcon');
+        }
+        for (const el of $openDrawers) {
+            $(el).toggleClass('closedDrawer openDrawer');
+        }
         icon.toggleClass('openIcon closedIcon');
         drawer.toggleClass('openDrawer closedDrawer');
 
-        //console.log(targetDrawerID);
-        if (targetDrawerID === 'right-nav-panel') {
-            $(this).closest('.drawer').find('.drawer-content').addClass('resizing').each((_, el) => {
-                slideToggle(el, {
-                    ...getSlideToggleOptions(),
-                    elementDisplayStyle: 'flex',
-                    onAnimationEnd: function (el) {
-                        el.closest('.drawer-content').classList.remove('resizing');
-                        favsToHotswap();
-                        $('#rm_print_characters_block').trigger('scroll');
-                    },
+        // Open the target drawer
+        const $drawerContents = $(this).closest('.drawer').find('.drawer-content');
+        for (const el of $drawerContents) {
+            $(el).addClass('resizing');
+            if (targetDrawerID === 'right-nav-panel') {
+                await animateDrawer($(el), true, 'flex', function (el) {
+                    $(el).closest('.drawer-content').removeClass('resizing');
+                    favsToHotswap();
+                    $('#rm_print_characters_block').trigger('scroll');
                 });
-            });
-        } else {
-            $(this).closest('.drawer').find('.drawer-content').addClass('resizing').each((_, el) => {
-                slideToggle(el, {
-                    ...getSlideToggleOptions(),
-                    onAnimationEnd: function (el) {
-                        el.closest('.drawer-content').classList.remove('resizing');
-                    },
+            } else {
+                await animateDrawer($(el), true, undefined, function (el) {
+                    $(el).closest('.drawer-content').removeClass('resizing');
                 });
-            });
+            }
         }
 
         // Set the height of "autoSetHeight" textareas within the drawer to their scroll height
         if (!CSS.supports('field-sizing', 'content')) {
-            $(this).closest('.drawer').find('.drawer-content textarea.autoSetHeight').each(async function () {
-                await resetScrollHeight($(this));
+            const textareas = $(this).closest('.drawer').find('.drawer-content textarea.autoSetHeight');
+            for (const textarea of textareas) {
+                await resetScrollHeight($(textarea));
                 return;
-            });
+            }
         }
 
-    } else if (drawerWasOpenAlready) { //to close manually
+    } else if (drawerWasOpenAlready) { // to close manually
+        console.warn('saw drawer was already open');
         icon.toggleClass('closedIcon openIcon');
 
         if (pinnedDrawerClicked) {
             $(drawer).addClass('resizing').each((_, el) => {
-                slideToggle(el, {
-                    ...getSlideToggleOptions(),
-                    onAnimationEnd: function (el) {
-                        el.classList.remove('resizing');
-                    },
+                animateDrawer($(el), false, undefined, function (el) {
+                    el.classList.remove('resizing');
                 });
             });
         }
         else {
+            console.warn('not pinned drawer');
             $('.openDrawer').not('.pinnedOpen').addClass('resizing').each((_, el) => {
-                slideToggle(el, {
-                    ...getSlideToggleOptions(),
-                    onAnimationEnd: function (el) {
-                        el.closest('.drawer-content').classList.remove('resizing');
-                    },
+                animateDrawer($(el), false, undefined, function (el) {
+                    el.closest('.drawer-content').classList.remove('resizing');
                 });
             });
         }
@@ -10403,7 +10438,7 @@ function doNavbarIconClick() {
         drawer.toggleClass('closedDrawer openDrawer');
     }
 }
-
+// ...existing code...
 function addDebugFunctions() {
     const doBackfill = async () => {
         for (const message of chat) {
@@ -12028,7 +12063,7 @@ jQuery(async function () {
 
     $('.drawer-toggle').on('click', doNavbarIconClick);
 
-    $('html').on('touchstart mousedown', function (e) {
+    $('html').on('touchstart mousedown', async function (e) {
         var clickTarget = $(e.target);
 
         if (isExportPopupOpen
@@ -12056,22 +12091,23 @@ jQuery(async function () {
             }
         }
 
+
+        // This autocloses open drawers that are not pinned if a click happens inside the app which does not target them.
         var targetParentHasOpenDrawer = clickTarget.parents('.openDrawer').length;
-        if (clickTarget.hasClass('drawer-icon') == false && !clickTarget.hasClass('openDrawer')) {
-            if ($('.openDrawer').length !== 0) {
-                if (targetParentHasOpenDrawer === 0) {
-                    //console.log($('.openDrawer').not('.pinnedOpen').length);
-                    $('.openDrawer').not('.pinnedOpen').addClass('resizing').each((_, el) => {
-                        slideToggle(el, {
-                            ...getSlideToggleOptions(),
-                            onAnimationEnd: (el) => {
-                                el.closest('.drawer-content').classList.remove('resizing');
-                            },
-                        });
+        if (!clickTarget.hasClass('drawer-icon') && !clickTarget.hasClass('openDrawer')) {
+            const $openDrawers = $('.openDrawer').not('.pinnedOpen');
+            if ($openDrawers.length && targetParentHasOpenDrawer === 0) {
+                // Animate close for each open drawer
+                for (const el of $openDrawers) {
+                    $(el).addClass('resizing');
+                    // Use the same animateDrawer helper as in doNavbarIconClick
+                    await animateDrawer($(el), false, undefined, function (el) {
+                        $(el).closest('.drawer-content').removeClass('resizing');
                     });
-                    $('.openIcon').not('.drawerPinnedOpen').toggleClass('closedIcon openIcon');
-                    $('.openDrawer').not('.pinnedOpen').toggleClass('closedDrawer openDrawer');
                 }
+                // Toggle icon and drawer classes after animation
+                $('.openIcon').not('.drawerPinnedOpen').toggleClass('closedIcon openIcon');
+                $openDrawers.toggleClass('closedDrawer openDrawer');
             }
         }
     });
