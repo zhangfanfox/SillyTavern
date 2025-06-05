@@ -1986,11 +1986,6 @@ function clearEntryList() {
         $elem.remove();
     });
 
-    // Destroy Sortable
-    if ($list.sortable('instance')) {
-        $list.sortable('destroy');
-    }
-
     const totalElementsOfAnyKindLeftInList = $list.children().length;
 
     // Final cleanup
