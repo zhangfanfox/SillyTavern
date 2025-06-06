@@ -3034,7 +3034,7 @@ export async function getWorldEntry(name, data, entry) {
 
     let drawerInitialized = false;
     let drawerDestroyTimeout = null;
-    headerTemplate.find('.inline-drawer-toggle').on('click', function () {
+    headerTemplate.find('.inline-drawer').on('inline-drawer-toggle', function () {
         if (drawerDestroyTimeout) {
             clearTimeout(drawerDestroyTimeout);
             drawerDestroyTimeout = null;
@@ -3047,6 +3047,7 @@ export async function getWorldEntry(name, data, entry) {
                 }
                 drawerInitialized = false;
                 clearEntryList(editOutlet);
+                drawerDestroyTimeout = null;
             }, debounce_timeout.relaxed);
         } else {
             drawerInitialized = true;
