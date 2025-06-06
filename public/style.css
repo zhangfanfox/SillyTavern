@@ -5480,16 +5480,16 @@ body:not(.movingUI) .drawer-content.maximized {
     }
 }
 
-.drawer-content .scrollDelay,
+/*
 .fillRight #rm_print_characters_block {
     overflow-y: hidden;
 }
 
-.drawer-content.openDrawer .scrollDelay,
 .fillRight.openDrawer #rm_print_characters_block {
     overflow-y: auto;
     animation: hide-scroll var(--animation-duration) backwards;
 }
+*/
 
 .scrollableInner {
     overflow-x: hidden;
