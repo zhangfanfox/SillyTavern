@@ -5362,7 +5362,7 @@ body:has(#character_popup.open) #top-settings-holder:has(.drawer-content.openDra
     border: 1px solid var(--SmartThemeBorderColor);
     min-width: 450px;
     width: var(--sheldWidth);
-    overflow-y: auto;
+    overflow-y: hidden;
     max-height: calc(100vh - calc(var(--topBarBlockSize) + var(--bottomFormBlockSize)));
     max-height: calc(100dvh - calc(var(--topBarBlockSize) + var(--bottomFormBlockSize)));
     display: none;
@@ -5385,10 +5385,16 @@ body:has(#character_popup.open) #top-settings-holder:has(.drawer-content.openDra
     display: block;
     height: auto;
     height: calc-size(auto, size);
+    overflow-y: auto;
+    animation: hide-scroll var(--animation-duration) backwards;
 
     @starting-style {
         height: 0;
     }
+}
+
+@keyframes hide-scroll {
+  from, to { overflow-y: hidden; }
 }
 
 body.movingUI .inline-drawer-maximize {
@@ -5430,6 +5436,7 @@ body:not(.movingUI) .drawer-content.maximized {
 }
 
 .fillLeft.openDrawer {
+    overflow-y: hidden;
     height: calc(100vh - var(--topBarBlockSize));
     height: calc(100dvh - var(--topBarBlockSize));
     height: calc-size((100dvh - var(--topBarBlockSize)), size);
