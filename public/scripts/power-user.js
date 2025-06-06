@@ -453,9 +453,6 @@ function fixMarkdown(text, forDisplay) {
 function switchHotswap() {
     $('body').toggleClass('no-hotswap', !power_user.hotswap_enabled);
     $('#hotswapEnabled').prop('checked', power_user.hotswap_enabled);
-    const hotSwapBlockHeight = $('#CharListButtonAndHotSwaps').css('height');
-    const heightMinusHotSwapBlockHeight = 'calc(100% - ' + hotSwapBlockHeight + ')';
-    $('#rm_ch_create_block, #rm_characters_block').css('height', heightMinusHotSwapBlockHeight);
 }
 
 function switchTimer() {

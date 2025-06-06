@@ -10355,9 +10355,6 @@ export async function doNavbarIconClick() {
         if (targetDrawerID === 'right-nav-panel') {
             favsToHotswap();
             $('#rm_print_characters_block').trigger('scroll');
-            const hotSwapBlockHeight = $('#CharListButtonAndHotSwaps').css('height');
-            const heightMinusHotSwapBlockHeight = 'calc(100% - ' + hotSwapBlockHeight + ')';
-            $('#rm_ch_create_block, #rm_characters_block').css('height', heightMinusHotSwapBlockHeight);
         }
 
         // Set the height of "autoSetHeight" textareas within the drawer to their scroll height
