@@ -10362,7 +10362,6 @@ export async function doNavbarIconClick() {
             const textareas = $(this).closest('.drawer').find('.drawer-content textarea.autoSetHeight');
             for (const textarea of textareas) {
                 await resetScrollHeight($(textarea));
-                return;
             }
         }
     } else if (drawerWasOpenAlready) {
