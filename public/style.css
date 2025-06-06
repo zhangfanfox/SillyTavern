@@ -4180,8 +4180,14 @@ input[type='checkbox'].del_checkbox {
     background-repeat: no-repeat !important;
     box-shadow: inset 0 0 2px var(--black50a) !important;
     cursor: ew-resize !important;
-    /* Causes the slider to linger for one frame when switching drawers */
-    /* z-index: 1; */
+}
+
+/*
+ * Setting a z-index will allow scrollbar to display properly in Firefox,
+ * while constraining to open drawers fixes a single frame linger in Chrome.
+ */
+.drawer-content.openDrawer .neo-range-slider {
+    z-index: 1;
 }
 
 .neo-range-slider:hover,
