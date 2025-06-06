@@ -5393,10 +5393,6 @@ body:has(#character_popup.open) #top-settings-holder:has(.drawer-content.openDra
     }
 }
 
-@keyframes hide-scroll {
-  from, to { overflow-y: hidden; }
-}
-
 body.movingUI .inline-drawer-maximize {
     display: none;
 }
@@ -5484,11 +5480,13 @@ body:not(.movingUI) .drawer-content.maximized {
     }
 }
 
+.drawer-content .scrollDelay,
 .fillRight #rm_characters_block,
 .fillRight #rm_print_characters_block {
     overflow-y: hidden;
 }
 
+.drawer-content.openDrawer .scrollDelay,
 .fillRight.openDrawer #rm_characters_block,
 .fillRight.openDrawer #rm_print_characters_block {
     overflow-y: auto;
