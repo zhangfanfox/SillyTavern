@@ -5484,6 +5484,17 @@ body:not(.movingUI) .drawer-content.maximized {
     }
 }
 
+.fillRight #rm_characters_block,
+.fillRight #rm_print_characters_block {
+    overflow-y: hidden;
+}
+
+.fillRight.openDrawer #rm_characters_block,
+.fillRight.openDrawer #rm_print_characters_block {
+    overflow-y: auto;
+    animation: hide-scroll var(--animation-duration) backwards;
+}
+
 .scrollableInner {
     overflow-x: hidden;
     height: calc(100% - 30px);
