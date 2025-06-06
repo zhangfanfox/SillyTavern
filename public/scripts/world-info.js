@@ -3066,6 +3066,8 @@ export async function getWorldEntry(name, data, entry) {
         // Key inputs
         const keyInput = enableKeysInputHelper({ template: editTemplate, entry, entryPropName: 'key', originalDataValueName: 'keys', name, data });
         const keySecondaryInput = enableKeysInputHelper({ template: editTemplate, entry, entryPropName: 'keysecondary', originalDataValueName: 'secondary_keys', name, data });
+        if (!keyInput.isFancy) initScrollHeight(keyInput.control);
+        if (!keySecondaryInput.isFancy) initScrollHeight(keySecondaryInput.control);
 
         // Key input switch
         editTemplate.find('.switch_input_type_icon').on('click', function () {
@@ -3332,8 +3334,6 @@ export async function getWorldEntry(name, data, entry) {
         setTimeout(() => createEntryInputAutocomplete(automationIdInput, getAutomationIdCallback(data)), 1);
 
         countTokensDebounced(counter, contentInput.val());
-        if (!keyInput.isFancy) initScrollHeight(keyInput.control);
-        if (!keySecondaryInput.isFancy) initScrollHeight(keySecondaryInput.control);
 
         editTemplate.find('.inline-drawer-content').css('display', 'none');
         editOutlet.append(editTemplate);
