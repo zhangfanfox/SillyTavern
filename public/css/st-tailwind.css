@@ -332,6 +332,10 @@
     overflow: hidden;
 }
 
+.overflowYScroll {
+    overflow-y: scroll;
+}
+
 .padding0 {
     padding: 0;
 }

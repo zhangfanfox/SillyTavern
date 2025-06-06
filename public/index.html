@@ -140,7 +140,7 @@
                                         <div data-preset-manager-import="novel" class="margin0 menu_button_icon menu_button" title="Import preset" data-i18n="[title]Import preset">
                                             <i class="fa-fw fa-solid fa-file-import"></i>
                                         </div>
-                                        <div data-preset-manager-export="novel"  class="margin0 menu_button_icon menu_button" title="Export preset" data-i18n="[title]Export preset">
+                                        <div data-preset-manager-export="novel" class="margin0 menu_button_icon menu_button" title="Export preset" data-i18n="[title]Export preset">
                                             <i class="fa-fw fa-solid fa-file-export"></i>
                                         </div>
                                         <div data-preset-manager-delete="novel" class="margin0 menu_button_icon menu_button" title="Delete the preset" data-i18n="[title]Delete the preset">
@@ -663,7 +663,7 @@
                                 <div data-source="openrouter" class="range-block">
                                     <div class="range-block-title" title="Allow compressing requests by removing messages from the middle of the prompt.">
                                         <span data-i18n="Middle-out Transform">Middle-out Transform</span>
-                                        <a href="https://openrouter.ai/docs/transforms" target="_blank" rel="noreferrer noopener"  class="note-link-span fa-solid fa-circle-question"></a>
+                                        <a href="https://openrouter.ai/docs/transforms" target="_blank" rel="noreferrer noopener" class="note-link-span fa-solid fa-circle-question"></a>
                                     </div>
                                     <div class="wide100p">
                                         <select id="openrouter_middleout" class="text_pole">
@@ -3300,16 +3300,16 @@
                                         <span id="vertexai_service_account_info"></span>
                                     </div>
                                     <textarea id="vertexai_service_account_json" class="text_pole textarea_compact" rows="4" placeholder='Paste your Service Account JSON content here, e.g.:
-{
-  "type": "service_account",
-  "project_id": "your-project-id",
-  "private_key_id": "...",
-  "private_key": "-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----\n",
-  "client_email": "...",
-  "client_id": "...",
-  "auth_uri": "https://accounts.google.com/o/oauth2/auth",
-  "token_uri": "https://oauth2.googleapis.com/token"
-}'></textarea>
+                {
+                "type": "service_account",
+                "project_id": "your-project-id",
+                "private_key_id": "...",
+                "private_key": "-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----\n",
+                "client_email": "...",
+                "client_id": "...",
+                "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+                "token_uri": "https://oauth2.googleapis.com/token"
+                }'></textarea>
                                     <div data-for="vertexai_service_account_json" class="neutral_warning" data-i18n="For privacy reasons, your Service Account JSON content will be hidden after you reload the page.">
                                         For privacy reasons, your Service Account JSON content will be hidden after you reload the page.
                                     </div>
@@ -3825,7 +3825,7 @@
                                     <input id="instruct_bind_to_context" type="checkbox" style="display:none;" />
                                     <small><i class="fa-solid fa-link menu_button margin0"></i></small>
                                 </label>
-                                <label id="instruct_enabled_label"for="instruct_enabled" class="checkbox_label flex1" title="Enable Instruct Mode" data-i18n="[title]instruct_enabled">
+                                <label id="instruct_enabled_label" for="instruct_enabled" class="checkbox_label flex1" title="Enable Instruct Mode" data-i18n="[title]instruct_enabled">
                                     <input id="instruct_enabled" type="checkbox" style="display:none;" />
                                     <small><i class="fa-solid fa-power-off menu_button togglable margin0"></i></small>
                                 </label>
@@ -5284,7 +5284,7 @@
                 <div class="flex-container wide100p alignitemscenter spaceBetween flexNoGap">
                     <div class="flex-container alignItemsBaseline wide100p">
                         <div class="flex1 flex-container alignItemsBaseline">
-                            <h3 class="margin0" >
+                            <h3 class="margin0">
                                 <span data-i18n="Persona Management">Persona Management</span>
                                 <a href="https://docs.sillytavern.app/usage/core-concepts/personas/" target="_blank">
                                     <span class="fa-solid fa-circle-question note-link-span"></span>
@@ -5455,10 +5455,12 @@
                         <div class="right_menu_button fa-solid fa-list-ul" id="rm_button_characters" title="Select/Create Characters" data-i18n="[title]Select/Create Characters"></div>
                     </div>
                     <div id="HotSwapWrapper" class="alignitemscenter flex-container margin0auto wide100p">
-                        <div class="hotswap avatars_inline scroll-reset-container expander" data-i18n="[no_favs]Favorite characters to add them to HotSwaps" no_favs="Favorite characters to add them to HotSwaps"></div>
+                        <div class="hotswap avatars_inline scroll-reset-container expander" data-i18n="[no_favs]Favorite characters to add them to HotSwaps" no_favs="Favorite characters to add them to HotSwaps">
+                        </div>
+                        <hr class="wide100p">
                     </div>
                 </div>
-                <hr>
+
                 <!-- this div structure must be preserved until group peeking can adjust -->
                 <div id="rm_PinAndTabs">
                     <div id="right-nav-panel-tabs" class="">

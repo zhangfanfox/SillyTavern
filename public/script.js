@@ -10339,9 +10339,25 @@ export async function doNavbarIconClick() {
         icon.toggleClass('openIcon closedIcon');
         drawer.toggleClass('openDrawer closedDrawer');
 
+        //commented code is to prevent scrollbars showing during transition, if we want to do that
+        //'scrollableInner' only exists on samplers panel though, so will need different logic for each drawer
+        //this does create an undesireable leftward width retraction of about 15px if a natural scrollbar pops after transition
+        //however, if we don't prevent the transition scrollbar, we get a 15px expansion right when it is no longer needed
+        //we get to pick our poison. (or...we go with just opacity transitions and stop caring about height and layout shifts.)
+        //only true fix for this is to make scrollbars always show (overflow-y:scroll), and style them so they are transparent until div hover
+        //this creates a 15px perma-padding on the right of the div tho, even when not needed
+        //example of this can be seen on STMP's pastChat list
+
+        //drawer.find('.scrollableInner').addClass('overflowHidden'); //prevents scrollbars
+        //await delay(250); //this duration is presumed
+        //drawer.find('.scrollableInner').removeClass('overflowHidden'); //restore after transition
+
         if (targetDrawerID === 'right-nav-panel') {
             favsToHotswap();
             $('#rm_print_characters_block').trigger('scroll');
+            const hotSwapBlockHeight = $('#CharListButtonAndHotSwaps').css('height');
+            const heightMinusHotSwapBlockHeight = 'calc(100% - ' + hotSwapBlockHeight + ')';
+            $('#rm_ch_create_block, #rm_characters_block').css('height', heightMinusHotSwapBlockHeight);
         }
 
         // Set the height of "autoSetHeight" textareas within the drawer to their scroll height
@@ -10353,8 +10369,14 @@ export async function doNavbarIconClick() {
             }
         }
     } else if (drawerWasOpenAlready) {
+
+        //drawer.find('.scrollableInner').toggleClass('overflowHidden'); //prevents scrollbars
+
         icon.toggleClass('closedIcon openIcon');
         drawer.toggleClass('closedDrawer openDrawer');
+
+        //await delay(250); //this duration is presumed
+        //drawer.find('.scrollableInner').toggleClass('overflowHidden'); //restore to default
     }
 }
 
