@@ -1,4 +1,4 @@
-import { DOMPurify, Bowser, slideToggle } from '../lib.js';
+import { DOMPurify, Bowser } from '../lib.js';
 
 import {
     characters,
