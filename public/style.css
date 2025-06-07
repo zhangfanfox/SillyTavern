@@ -5446,9 +5446,7 @@ body:not(.movingUI) .drawer-content.maximized {
 
 .fillLeft.openDrawer {
     overflow-y: hidden;
-    height: calc(100vh - var(--topBarBlockSize));
-    height: calc(100dvh - var(--topBarBlockSize));
-    height: calc-size((100dvh - var(--topBarBlockSize)), size);
+    height: 100%;
 
     @starting-style {
         height: 0;
@@ -5484,9 +5482,7 @@ body:not(.movingUI) .drawer-content.maximized {
 
 .fillRight.openDrawer {
     display: flex;
-    height: calc(100vh - var(--topBarBlockSize));
-    height: calc(100dvh - var(--topBarBlockSize));
-    height: calc-size((100dvh - var(--topBarBlockSize)), size);
+    height: 100%;
 
     @starting-style {
         height: 0;
@@ -5506,8 +5502,7 @@ body:not(.movingUI) .drawer-content.maximized {
 
 .scrollableInner {
     overflow-x: hidden;
-    height: calc(100vh - 30px);
-    height: calc(100dvh - 30px);
+    height: 100%;
 }
 
 .scrollableInnerFull {
