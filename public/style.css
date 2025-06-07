@@ -5426,24 +5426,7 @@ body:not(.movingUI) .drawer-content.maximized {
     position: fixed;
 }
 
-.fillLeft {
-    width: calc((100vw - var(--sheldWidth) - 2px) /2);
-    width: calc((100dvw - var(--sheldWidth) - 2px) /2);
-    height: 0;
-    max-height: calc(100vh - var(--topBarBlockSize));
-    max-height: calc(100dvh - var(--topBarBlockSize));
-    position: fixed;
-    top: 0;
-    margin: 0;
-    left: 0;
-    right: auto;
-    border-radius: 10px;
-    box-shadow: none;
-    overflow: hidden;
-    flex-flow: column;
-    border: 1px solid var(--SmartThemeBorderColor);
-}
-
+.fillLeft,
 .fillRight {
     width: calc((100vw - var(--sheldWidth) - 2px) /2);
     width: calc((100dvw - var(--sheldWidth) - 2px) /2);
@@ -5453,22 +5436,21 @@ body:not(.movingUI) .drawer-content.maximized {
     position: fixed;
     top: 0;
     margin: 0;
-    right: 0;
-    left: calc(100% - var(--sheldWidth) /2 + var(--sheldWidth) +1px);
-    padding: 5px;
-    margin-bottom: 5px;
-    backdrop-filter: blur(calc(var(--SmartThemeBlurStrength)));
-    background-color: var(--SmartThemeBlurTintColor);
-    -webkit-backdrop-filter: blur(calc(var(--SmartThemeBlurStrength)));
-    z-index: 3000;
-
-    border: 1px solid var(--SmartThemeBorderColor);
-
     box-shadow: none;
-    border-radius: 10px;
     overflow: hidden;
     flex-flow: column;
     min-width: 100px;
+}
+
+.fillLeft {
+    left: 0;
+    right: auto;
+}
+
+.fillRight {
+    right: 0;
+    left: calc(100% - var(--sheldWidth) /2 + var(--sheldWidth) +1px);
+    z-index: 3000;
 }
 
 .fillLeft.openDrawer,
