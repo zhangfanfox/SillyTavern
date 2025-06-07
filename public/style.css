@@ -5506,7 +5506,8 @@ body:not(.movingUI) .drawer-content.maximized {
 
 .scrollableInner {
     overflow-x: hidden;
-    height: calc(100% - 30px);
+    height: calc(100vh - 30px);
+    height: calc(100dvh - 30px);
 }
 
 .scrollableInnerFull {
