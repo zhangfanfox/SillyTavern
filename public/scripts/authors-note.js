@@ -402,7 +402,6 @@ function onANMenuItemClick() {
         $ANcontainer.css('display', 'flex');
         $ANcontainer.css('opacity', 0.0);
         $ANcontainer.transition({
-            height: 'unset', //AN gets height: 0 from CSS LN 5363 for .drawer-content
             opacity: 1.0,
             duration: animation_duration,
         }, async function () {

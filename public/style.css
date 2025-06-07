@@ -2830,6 +2830,7 @@ input[type="file"] {
     margin: 0;
     right: unset;
     width: calc(((100dvw - var(--sheldWidth)) / 2) - 1px);
+    height: unset;
 
 }
 
