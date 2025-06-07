@@ -5381,7 +5381,6 @@ body:has(#character_popup.open) #top-settings-holder:has(.drawer-content.openDra
     backdrop-filter: blur(calc(var(--SmartThemeBlurStrength)));
     -webkit-backdrop-filter: blur(calc(var(--SmartThemeBlurStrength)));
     /* z-index: 1000 !important; */
-    height: 0;
     transition-property: height, display;
     transition-duration: var(--animation-duration);
     transition-timing-function: ease-in-out;
