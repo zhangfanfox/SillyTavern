@@ -1096,10 +1096,11 @@ router.post('/status', async function (request, response_getstatus_openai) {
         // For Google AI Studio, we need to get models from the API
         const api_key_makersuite = request.body.reverse_proxy ? request.body.proxy_password : readSecret(request.user.directories, SECRET_KEYS.MAKERSUITE);
         const api_url = new URL(request.body.reverse_proxy || API_MAKERSUITE);
-        let models_url = `${api_url.origin}/v1beta/models?key=${api_key_makersuite}`;
+        const apiVersion = getConfigValue('gemini.apiVersion', 'v1beta');
+        let models_url = `${api_url.origin}/${apiVersion}/models?key=${api_key_makersuite}`;
 
         if (!api_key_makersuite && request.body.reverse_proxy) {
-            models_url = `${api_url.origin}/v1beta/models`; // For some special reverse proxy, we can't pass the API key
+            models_url = `${api_url.origin}/${apiVersion}/models`; // For some special reverse proxy, we can't pass the API key
         } else if (!api_key_makersuite && !request.body.reverse_proxy) {
             console.warn('Google AI Studio API key is missing.');
             return response_getstatus_openai.status(400).send({ error: true });
@@ -1114,15 +1115,13 @@ router.post('/status', async function (request, response_getstatus_openai) {
             });
 
             if (response.ok) {
+                /** @type {any} */
                 const data = await response.json();
                 // Transform Google AI Studio models to OpenAI format
                 const models = data.models
                     ?.filter(model => model.supportedGenerationMethods?.includes('generateContent'))
                     ?.map(model => ({
                         id: model.name.replace('models/', ''),
-                        object: 'model',
-                        created: Date.now(),
-                        owned_by: 'google',
                     })) || [];
 
                 response_getstatus_openai.send({ data: models });

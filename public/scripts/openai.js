@@ -1914,13 +1914,25 @@ function saveModelList(data) {
     }
 
     if (oai_settings.chat_completion_source === chat_completion_sources.MAKERSUITE) {
-        $('#model_google_select').empty();
+        // Clear only the "Other" optgroup for dynamic models
+        $('#google_other_models').empty();
+
+        // Get static model options that are already in the HTML
+        const staticModels = [];
+        $('#model_google_select option').each(function() {
+            staticModels.push($(this).val());
+        });
+
+        // Add dynamic models to the "Other" group
         model_list.forEach((model) => {
-            $('#model_google_select').append(
-                $('<option>', {
-                    value: model.id,
-                    text: model.id,
-                }));
+            // Only add if not already in static list
+            if (!staticModels.includes(model.id)) {
+                $('#google_other_models').append(
+                    $('<option>', {
+                        value: model.id,
+                        text: model.id,
+                    }));
+            }
         });
 
         const selectedModel = model_list.find(model => model.id === oai_settings.google_model);
