@@ -1912,6 +1912,24 @@ function saveModelList(data) {
 
         $('#model_pollinations_select').val(oai_settings.pollinations_model).trigger('change');
     }
+
+    if (oai_settings.chat_completion_source === chat_completion_sources.MAKERSUITE) {
+        $('#model_google_select').empty();
+        model_list.forEach((model) => {
+            $('#model_google_select').append(
+                $('<option>', {
+                    value: model.id,
+                    text: model.id,
+                }));
+        });
+
+        const selectedModel = model_list.find(model => model.id === oai_settings.google_model);
+        if (model_list.length > 0 && (!selectedModel || !oai_settings.google_model)) {
+            oai_settings.google_model = model_list[0].id;
+        }
+
+        $('#model_google_select').val(oai_settings.google_model).trigger('change');
+    }
 }
 
 function appendOpenRouterOptions(model_list, groupModels = false, sort = false) {
@@ -3700,7 +3718,6 @@ async function getStatusOpen() {
         chat_completion_sources.SCALE,
         chat_completion_sources.CLAUDE,
         chat_completion_sources.AI21,
-        chat_completion_sources.MAKERSUITE,
         chat_completion_sources.VERTEXAI,
         chat_completion_sources.PERPLEXITY,
         chat_completion_sources.GROQ,
