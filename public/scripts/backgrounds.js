@@ -479,12 +479,14 @@ function activateLazyLoader() {
     lazyLoadObserver = new IntersectionObserver((entries, observer) => {
         entries.forEach(entry => {
             if (entry.target instanceof HTMLElement && entry.isIntersecting) {
-                const imageUrl = entry.target.dataset.bgSrc;
-                if (imageUrl) {
-                    entry.target.style.backgroundImage = `url('${imageUrl}')`;
-                }
-                entry.target.classList.remove('lazy-load-background');
-                observer.unobserve(entry.target);
+                const target = entry.target;
+                const bg = target.getAttribute('bgfile');
+                const isCustom = target.getAttribute('custom') === 'true';
+                resolveImageUrl(bg, isCustom)
+                    .then(url => { target.style.backgroundImage = url; })
+                    .catch(() => { target.style.backgroundImage = PLACEHOLDER_IMAGE; });
+                target.classList.remove('lazy-load-background');
+                observer.unobserve(target);
             }
         });
     }, options);
@@ -508,6 +510,24 @@ function generateUrlParameter(bg, isCustom) {
 }
 
 /**
+ * Resolves the image URL for the background.
+ * @param {string} bg Background file name
+ * @param {boolean} isCustom Is a custom background
+ * @returns {Promise<string>} CSS URL of the background
+ */
+async function resolveImageUrl(bg, isCustom) {
+    const fileExtension = bg.split('.').pop().toLowerCase();
+    const isAnimated = ['mp4', 'webp'].includes(fileExtension);
+    const thumbnailUrl = isAnimated && !background_settings.animation
+        ? await getThumbnailFromStorage(bg)
+        : isCustom
+            ? bg
+            : getThumbnailUrl('bg', bg);
+
+    return `url('${thumbnailUrl}')`;
+}
+
+/**
  * Instantiates a background template
  * @param {string} bg Path to background
  * @param {boolean} isCustom Whether the background is custom
@@ -518,19 +538,11 @@ async function getBackgroundFromTemplate(bg, isCustom) {
     const url = generateUrlParameter(bg, isCustom);
     const title = isCustom ? bg.split('/').pop() : bg;
     const friendlyTitle = title.slice(0, title.lastIndexOf('.'));
-    const fileExtension = bg.split('.').pop().toLowerCase();
-    const isAnimated = ['mp4', 'webp'].includes(fileExtension);
-    const thumbnailUrl = isAnimated && !background_settings.animation
-        ? await getThumbnailFromStorage(bg)
-        : isCustom
-            ? bg
-            : getThumbnailUrl('bg', bg);
 
     template.attr('title', title);
     template.attr('bgfile', bg);
     template.attr('custom', String(isCustom));
     template.data('url', url);
-    template.attr('data-bg-src', thumbnailUrl);
     template.addClass('lazy-load-background');
     template.css('background-image', PLACEHOLDER_IMAGE);
     template.find('.BGSampleTitle').text(friendlyTitle);
