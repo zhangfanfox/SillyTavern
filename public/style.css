@@ -5398,7 +5398,10 @@ body:has(#character_popup.open) #top-settings-holder:has(.drawer-content.openDra
     height: auto;
     height: calc-size(auto, size);
     overflow-y: auto;
-    animation: hide-scroll var(--animation-duration-2x) backwards;
+
+    @supports selector(::-webkit-scrollbar-thumb) {
+        animation: hide-scroll var(--animation-duration-2x) backwards;
+    }
 
     @starting-style {
         height: 0;
