@@ -5440,16 +5440,8 @@ body:not(.movingUI) .drawer-content.maximized {
     border-radius: 10px;
     box-shadow: none;
     overflow: hidden;
+    flex-flow: column;
     border: 1px solid var(--SmartThemeBorderColor);
-}
-
-.fillLeft.openDrawer {
-    overflow-y: hidden;
-    height: 100%;
-
-    @starting-style {
-        height: 0;
-    }
 }
 
 .fillRight {
@@ -5479,6 +5471,7 @@ body:not(.movingUI) .drawer-content.maximized {
     min-width: 100px;
 }
 
+.fillLeft.openDrawer,
 .fillRight.openDrawer {
     display: flex;
     height: 100%;
