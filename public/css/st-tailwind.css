@@ -484,7 +484,7 @@
 }
 
 .hoverglow {
-    transition: opacity 200ms;
+    transition: opacity var(--animation-duration-2x);
 }
 
 .hoverglow:hover {

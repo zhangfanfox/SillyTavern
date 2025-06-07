@@ -16,7 +16,7 @@
 #qr--bar {
     outline: none;
     margin: 0;
-    transition: 0.3s;
+    transition: var(--animation-duration-2x);
     opacity: 0.7;
     display: flex;
     align-items: center;
@@ -54,7 +54,7 @@
                 aspect-ratio: 1 / 1;
                 font-size: 20px;
                 opacity: 0.5;
-                transition: all 250ms;
+                transition: all var(--animation-duration-2x);
             }
         }
     }
@@ -118,7 +118,7 @@
             padding: 3px 5px;
             margin: 3px 0;
             cursor: pointer;
-            transition: 0.3s;
+            transition: var(--animation-duration-2x);
             display: flex;
             align-items: center;
             justify-content: center;
@@ -274,7 +274,7 @@
                 display: flex;
                 align-items: center;
                 opacity: 0;
-                transition: 100ms;
+                transition: var(--animation-duration);
                 margin: -2px 0 -11px 0;
                 position: relative;
                 .qr--actions {
@@ -525,7 +525,7 @@
                         cursor: not-allowed;
                         opacity: 0.5;
                         pointer-events: none;
-                        transition: 200ms;
+                        transition: var(--animation-duration-2x);
                         border-color: transparent;
                     }
 				}
@@ -559,7 +559,7 @@
 					width: 6px;
 					background-color: var(--SmartThemeBorderColor);
 					border: 2px solid var(--SmartThemeBlurTintColor);
-					transition: border-color 200ms, background-color 200ms;
+					transition: border-color var(--animation-duration-2x), background-color var(--animation-duration-2x);
 					cursor: w-resize;
 					&:hover {
 						background-color: var(--SmartThemeQuoteColor);
@@ -630,7 +630,7 @@
                                 gap: 1em;
                                 text-align: left;
                                 opacity: 0.75;
-                                transition: 200ms;
+                                transition: var(--animation-duration-2x);
                                 cursor: pointer;
                                 &:hover {
                                     opacity: 1;
@@ -778,7 +778,7 @@
                 }
 
                 #qr--modal-execute {
-                    transition: 200ms;
+                    transition: var(--animation-duration-2x);
                     filter: grayscale(0);
 
                     &.qr--busy {
@@ -879,7 +879,7 @@
                     position: absolute;
                     inset: 0;
                     right: calc(100% - var(--prog) * 1%);
-                    transition: 200ms;
+                    transition: var(--animation-duration-2x);
                 }
 
                 &.qr--paused:after {
@@ -1123,7 +1123,7 @@
 		white-space: pre;
 		font-weight: normal;
 		box-shadow: 0 0 0;
-		transition: 200ms;
+		transition: var(--animation-duration-2x);
 	}
 	.qr--copy {
 		&:after {
@@ -1138,7 +1138,7 @@
 		white-space: pre;
 		font-weight: normal;
 		box-shadow: 0 0 0;
-		transition: 200ms;
+		transition: var(--animation-duration-2x);
 	}
 	&:has(.qr--transferSelect:focus) {
 		.popup-button-ok {
