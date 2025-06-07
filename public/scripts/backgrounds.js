@@ -13,6 +13,7 @@ const LIST_METADATA_KEY = 'chat_backgrounds';
 // A single transparent PNG pixel used as a placeholder for errored backgrounds
 const PNG_PIXEL = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=';
 const PNG_PIXEL_BLOB = new Blob([Uint8Array.from(atob(PNG_PIXEL), c => c.charCodeAt(0))], { type: 'image/png' });
+const PLACEHOLDER_IMAGE = `url('data:image/png;base64,${PNG_PIXEL}')`;
 
 /**
  * Storage for frontend-generated background thumbnails.
@@ -25,6 +26,12 @@ const THUMBNAIL_STORAGE = localforage.createInstance({ name: 'SillyTavern_Thumbn
  * @type {Map<string, string>}
  */
 const THUMBNAIL_BLOBS = new Map();
+
+/**
+ * Global IntersectionObserver instance for lazy loading backgrounds
+ * @type {IntersectionObserver|null}
+ */
+let lazyLoadObserver = null;
 
 export let background_settings = {
     name: '__transparent.png',
@@ -95,6 +102,7 @@ async function getChatBackgroundsList() {
         const template = await getBackgroundFromTemplate(bg, true);
         $('#bg_custom_content').append(template);
     }
+    activateLazyLoader();
 }
 
 function getBackgroundPath(fileUrl) {
@@ -434,20 +442,50 @@ export async function getBackgrounds() {
     const response = await fetch('/api/backgrounds/all', {
         method: 'POST',
         headers: getRequestHeaders(),
-        body: JSON.stringify({
-            '': '',
-        }),
+        body: JSON.stringify({}),
     });
     if (response.ok) {
         const getData = await response.json();
-        //background = getData;
-        //console.log(getData.length);
         $('#bg_menu_content').children('div').remove();
         for (const bg of getData) {
             const template = await getBackgroundFromTemplate(bg, false);
             $('#bg_menu_content').append(template);
         }
+        activateLazyLoader();
     }
+}
+
+function activateLazyLoader() {
+    // Disconnect previous observer to prevent memory leaks
+    if (lazyLoadObserver) {
+        lazyLoadObserver.disconnect();
+        lazyLoadObserver = null;
+    }
+
+    const lazyLoadElements = document.querySelectorAll('.lazy-load-background');
+
+    const options = {
+        root: null,
+        rootMargin: '200px',
+        threshold: 0.01,
+    };
+
+    lazyLoadObserver = new IntersectionObserver((entries, observer) => {
+        entries.forEach(entry => {
+            if (entry.target instanceof HTMLElement && entry.isIntersecting) {
+                const imageUrl = entry.target.dataset.bgSrc;
+                if (imageUrl) {
+                    entry.target.style.backgroundImage = `url('${imageUrl}')`;
+                }
+                entry.target.classList.remove('lazy-load-background');
+                observer.unobserve(entry.target);
+            }
+        });
+    }, options);
+
+    lazyLoadElements.forEach(element => {
+        lazyLoadObserver.observe(element);
+    });
 }
 
 /**
@@ -481,13 +519,14 @@ async function getBackgroundFromTemplate(bg, isCustom) {
         : isCustom
             ? bg
             : getThumbnailUrl('bg', bg);
-    const thumbnailCssUrl = `url('${thumbnailUrl}')`;
 
     template.attr('title', title);
     template.attr('bgfile', bg);
     template.attr('custom', String(isCustom));
     template.data('url', url);
-    template.css('background-image', thumbnailCssUrl);
+    template.attr('data-bg-src', thumbnailUrl);
+    template.addClass('lazy-load-background');
+    template.css('background-image', PLACEHOLDER_IMAGE);
     template.find('.BGSampleTitle').text(friendlyTitle);
     return template;
 }
