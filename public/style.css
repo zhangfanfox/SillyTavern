@@ -5378,6 +5378,7 @@ body:has(#character_popup.open) #top-settings-holder:has(.drawer-content.openDra
     left: 0;
     right: 0;
     margin: 0 auto;
+    height: 0;
     backdrop-filter: blur(calc(var(--SmartThemeBlurStrength)));
     -webkit-backdrop-filter: blur(calc(var(--SmartThemeBlurStrength)));
     /* z-index: 1000 !important; */
@@ -5385,6 +5386,10 @@ body:has(#character_popup.open) #top-settings-holder:has(.drawer-content.openDra
     transition-duration: var(--animation-duration);
     transition-timing-function: ease-in-out;
     transition-behavior: allow-discrete;
+}
+
+#movingDivs>.drawer-content {
+    height: unset;
 }
 
 .drawer-content.openDrawer {
