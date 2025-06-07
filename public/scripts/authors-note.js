@@ -1,9 +1,11 @@
 import {
+    MAX_INJECTION_DEPTH,
     animation_duration,
     chat_metadata,
     eventSource,
     event_types,
     extension_prompt_roles,
+    extension_prompt_types,
     saveSettingsDebounced,
     this_chid,
 } from '../script.js';
@@ -347,7 +349,7 @@ export function setFloatingPrompt() {
     }
 
     if (lastMessageNumber <= 0 || chat_metadata[metadata_keys.interval] <= 0) {
-        context.setExtensionPrompt(MODULE_NAME, '', 999, 999);
+        context.setExtensionPrompt(MODULE_NAME, '', extension_prompt_types.NONE, MAX_INJECTION_DEPTH);
         $('#extension_floating_counter').text('(disabled)');
         shouldWIAddPrompt = false;
         return;
