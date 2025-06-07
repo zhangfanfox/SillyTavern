@@ -3797,6 +3797,9 @@ async function getStatusOpen() {
         if (!('error' in responseData)) {
             setOnlineStatus(t`Valid`);
         }
+        if (responseData.bypass) {
+            setOnlineStatus(t`Status check bypassed`);
+        }
     } catch (error) {
         console.error(error);
 

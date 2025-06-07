@@ -1122,11 +1122,11 @@ router.post('/status', async function (request, statusResponse) {
                 return statusResponse.send({ data: models });
             } else {
                 console.warn('Google AI Studio models endpoint failed:', response.status, response.statusText);
-                return statusResponse.send({ error: true, can_bypass: true, data: { data: [] } });
+                return statusResponse.send({ error: true, bypass: true, data: { data: [] } });
             }
         } catch (error) {
             console.error('Error fetching Google AI Studio models:', error);
-            return statusResponse.send({ error: true, can_bypass: true, data: { data: [] } });
+            return statusResponse.send({ error: true, bypass: true, data: { data: [] } });
         }
     } else {
         console.warn('This chat completion source is not supported yet.');
@@ -1191,7 +1191,7 @@ router.post('/status', async function (request, statusResponse) {
         }
         else {
             console.error('Chat Completion status check failed. Either Access Token is incorrect or API endpoint is down.');
-            statusResponse.send({ error: true, can_bypass: true, data: { data: [] } });
+            statusResponse.send({ error: true, data: { data: [] } });
         }
     } catch (e) {
         console.error(e);
