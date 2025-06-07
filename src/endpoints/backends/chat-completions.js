@@ -1092,6 +1092,49 @@ router.post('/status', async function (request, response_getstatus_openai) {
         api_url = 'https://text.pollinations.ai';
         api_key_openai = 'NONE';
         headers = {};
+    } else if (request.body.chat_completion_source === CHAT_COMPLETION_SOURCES.MAKERSUITE) {
+        // For Google AI Studio, we need to get models from the API
+        const api_key_makersuite = request.body.reverse_proxy ? request.body.proxy_password : readSecret(request.user.directories, SECRET_KEYS.MAKERSUITE);
+        const api_url = new URL(request.body.reverse_proxy || API_MAKERSUITE);
+        const apiVersion = getConfigValue('gemini.apiVersion', 'v1beta');
+        let models_url = `${api_url.origin}/${apiVersion}/models?key=${api_key_makersuite}`;
+
+        if (!api_key_makersuite && request.body.reverse_proxy) {
+            models_url = `${api_url.origin}/${apiVersion}/models`; // For some special reverse proxy, we can't pass the API key
+        } else if (!api_key_makersuite && !request.body.reverse_proxy) {
+            console.warn('Google AI Studio API key is missing.');
+            return response_getstatus_openai.status(400).send({ error: true });
+        }
+
+        try {
+            const response = await fetch(models_url, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+            });
+
+            if (response.ok) {
+                /** @type {any} */
+                const data = await response.json();
+                // Transform Google AI Studio models to OpenAI format
+                const models = data.models
+                    ?.filter(model => model.supportedGenerationMethods?.includes('generateContent'))
+                    ?.map(model => ({
+                        id: model.name.replace('models/', ''),
+                    })) || [];
+
+                response_getstatus_openai.send({ data: models });
+                console.info('Available Google AI Studio models:', models.map(m => m.id));
+                return;
+            } else {
+                console.error('Google AI Studio models endpoint failed:', response.status, response.statusText);
+                return response_getstatus_openai.send({ error: true, can_bypass: true, data: { data: [] } });
+            }
+        } catch (error) {
+            console.error('Error fetching Google AI Studio models:', error);
+            return response_getstatus_openai.send({ error: true, can_bypass: true, data: { data: [] } });
+        }
     } else {
         console.warn('This chat completion source is not supported yet.');
         return response_getstatus_openai.status(400).send({ error: true });
