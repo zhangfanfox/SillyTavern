@@ -27,6 +27,11 @@ const THUMBNAIL_STORAGE = localforage.createInstance({ name: 'SillyTavern_Thumbn
  */
 const THUMBNAIL_BLOBS = new Map();
 
+const THUMBNAIL_CONFIG = {
+    width: 160,
+    height: 90,
+};
+
 /**
  * Global IntersectionObserver instance for lazy loading backgrounds
  * @type {IntersectionObserver|null}
@@ -282,7 +287,7 @@ async function getThumbnailFromStorage(bg) {
         }
         const imageBlob = await response.blob();
         const imageBase64 = await getBase64Async(imageBlob);
-        const thumbnailBase64 = await createThumbnail(imageBase64);
+        const thumbnailBase64 = await createThumbnail(imageBase64, THUMBNAIL_CONFIG.width, THUMBNAIL_CONFIG.height);
         const thumbnailBlob = await fetch(thumbnailBase64).then(res => res.blob());
         await THUMBNAIL_STORAGE.setItem(bg, thumbnailBlob);
         const blobUrl = URL.createObjectURL(thumbnailBlob);
@@ -445,9 +450,10 @@ export async function getBackgrounds() {
         body: JSON.stringify({}),
     });
     if (response.ok) {
-        const getData = await response.json();
+        const { images, config } = await response.json();
+        Object.assign(THUMBNAIL_CONFIG, config);
         $('#bg_menu_content').children('div').remove();
-        for (const bg of getData) {
+        for (const bg of images) {
             const template = await getBackgroundFromTemplate(bg, false);
             $('#bg_menu_content').append(template);
         }
