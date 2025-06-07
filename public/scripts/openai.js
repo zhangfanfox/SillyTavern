@@ -1919,7 +1919,7 @@ function saveModelList(data) {
 
         // Get static model options that are already in the HTML
         const staticModels = [];
-        $('#model_google_select option').each(function() {
+        $('#model_google_select option').each(function () {
             staticModels.push($(this).val());
         });
 
