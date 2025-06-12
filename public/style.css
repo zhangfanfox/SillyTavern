@@ -715,6 +715,10 @@ hr {
     opacity: 0.2;
 }
 
+#chat hr {
+    opacity: 0.4;
+}
+
 #bg1,
 #bg_custom {
     background-repeat: no-repeat;
