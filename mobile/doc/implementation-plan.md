@@ -3,10 +3,10 @@
 > 目标：4 个迭代完成 MVP 可用版本（iOS/Android Dev 客户端），第 5 个迭代补强导入/PNG 等。
 
 ## 里程碑 M0：工作区初始化（1d）
-- [ ] 创建 `mobile/` 下 Expo 项目（独立 package.json）
-- [ ] 引入依赖：expo-router、react-native-paper 或 tamagui、zustand、@react-native-async-storage/async-storage、expo-secure-store、buffer、expo-crypto、react-native-gesture-handler 等
-- [ ] 配置 Metro polyfill（Buffer/crypto），EAS 项目初始化（可选）
-- [ ] 设置 TypeScript 与 ESLint
+- [x] 创建 `mobile/` 下 Expo 项目（独立 package.json）
+- [x] 引入依赖（已写入 package.json）：expo-router、react-native-paper、zustand、@react-native-async-storage/async-storage、expo-secure-store、buffer、expo-crypto、react-native-gesture-handler 等
+- [x] 配置 polyfill（Buffer/random-values，见 `mobile/src/polyfills/`），EAS 项目初始化（可选，待安装依赖后进行）
+- [x] 设置 TypeScript 与 ESLint（`tsconfig.json`、`.eslintrc.js`、`babel.config.js`）
 
 ## 里程碑 M1：导航与框架（2-3d）
 - [ ] 顶层布局 `_layout.tsx`，实现左右抽屉与 Header 按钮
