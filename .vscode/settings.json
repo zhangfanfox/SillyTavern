@@ -1,0 +1,55 @@
+{
+  "github.copilot.chat.codesearch.enabled": true,
+  "github.copilot.chat.agent.thinkingTool": true,
+  "github.copilot.chat.alternateGptPrompt.enabled": true,
+
+  // Ensure integrated terminals (including those created by extensions/automation) use login shell so PATH is correctly loaded
+  "terminal.integrated.defaultProfile.osx": "zsh",
+  "terminal.integrated.profiles.osx": {
+    "zsh": {
+      "path": "/bin/zsh",
+      "args": ["-l", "-i"],
+      "icon": "terminal-bash"
+    }
+  },
+
+  // Use PowerShell on Windows and allow profiles to load
+  "terminal.integrated.defaultProfile.windows": "PowerShell",
+  "terminal.integrated.profiles.windows": {
+    "PowerShell": {
+      "source": "PowerShell",
+      "args": []
+    },
+    "Command Prompt": {
+      "path": "C:/Windows/System32/cmd.exe"
+    }
+  },
+
+  // Make sure environment variables from the VS Code process are inherited by terminals launched by tasks/extensions
+  "terminal.integrated.inheritEnv": true,
+
+  // Force automation terminals to use same login shell
+  "terminal.integrated.automationProfile.osx": {
+    "path": "/bin/zsh",
+    "args": ["-l", "-i"]
+  },
+  // PowerShell automation profile on Windows (explicit path avoids schema complaints)
+  "terminal.integrated.automationProfile.windows": {
+    "path": "C:/Windows/System32/WindowsPowerShell/v1.0/powershell.exe",
+    "args": []
+  },
+
+  // Shell integration can help detect PATH from login environment
+  "terminal.integrated.shellIntegration.enabled": true,
+
+  // Fallback PATH injection for macOS terminals launched by automation (preserve existing PATH)
+  "terminal.integrated.env.osx": {
+    "PATH": "/opt/homebrew/bin:/usr/local/bin:${env:PATH}"
+  },
+  // Fallback PATH injection for Windows terminals
+  "terminal.integrated.env.windows": {
+    "Path": "C:/Program Files/nodejs;${env:Path}"
+  },
+
+  "terminal.integrated.environmentChangesIndicator": "on"
+}

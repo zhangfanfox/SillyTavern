@@ -1,6 +1,6 @@
 // Metro config for Expo that limits watchers to the mobile folder and excludes heavy sibling folders.
 const path = require('path');
-const { getDefaultConfig } = require('@expo/metro-config');
+const { getDefaultConfig } = require('expo/metro-config');
 
 const projectRoot = __dirname;
 const workspaceRoot = path.resolve(projectRoot, '..');
