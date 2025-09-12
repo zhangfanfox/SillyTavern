@@ -1,0 +1,11 @@
+{
+  "expo": {
+    "name": "SillyTavern",
+    "slug": "sillytavern-mobile",
+    "scheme": "sillytavern",
+    "orientation": "portrait",
+    "plugins": ["expo-router"],
+    "ios": { "supportsTablet": true },
+    "android": { "adaptiveIcon": { "backgroundColor": "#000000" } }
+  }
+}

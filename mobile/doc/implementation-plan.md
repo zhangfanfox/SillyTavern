@@ -9,10 +9,10 @@
 - [x] 设置 TypeScript 与 ESLint（`tsconfig.json`、`.eslintrc.js`、`babel.config.js`）
 
 ## 里程碑 M1：导航与框架（2-3d）
-- [ ] 顶层布局 `_layout.tsx`，实现左右抽屉与 Header 按钮
-- [ ] 路由：主页、聊天页、角色列表、角色创建、API 连接列表/编辑、右侧参数面板
-- [ ] 主题与暗黑模式
-- [ ] 状态管理骨架（stores）与持久化
+- [x] 顶层布局 `_layout.tsx`，实现左右抽屉与 Header 按钮
+- [x] 路由：主页、聊天页、角色列表、角色创建、API 连接列表/编辑、右侧参数面板（占位）
+- [x] 主题与暗黑模式（系统/浅色/深色，可持久化）
+- [x] 状态管理骨架（stores）与持久化（Zustand + AsyncStorage）
 
 ## 里程碑 M2：基础数据模型与 API 连接（3-4d）
 - [ ] ApiConnection CRUD + SecureStore
