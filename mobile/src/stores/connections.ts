@@ -13,6 +13,7 @@ export interface ApiConnectionMeta {
   model?: string;
   isDefault?: boolean;
   isValid?: boolean;
+  preferStream?: boolean; // whether to use streaming when available
 }
 
 export interface ApiConnectionWithSecret extends ApiConnectionMeta {
@@ -47,6 +48,7 @@ export const useConnectionsStore = create<ConnectionsState>()(
           model: c.model,
           isDefault: c.isDefault ?? false,
           isValid: undefined,
+          preferStream: true,
         };
         set((s) => ({ items: [...s.items, meta] }));
       },

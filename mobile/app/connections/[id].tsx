@@ -12,12 +12,14 @@ export default function EditConnectionScreen() {
   const conn = items.find((x) => x.id === id);
   const [name, setName] = useState(conn?.name ?? '');
   const [model, setModel] = useState(conn?.model ?? '');
-  const [baseUrl, setBaseUrl] = useState(conn?.baseUrl ?? '');
+  // Base URL 不再直接编辑；仅展示供应商与默认 Base URL
   const [apiKey, setApiKey] = useState('');
   const [isDefault, setIsDefault] = useState(!!conn?.isDefault);
+  const [preferStream, setPreferStream] = useState(conn?.preferStream ?? true);
   const [modelPickerOpen, setModelPickerOpen] = useState(false);
   const [testing, setTesting] = useState(false);
   const [lastValid, setLastValid] = useState<boolean | undefined>(conn?.isValid);
+  const [debugLogs, setDebugLogs] = useState<any[]>([]);
 
   const META = useMemo(() => ({
     openai: getProviderMeta('openai'),
@@ -29,7 +31,6 @@ export default function EditConnectionScreen() {
   useEffect(() => {
     if (conn) {
       const m = META[conn.provider as keyof typeof META];
-      if (!conn.baseUrl && m.baseUrl) setBaseUrl(m.baseUrl);
       if (!conn.model && m.models?.length) setModel(m.models[0]);
     }
   }, [conn, META]);
@@ -47,9 +48,10 @@ export default function EditConnectionScreen() {
 
   const onSave = async () => {
     setTesting(true);
-    await update(conn.id, { name, model, baseUrl, apiKey });
+    await update(conn.id, { name, model, apiKey, preferStream });
     if (isDefault) setDefault(conn.id);
-    const ok = await testConnection(conn.id);
+    setDebugLogs([]);
+    const ok = await testConnection(conn.id, { onDebug: (e) => setDebugLogs((prev) => [...prev, e]) });
     setLastValid(ok);
     setTesting(false);
     router.back();
@@ -64,8 +66,9 @@ export default function EditConnectionScreen() {
     <View style={styles.container}>
       <Text variant="titleLarge">编辑连接</Text>
       <TextInput label="名称" value={name} onChangeText={setName} mode="outlined" />
-      {/* Base URL 默认隐藏，如确需自定义可在此处编辑 */}
-      <TextInput label="Base URL（可选）" value={baseUrl} onChangeText={setBaseUrl} mode="outlined" />
+      {/* 供应商与默认 Base URL 信息（只读） */}
+      <Text>供应商：{conn.provider}</Text>
+      <Text>默认 Base URL：{META[conn.provider as keyof typeof META].baseUrl}</Text>
   <Text>{META[conn.provider as keyof typeof META].modelLabel}</Text>
       <Button mode="outlined" onPress={() => setModelPickerOpen(true)}>{model || '选择模型'}</Button>
       <Portal>
@@ -87,13 +90,28 @@ export default function EditConnectionScreen() {
           {lastValid ? '连接有效' : '连接无效，请检查密钥/模型/网络'}
         </HelperText>
       )}
+      {/* 调试输出（最近一次测试） */}
+      {debugLogs.length > 0 && (
+        <View style={{ marginTop: 8 }}>
+          <Text variant="titleSmall">调试</Text>
+          {debugLogs.map((d, i) => (
+            <Text key={i} selectable style={{ fontFamily: 'Courier', fontSize: 12 }}>
+              {JSON.stringify(d)}
+            </Text>
+          ))}
+        </View>
+      )}
       <View style={styles.row}>
         <Text>设为默认</Text>
         <Switch value={isDefault} onValueChange={setIsDefault} />
       </View>
-      <View style={{ flexDirection: 'row', gap: 8 }}>
+      <View style={styles.row}>
+        <Text>流式输出</Text>
+        <Switch value={preferStream} onValueChange={setPreferStream} />
+      </View>
+      <View style={{ flexDirection: 'row', gap: 8, flexWrap: 'wrap' }}>
         <Button mode="contained" onPress={onSave} loading={testing} disabled={testing}>保存</Button>
-        <Button mode="outlined" onPress={async () => { setTesting(true); const ok = await testConnection(conn.id); setLastValid(ok); setTesting(false); }} loading={testing} disabled={testing}>测试</Button>
+        <Button mode="outlined" onPress={async () => { setTesting(true); setDebugLogs([]); const ok = await testConnection(conn.id, { onDebug: (e) => setDebugLogs((prev) => [...prev, e]) }); setLastValid(ok); setTesting(false); }} loading={testing} disabled={testing}>测试</Button>
         <Button mode="outlined" onPress={onDelete}>删除</Button>
       </View>
     </View>

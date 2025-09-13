@@ -17,8 +17,8 @@
 ## 里程碑 M2：基础数据模型与 API 连接（3-4d）
 - [x] ApiConnection CRUD + SecureStore
 - [x] 参数面板根据 provider 动态渲染（读取 `constants`）
-- [x] LLM 适配层最小实现（OpenAI + Claude 已接入）
-- [x] 流式输出解析与中止
+- [x] LLM 适配层最小实现（OpenAI + Claude + Gemini）
+- [x] 流式输出解析与中止（OpenAI/Claude/Gemini 均已支持，Gemini 采用 `:streamGenerateContent?alt=sse`）
 
 ## 里程碑 M3：聊天页与会话管理（4-6d）
 - [ ] MessageList/ChatInput 组件与滚动加载

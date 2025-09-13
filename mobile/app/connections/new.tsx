@@ -1,10 +1,10 @@
 import { useEffect, useMemo, useState } from 'react';
 import { View, StyleSheet, ScrollView } from 'react-native';
-import { Button, Text, TextInput, RadioButton, Portal, Modal, List, HelperText } from 'react-native-paper';
+import { Button, Text, TextInput, RadioButton, Portal, Modal, List, HelperText, Switch } from 'react-native-paper';
 import { useConnectionsStore, type ProviderId } from '../../src/stores/connections';
 import { getProviderMeta } from '../../src/services/providerMeta';
 import { router } from 'expo-router';
-import { testConnection, testConnectionRaw } from '../../src/services/llm';
+import { testConnectionRaw } from '../../src/services/llm';
 
 function uuid() {
   return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
@@ -22,6 +22,7 @@ export default function NewConnectionScreen() {
   const [baseUrl, setBaseUrl] = useState('https://api.openai.com');
   const [model, setModel] = useState('gpt-4o-mini');
   const [modelPickerOpen, setModelPickerOpen] = useState(false);
+  const [preferStream, setPreferStream] = useState(true);
 
   const META = useMemo(() => ({
     openai: getProviderMeta('openai'),
@@ -38,11 +39,13 @@ export default function NewConnectionScreen() {
 
   const [testing, setTesting] = useState(false);
   const [lastValid, setLastValid] = useState<boolean | undefined>(undefined);
+  const [debugLogs, setDebugLogs] = useState<any[]>([]);
 
   const onTest = async (id: string) => {
     setTesting(true);
     try {
-      const ok = await testConnectionRaw({ provider, baseUrl, model }, apiKey);
+      setDebugLogs([]);
+      const ok = await testConnectionRaw({ provider, baseUrl, model, preferStream }, apiKey, { onDebug: (e) => setDebugLogs((prev) => [...prev, e]) });
       setLastValid(ok);
     } finally {
       setTesting(false);
@@ -51,7 +54,7 @@ export default function NewConnectionScreen() {
 
   const onSave = async () => {
     const id = uuid();
-    await add({ id, name, provider, apiKey, baseUrl, model, isDefault: true });
+    await add({ id, name, provider, apiKey, baseUrl, model, isDefault: true, preferStream });
     await onTest(id);
     router.back();
   };
@@ -94,10 +97,24 @@ export default function NewConnectionScreen() {
           <Button style={{ marginTop: 8 }} mode="contained" onPress={() => setModelPickerOpen(false)}>完成</Button>
         </Modal>
       </Portal>
-      <View style={{ flexDirection: 'row', gap: 8 }}>
+      <View style={styles.row}>
+        <Text>流式输出</Text>
+        <Switch value={preferStream} onValueChange={setPreferStream} />
+      </View>
+      <View style={{ flexDirection: 'row', gap: 8, flexWrap: 'wrap' }}>
         <Button mode="contained" onPress={onSave} loading={testing} disabled={testing}>保存并设为默认</Button>
         <Button mode="outlined" onPress={async () => { await onTest('raw'); }} loading={testing} disabled={testing}>测试</Button>
       </View>
+      {debugLogs.length > 0 && (
+        <View style={{ marginTop: 8 }}>
+          <Text variant="titleSmall">调试</Text>
+          {debugLogs.map((d, i) => (
+            <Text key={i} selectable style={{ fontFamily: 'Courier', fontSize: 12 }}>
+              {JSON.stringify(d)}
+            </Text>
+          ))}
+        </View>
+      )}
     </View>
   );
 }
