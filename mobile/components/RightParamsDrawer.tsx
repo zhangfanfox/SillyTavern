@@ -5,6 +5,8 @@ import { useUIStore, type UIState } from '../src/stores/ui';
 import { useConnectionsStore } from '../src/stores/connections';
 import { useParamsStore } from '../src/stores/params';
 import { getProvider } from '../src/services/providers';
+import { useChatStore } from '../src/stores/chat';
+import { usePathname } from 'expo-router';
 
 const WIDTH = Math.min(380, Math.floor(Dimensions.get('window').width * 0.9));
 
@@ -18,6 +20,8 @@ export default function RightParamsDrawer() {
   const paramsByConn = useParamsStore((s) => s.byConnId);
   const setParams = useParamsStore((s) => s.set);
   const [form, setForm] = useState<Record<string, any>>({});
+  const chat = useChatStore();
+  const pathname = usePathname();
 
   useEffect(() => {
     if (currentId) {
@@ -33,12 +37,12 @@ export default function RightParamsDrawer() {
           <Text variant="titleMedium">参数面板</Text>
           <Button compact onPress={() => setOpen(false)}>关闭</Button>
         </View>
-        <ScrollView style={styles.content} contentContainerStyle={{ paddingBottom: 32 }}>
+  <ScrollView style={styles.content} contentContainerStyle={styles.pb32}>
           {current ? (
             <>
               <List.Item title={`连接：${current.name}`} description={current.provider} />
               {provider?.params.map((p) => (
-                <View key={p.key} style={{ marginBottom: 8 }}>
+                <View key={p.key} style={styles.mb8}>
                   {p.type === 'text' && (
                     <TextInput
                       label={p.key}
@@ -73,6 +77,23 @@ export default function RightParamsDrawer() {
               >
                 应用
               </Button>
+              {pathname?.startsWith('/chat') && chat.currentId && (
+                <>
+                  <View style={styles.h12} />
+                  <Button
+                    mode="outlined"
+                    buttonColor="white"
+                    textColor="red"
+                    onPress={async () => {
+                      const id = chat.currentId!;
+                      await chat.deleteSession(id);
+                      setOpen(false);
+                    }}
+                  >
+                    删除当前会话
+                  </Button>
+                </>
+              )}
             </>
           ) : (
             <Text>请先创建并设为默认的 API 连接</Text>
@@ -90,20 +111,23 @@ const styles = StyleSheet.create({
     width: WIDTH,
     backgroundColor: 'white',
     padding: 16,
-    height: '100%'
+    height: '100%',
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: 8
+    marginBottom: 8,
   },
   content: {
-    flex: 1
+    flex: 1,
   },
   rowBetween: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between'
-  }
+    justifyContent: 'space-between',
+  },
+  pb32: { paddingBottom: 32 },
+  mb8: { marginBottom: 8 },
+  h12: { height: 12 },
 });

@@ -45,6 +45,7 @@ type ChatState = {
   setStreaming: (v: boolean) => void;
   exportSessionJSONL: (id: string) => Promise<string | null>;
   loadAllSessions: () => Promise<void>;
+  deleteSession: (id: string) => Promise<void>;
 };
 
 async function saveSessionToDisk(s: Session) {
@@ -155,6 +156,15 @@ export const useChatStore = create<ChatState>()(
         } catch {
           // ignore
         }
+      },
+      deleteSession: async (id: string) => {
+        const s = get().sessions.find((x) => x.id === id);
+        if (s) {
+          try { await FileSystem.deleteAsync(s.filePath, { idempotent: true }); } catch {}
+        }
+        const rest = get().sessions.filter((x) => x.id !== id);
+        const nextId = get().currentId === id ? rest[0]?.id : get().currentId;
+        set({ sessions: rest, currentId: nextId });
       },
     }),
     {

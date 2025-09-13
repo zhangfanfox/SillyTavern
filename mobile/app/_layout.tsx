@@ -2,55 +2,61 @@ import 'react-native-gesture-handler';
 import 'react-native-reanimated';
 import '../src/polyfills';
 import { Drawer } from 'expo-router/drawer';
-import { Slot, useNavigation } from 'expo-router';
+import { useNavigation } from 'expo-router';
 import { IconButton, PaperProvider } from 'react-native-paper';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-import { View } from 'react-native';
+import { View, StyleSheet } from 'react-native';
 import { useEffect } from 'react';
 import { LogBox } from 'react-native';
 import RightParamsDrawer from '../components/RightParamsDrawer';
+import LeftDrawerContent from '../components/LeftDrawerContent';
 import { useUIStore } from '../src/stores/ui';
 import { useThemeProvider } from '../src/theme';
 
-export default function RootLayout() {
-  useEffect(() => {
-    // RN Reanimated/gesture handler noisy warnings in dev
-    LogBox.ignoreLogs([
-      'Sending `onAnimatedValueUpdate` with no listeners registered'
-    ]);
-  }, []);
+function HeaderMenuButton() {
+  const navigation = useNavigation();
+  return (
+    <IconButton
+      icon="menu"
+      onPress={() => {
+        // @ts-expect-error Drawer API available at runtime
+        navigation.toggleDrawer?.();
+      }}
+      accessibilityLabel="Open navigation"
+    />
+  );
+}
 
+function HeaderParamsButton() {
   const ui = useUIStore();
-  const { paperTheme } = useThemeProvider();
-
-  const HeaderMenuButton = () => {
-    const navigation = useNavigation();
-    return (
-      <IconButton
-        icon="menu"
-        onPress={() => {
-          // @ts-expect-error Drawer API available at runtime
-          navigation.toggleDrawer?.();
-        }}
-        accessibilityLabel="Open navigation"
-      />
-    );
-  };
-
-  const HeaderParamsButton = () => (
+  return (
     <IconButton
       icon="tune"
       onPress={() => ui.setRightPanelOpen(true)}
       accessibilityLabel="Open parameters"
     />
   );
+}
+
+export default function RootLayout() {
+  useEffect(() => {
+    // RN Reanimated/gesture handler noisy warnings in dev
+    LogBox.ignoreLogs([
+      'Sending `onAnimatedValueUpdate` with no listeners registered',
+    ]);
+  }, []);
+
+  const { paperTheme } = useThemeProvider();
 
   return (
     <SafeAreaProvider>
       <PaperProvider theme={paperTheme}>
-        <View style={{ flex: 1 }}>
+  <View style={styles.flex1}>
           {/* Left navigation drawer via expo-router */}
-          <Drawer screenOptions={{ headerLeft: HeaderMenuButton, headerRight: HeaderParamsButton }}>
+          <Drawer
+            screenOptions={{ headerLeft: HeaderMenuButton, headerRight: HeaderParamsButton }}
+            drawerContent={LeftDrawerContent}
+          >
             {/* Declare key routes to appear in left drawer */}
             <Drawer.Screen name="index" options={{ title: '主页' }} />
             <Drawer.Screen name="chat/index" options={{ title: '聊天' }} />
@@ -66,3 +72,7 @@ export default function RootLayout() {
     </SafeAreaProvider>
   );
 }
+
+const styles = StyleSheet.create({
+  flex1: { flex: 1 },
+});

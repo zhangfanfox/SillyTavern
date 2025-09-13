@@ -21,10 +21,16 @@
 - [x] 流式输出解析与中止（OpenAI/Claude/Gemini 均已支持，Gemini 采用 `:streamGenerateContent?alt=sse`）
 
 ## 里程碑 M3：聊天页与会话管理（4-6d）
-- [ ] MessageList/ChatInput 组件与滚动加载
-- [ ] 发送/接收消息（含流式）
-- [ ] 错误处理与重试、停止生成
-- [ ] 会话的本地持久化（最近 3-5 个会话在左侧抽屉）
+- [x] MessageList/ChatInput 组件与滚动加载（气泡、时间戳、打字动画、自动滚动）
+- [x] 发送/接收消息（含流式与非流式切换，Send/Stop 合一按钮）
+- [x] 错误处理与停止生成（AbortController，中断后 UI 复位）
+- [x] 会话本地持久化（ST JSONL 头 + 消息），左侧抽屉列出会话并可新建/切换
+
+持久化实现说明：
+- 存储路径：`FileSystem.documentDirectory + 'st-mobile/chats/'`，文件名为 `encodeURIComponent(sessionId).jsonl`
+- 文件格式：SillyTavern 兼容 JSONL，首行为头信息，后续每行一条消息；使用 `serializeToJSONL`/`parseFromJSONL` 实现
+- 完整导出：`useChatStore.exportSessionJSONL(id)`
+- 会话删除：`useChatStore.deleteSession(id)` 会移除文件并更新当前会话
 
 ## 里程碑 M4：角色创建/导入（3-5d）
 - [ ] 新建角色（头像/名称/系统提示）
