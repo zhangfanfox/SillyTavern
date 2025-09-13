@@ -79,10 +79,19 @@ async function streamSSEWithXHR(opts: {
     };
     xhr.onprogress = processChunk;
     xhr.onreadystatechange = () => {
+      if (xhr.readyState === xhr.HEADERS_RECEIVED /* 2 */) {
+        // If status is error, we will still collect responseText in DONE to surface details
+      }
       if (xhr.readyState === xhr.LOADING /* 3 */ || xhr.readyState === xhr.DONE /* 4 */) {
         processChunk();
         if (xhr.readyState === xhr.DONE) {
-          opts.onDone();
+          // Surface HTTP errors with response payload for debugging
+          if (xhr.status && (xhr.status < 200 || xhr.status >= 300)) {
+            const resp = xhr.responseText;
+            opts.onError({ status: xhr.status, response: resp });
+          } else {
+            opts.onDone();
+          }
           cleanUp();
         }
       }
@@ -139,7 +148,12 @@ export async function streamOpenAIChat(opts: {
       signal: controller.signal,
     });
     const anyRes = res as any;
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    if (!res.ok) {
+      let respText: any = undefined;
+      try { respText = await res.text(); } catch {}
+      onDebug?.({ provider: 'openai', url, phase: 'response', status: res.status, response: respText });
+      throw new Error(`HTTP ${res.status}`);
+    }
     if (!anyRes.body) {
       // Fallback to XHR progressive streaming
       await streamSSEWithXHR({
@@ -270,7 +284,12 @@ export async function streamClaudeChat(opts: {
       signal: controller.signal,
     });
     const anyRes = res as any;
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    if (!res.ok) {
+      let respText: any = undefined;
+      try { respText = await res.text(); } catch {}
+      onDebug?.({ provider: 'claude', url, phase: 'response', status: res.status, response: respText });
+      throw new Error(`HTTP ${res.status}`);
+    }
     if (!anyRes.body) {
       await streamSSEWithXHR({
         url,
@@ -610,7 +629,6 @@ export async function streamGeminiChat(opts: {
   // Use streaming endpoint with SSE
   const url = `${base}/v1/models/${encodeURIComponent(model)}:streamGenerateContent?alt=sse&key=${encodeURIComponent(apiKey)}`;
 
-  const sys = messages.find((m) => m.role === 'system')?.content;
   const contents = messages
     .filter((m) => m.role !== 'system')
     .map((m) => ({ role: m.role === 'assistant' ? 'model' : 'user', parts: [{ text: m.content }] }));
