@@ -1,7 +1,8 @@
-import { useState } from 'react';
-import { View, StyleSheet } from 'react-native';
-import { Button, Text, TextInput, RadioButton } from 'react-native-paper';
+import { useEffect, useMemo, useState } from 'react';
+import { View, StyleSheet, ScrollView } from 'react-native';
+import { Button, Text, TextInput, RadioButton, Portal, Modal, List } from 'react-native-paper';
 import { useConnectionsStore, type ProviderId } from '../../src/stores/connections';
+import { getProviderMeta } from '../../src/services/providerMeta';
 import { router } from 'expo-router';
 
 function uuid() {
@@ -19,6 +20,20 @@ export default function NewConnectionScreen() {
   const [apiKey, setApiKey] = useState('');
   const [baseUrl, setBaseUrl] = useState('https://api.openai.com');
   const [model, setModel] = useState('gpt-4o-mini');
+  const [modelPickerOpen, setModelPickerOpen] = useState(false);
+
+  const META = useMemo(() => ({
+    openai: getProviderMeta('openai'),
+    claude: getProviderMeta('claude'),
+    gemini: getProviderMeta('gemini'),
+    openrouter: getProviderMeta('openrouter'),
+  }), []);
+
+  useEffect(() => {
+    const m = META[provider];
+    if (m.baseUrl) setBaseUrl(m.baseUrl);
+    if (m.models?.length) setModel((prev) => (m.models.includes(prev) ? prev : m.models[0]));
+  }, [provider, META]);
 
   const onSave = async () => {
     const id = uuid();
@@ -37,9 +52,28 @@ export default function NewConnectionScreen() {
         <View style={styles.row}><RadioButton value="gemini" /><Text>Gemini</Text></View>
         <View style={styles.row}><RadioButton value="openrouter" /><Text>OpenRouter</Text></View>
       </RadioButton.Group>
-      <TextInput label="API Key" value={apiKey} onChangeText={setApiKey} secureTextEntry mode="outlined" />
-      <TextInput label="Base URL" value={baseUrl} onChangeText={setBaseUrl} mode="outlined" />
-      <TextInput label="默认模型" value={model} onChangeText={setModel} mode="outlined" />
+      <TextInput label={META[provider].apiKeyLabel} value={apiKey} onChangeText={setApiKey} secureTextEntry mode="outlined" />
+      {/* Base URL 不暴露在新建页面，跟随 provider 自动设置（如需修改可到编辑页） */}
+  <Text>{getProviderMeta(provider).modelLabel}</Text>
+      <Button mode="outlined" onPress={() => setModelPickerOpen(true)}>{model}</Button>
+      <Portal>
+        <Modal visible={modelPickerOpen} onDismiss={() => setModelPickerOpen(false)} contentContainerStyle={styles.modal}>
+          <Text variant="titleMedium" style={{ marginBottom: 8 }}>选择模型（{provider}）</Text>
+          <ScrollView style={{ maxHeight: 360 }}>
+            <RadioButton.Group onValueChange={(v) => setModel(v)} value={model}>
+              {getProviderMeta(provider).models.map((m) => (
+                <List.Item
+                  key={m}
+                  title={m}
+                  onPress={() => setModel(m)}
+                  right={() => <RadioButton value={m} />}
+                />
+              ))}
+            </RadioButton.Group>
+          </ScrollView>
+          <Button style={{ marginTop: 8 }} mode="contained" onPress={() => setModelPickerOpen(false)}>完成</Button>
+        </Modal>
+      </Portal>
       <Button mode="contained" onPress={onSave}>保存并设为默认</Button>
     </View>
   );
@@ -48,4 +82,5 @@ export default function NewConnectionScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, padding: 16, gap: 12 },
   row: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  modal: { backgroundColor: 'white', padding: 16, margin: 16, borderRadius: 8 },
 });
