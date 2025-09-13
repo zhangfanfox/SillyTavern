@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { View, StyleSheet } from 'react-native';
-import { Button, Divider, IconButton, List, Text } from 'react-native-paper';
+import { Button, Divider, IconButton, List, Text, Dialog, Portal } from 'react-native-paper';
 import { useChatStore } from '../src/stores/chat';
 import { Link, useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -8,6 +8,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 export default function LeftDrawerContent() {
   const { sessions, currentId, loadAllSessions, createSession } = useChatStore();
   const router = useRouter();
+  const [confirmId, setConfirmId] = React.useState<string | null>(null);
 
   useEffect(() => {
     // Hydrate sessions for the drawer; if none exist, create default
@@ -25,11 +26,10 @@ export default function LeftDrawerContent() {
         <Text variant="titleMedium">会话</Text>
         <IconButton
           icon="plus"
-          onPress={async () => {
-            await createSession('User', 'Assistant');
-            router.push('/chat');
+          onPress={() => {
+            router.push('/roles');
           }}
-          accessibilityLabel="新建会话"
+          accessibilityLabel="从角色开始会话"
         />
       </View>
   <Divider style={styles.mb8} />
@@ -39,15 +39,19 @@ export default function LeftDrawerContent() {
           <Text style={styles.empty}>暂无会话</Text>
         ) : (
           sessions.map((s) => (
-              <List.Item
-                key={s.id}
-                title={s.title || s.id}
-                description={`${s.characterName}${currentId === s.id ? ' · 当前' : ''}`}
-                onPress={() => {
-                  useChatStore.setState({ currentId: s.id });
-                  router.push('/chat');
-                }}
-              />
+            <View key={s.id} style={styles.sessionRow}>
+              <View style={styles.sessionMain}>
+                <List.Item
+                  title={s.title || s.id}
+                  description={`${s.characterName}${currentId === s.id ? ' · 当前' : ''}`}
+                  onPress={() => {
+                    useChatStore.setState({ currentId: s.id });
+                    router.push('/chat');
+                  }}
+                />
+              </View>
+              <IconButton icon="delete" onPress={() => setConfirmId(s.id)} accessibilityLabel="删除会话" />
+            </View>
           ))
         )}
       </View>
@@ -65,6 +69,27 @@ export default function LeftDrawerContent() {
           <Button mode="text">角色</Button>
         </Link>
       </View>
+      <Portal>
+        <Dialog visible={!!confirmId} onDismiss={() => setConfirmId(null)}>
+          <Dialog.Title>删除会话</Dialog.Title>
+          <Dialog.Content>
+            <Text>确定要删除该会话吗？此操作不可撤销。</Text>
+          </Dialog.Content>
+          <Dialog.Actions>
+            <Button onPress={() => setConfirmId(null)}>取消</Button>
+            <Button
+              onPress={async () => {
+                if (confirmId) {
+                  await useChatStore.getState().deleteSession(confirmId);
+                }
+                setConfirmId(null);
+              }}
+            >
+              删除
+            </Button>
+          </Dialog.Actions>
+        </Dialog>
+      </Portal>
       </View>
     </SafeAreaView>
   );
@@ -79,4 +104,6 @@ const styles = StyleSheet.create({
   empty: { opacity: 0.6 },
   mb8: { marginBottom: 8 },
   mv8: { marginVertical: 8 },
+  sessionRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  sessionMain: { flex: 1 },
 });
