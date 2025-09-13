@@ -10,14 +10,18 @@ import ChatInput from '../../components/ChatInput';
 import DraggableDebugPanel from '../../components/DraggableDebugPanel';
 import { postProcessPrompt, PROMPT_PROCESSING_TYPE } from '../../src/services/prompt-converters';
 import { useRolesStore } from '../../src/stores/roles';
+import ParamsPanel from '../../components/ParamsPanel';
+import { useParamsStore } from '../../src/stores/params';
 
 export default function ChatScreen() {
   const [input, setInput] = useState('');
   const [streamEnabled, setStreamEnabled] = useState(true);
   const [debugVisible, setDebugVisible] = useState(false);
+  const [paramsVisible, setParamsVisible] = useState(false);
   const assistantBufferRef = useRef<string>('');
   const items = useConnectionsStore((s) => s.items);
   const defaultConn = items.find((x) => x.isDefault);
+  const selectedParams = useParamsStore((s) => (defaultConn ? s.get(defaultConn.id) : undefined)) || {};
   const chat = useChatStore();
   const session = useMemo(() => chat.currentId ? chat.sessions.find(s => s.id === chat.currentId) : undefined, [chat.currentId, chat.sessions]);
   const debugEventsRef = useRef<Array<{ provider: string; url: string; phase: 'request' | 'response' | 'error'; request?: any; response?: any; status?: number; error?: any }>>([]);
@@ -151,7 +155,8 @@ export default function ChatScreen() {
       let payload = (hasSystem ? mapped : [{ role: 'system', content: derivedSys! }, ...mapped]) as Array<{ role: 'system' | 'user' | 'assistant'; content: string }>;
   try { console.log('[Chat] Selected systemPrompt', { source: hasSystem ? 'existing' : (derivedSys === 'You are a helpful assistant.' ? 'fallback' : 'role'), len: (payload.find(m => m.role === 'system')?.content || '').length }); } catch {}
       // Minimal ST-like merge post-processing
-      payload = postProcessPrompt(payload as any, PROMPT_PROCESSING_TYPE.MERGE, {
+      const mode = (selectedParams.prompt_mode as string) || PROMPT_PROCESSING_TYPE.MERGE;
+      payload = postProcessPrompt(payload as any, mode as any, {
         charName: session.characterName,
         userName: session.userName,
         groupNames: [],
@@ -212,7 +217,10 @@ export default function ChatScreen() {
     <View style={styles.container}>
       <View style={styles.header}>
         <Text variant="titleLarge">{session?.title || '聊天'}</Text>
-        <IconButton icon={debugVisible ? 'bug-check' : 'bug'} onPress={() => setDebugVisible((v) => !v)} accessibilityLabel="切换调试面板" />
+        <View style={styles.headerActions}>
+          <IconButton icon="tune" onPress={() => setParamsVisible(true)} accessibilityLabel="打开参数面板" />
+          <IconButton icon={debugVisible ? 'bug-check' : 'bug'} onPress={() => setDebugVisible((v) => !v)} accessibilityLabel="切换调试面板" />
+        </View>
       </View>
       <View style={styles.listContainer}>
         <MessageList messages={session?.messages || []} userName={session?.userName || 'User'} characterName={session?.characterName || 'Assistant'} streaming={!!chat.stream.streaming} />
@@ -227,6 +235,7 @@ export default function ChatScreen() {
           (e.response !== undefined ? `Response:\n${safe(e.response)}\n` : '') +
           (e.error ? `Error:\n${safe(e.error)}\n` : '')).join('\n');
       })()} />
+      <ParamsPanel visible={paramsVisible} onDismiss={() => setParamsVisible(false)} />
     </View>
   );
 }
@@ -234,5 +243,6 @@ export default function ChatScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, padding: 12, gap: 8 },
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  headerActions: { flexDirection: 'row' },
   listContainer: { flex: 1 },
 });

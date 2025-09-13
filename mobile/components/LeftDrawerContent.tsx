@@ -4,11 +4,15 @@ import { Button, Divider, IconButton, List, Text, Dialog, Portal } from 'react-n
 import { useChatStore } from '../src/stores/chat';
 import { Link, useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useRolesStore } from '../src/stores/roles';
 
 export default function LeftDrawerContent() {
   const { sessions, currentId, loadAllSessions, createSession } = useChatStore();
   const router = useRouter();
   const [confirmId, setConfirmId] = React.useState<string | null>(null);
+  const [rolePickerOpen, setRolePickerOpen] = React.useState(false);
+  const roles = useRolesStore((s) => s.roles);
+  const loadAllRoles = useRolesStore((s) => s.loadAllRoles);
 
   useEffect(() => {
     // Hydrate sessions for the drawer; if none exist, create default
@@ -16,8 +20,9 @@ export default function LeftDrawerContent() {
       await loadAllSessions();
       const hasAny = useChatStore.getState().sessions.length > 0;
       if (!hasAny) await createSession('User', 'Assistant');
+      try { await loadAllRoles(); } catch {}
     })();
-  }, [loadAllSessions, createSession]);
+  }, [loadAllSessions, createSession, loadAllRoles]);
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['top', 'bottom']}>
@@ -26,9 +31,7 @@ export default function LeftDrawerContent() {
         <Text variant="titleMedium">会话</Text>
         <IconButton
           icon="plus"
-          onPress={() => {
-            router.push('/roles');
-          }}
+          onPress={() => setRolePickerOpen(true)}
           accessibilityLabel="从角色开始会话"
         />
       </View>
@@ -87,6 +90,34 @@ export default function LeftDrawerContent() {
             >
               删除
             </Button>
+          </Dialog.Actions>
+        </Dialog>
+        <Dialog visible={rolePickerOpen} onDismiss={() => setRolePickerOpen(false)}>
+          <Dialog.Title>选择角色开始聊天</Dialog.Title>
+          <Dialog.Content>
+            {roles.length === 0 ? (
+              <Text>暂无角色，请先在“角色”页面创建或导入。</Text>
+            ) : (
+              roles.map((r) => (
+                <List.Item
+                  key={r.id}
+                  title={r.name}
+                  description={(r.description || '').slice(0, 60)}
+                  onPress={async () => {
+                    const session = await useChatStore.getState().createSessionFromRole(r);
+                    useChatStore.setState({ currentId: session.id });
+                    setRolePickerOpen(false);
+                    router.push('/chat');
+                  }}
+                />
+              ))
+            )}
+          </Dialog.Content>
+          <Dialog.Actions>
+            <Button onPress={() => setRolePickerOpen(false)}>关闭</Button>
+            <Link href="/roles" asChild>
+              <Button>管理角色</Button>
+            </Link>
           </Dialog.Actions>
         </Dialog>
       </Portal>
