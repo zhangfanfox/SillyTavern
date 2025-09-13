@@ -13,8 +13,36 @@ export type MessageListProps = {
 
 export default function MessageList({ messages, userName, characterName, streaming }: MessageListProps) {
   const data = useMemo(() => messages.map((m, i) => ({ key: String(i), item: m, index: i })), [messages]);
+
+  const listRef = useRef<FlatList<any>>(null);
+  const lastKey = useMemo(() => {
+    const last = messages[messages.length - 1];
+    const len = last ? (last.mes ? last.mes.length : 0) : 0;
+    return `${messages.length}:${len}`;
+  }, [messages]);
+
+  // Auto scroll when content grows (new message or streaming appends)
+  useEffect(() => {
+    const scroll = () => {
+      const anyRef = listRef.current as any;
+      if (anyRef?.scrollToEnd) {
+        anyRef.scrollToEnd({ animated: true });
+      } else if (listRef.current && data.length > 0) {
+        try { listRef.current.scrollToIndex({ index: data.length - 1, animated: true, viewPosition: 1 }); } catch {}
+      }
+    };
+    const id = setTimeout(scroll, 30);
+    return () => clearTimeout(id);
+  }, [lastKey, data.length]);
+
+  const handleContentSizeChange = () => {
+    const anyRef = listRef.current as any;
+    if (anyRef?.scrollToEnd) anyRef.scrollToEnd({ animated: true });
+  };
+
   return (
     <FlatList
+      ref={listRef}
       data={data}
       renderItem={({ item }) => {
         const isLast = item.index === messages.length - 1;
@@ -26,6 +54,7 @@ export default function MessageList({ messages, userName, characterName, streami
       }}
       keyExtractor={(i) => i.key}
       contentContainerStyle={styles.list}
+      onContentSizeChange={handleContentSizeChange}
     />
   );
 }
