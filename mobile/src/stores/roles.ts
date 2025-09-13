@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as FileSystem from 'expo-file-system';
+import { parseRoleFromJSON as parseGenericJSON, parseRoleFromURL } from '../services/role-importers';
 
 const ROOT_DIR = FileSystem.documentDirectory + 'st-mobile/';
 const ROLES_DIR = ROOT_DIR + 'roles/';
@@ -138,15 +139,15 @@ export const useRolesStore = create<RoleState>()(
         set({ roles: rest, currentId: rest[0]?.id });
       },
       importRoleFromJSON: async (text) => {
-        const parsed = parseSillyTavernRoleCard(text);
-  const role = await get().createRole({ name: parsed.name, avatar: parsed.avatar, description: parsed.description, system_prompt: parsed.system_prompt, raw: parsed.raw } as Omit<STRole, 'id' | 'filePath' | 'createdAt'>);
+        // Use generic parser that mirrors SillyTavern tolerance
+        const parsed = parseGenericJSON(text);
+        const role = await get().createRole({ name: parsed.name, avatar: parsed.avatar, description: parsed.description, system_prompt: parsed.system_prompt, raw: parsed.raw } as Omit<STRole, 'id' | 'filePath' | 'createdAt'>);
         return role;
       },
       importRoleFromURL: async (url) => {
-        const res = await fetch(url);
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const text = await res.text();
-        return get().importRoleFromJSON(text);
+        const parsed = await parseRoleFromURL(url);
+        const role = await get().createRole({ name: parsed.name, avatar: parsed.avatar, description: parsed.description, system_prompt: parsed.system_prompt, raw: parsed.raw } as Omit<STRole, 'id' | 'filePath' | 'createdAt'>);
+        return role;
       },
     }),
     {

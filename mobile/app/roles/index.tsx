@@ -41,6 +41,9 @@ export default function RolesScreen() {
       <Link href="/roles/create" asChild>
         <Button mode="contained">新建角色</Button>
       </Link>
+      <Link href="/roles/import" asChild>
+        <Button mode="text">导入角色</Button>
+      </Link>
     </View>
   );
 }
