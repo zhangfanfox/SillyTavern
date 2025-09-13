@@ -1,5 +1,5 @@
-import { useRef, useState } from 'react';
-import { View, StyleSheet, Platform } from 'react-native';
+import { useRef, useState, useEffect } from 'react';
+import { View, StyleSheet, Platform, ScrollView } from 'react-native';
 import { Button, Text, TextInput, Divider } from 'react-native-paper';
 import { createAbortController, streamChat } from '../../src/services/llm';
 import { useConnectionsStore } from '../../src/stores/connections';
@@ -12,6 +12,7 @@ export default function ChatScreen() {
   const items = useConnectionsStore((s) => s.items);
   const defaultConn = items.find((x) => x.isDefault);
   const [debugLogs, setDebugLogs] = useState<Array<{ provider: string; url: string; phase: string; status?: number; request?: any; response?: any; error?: any }>>([]);
+  const scrollRef = useRef<ScrollView | null>(null);
 
   const pushDebug = (d: any) => setDebugLogs((prev) => [...prev, d].slice(-20));
 
@@ -50,8 +51,13 @@ export default function ChatScreen() {
     setLoading(false);
   };
 
+  // Auto scroll to bottom on new output or logs
+  useEffect(() => {
+    scrollRef.current?.scrollToEnd({ animated: true });
+  }, [output, debugLogs.length]);
+
   return (
-    <View style={styles.container}>
+    <ScrollView ref={scrollRef} style={{ flex: 1 }} contentContainerStyle={styles.container}>
       <Text variant="titleLarge">聊天（测试发送）</Text>
       <TextInput
         label="你的消息"
@@ -81,10 +87,11 @@ export default function ChatScreen() {
           </Text>
         ))
       )}
-    </View>
+      <View style={{ height: 24 }} />
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 16, gap: 12 }
+  container: { padding: 16, paddingBottom: 24, gap: 12 }
 });

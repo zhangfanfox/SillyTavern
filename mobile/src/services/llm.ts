@@ -13,6 +13,89 @@ export function createAbortController() {
   return new AbortController();
 }
 
+// XHR-based SSE fallback for React Native environments where fetch streaming isn't available
+async function streamSSEWithXHR(opts: {
+  url: string;
+  method?: 'POST' | 'GET';
+  headers?: Record<string, string>;
+  body?: string;
+  controller: AbortController;
+  onEvent: (data: any) => void; // JSON parsed per data: line
+  onDone: () => void;
+  onError: (e: any) => void;
+}) {
+  try {
+    const xhr = new XMLHttpRequest();
+    let lastIndex = 0;
+    let buffer = '';
+    xhr.open(opts.method ?? 'POST', opts.url);
+    if (opts.headers) {
+      for (const [k, v] of Object.entries(opts.headers)) xhr.setRequestHeader(k, v);
+    }
+    // Encourage progressive delivery from proxies
+    try { xhr.setRequestHeader('Cache-Control', 'no-cache, no-transform'); } catch {}
+    try { xhr.setRequestHeader('Accept', 'text/event-stream'); } catch {}
+    const cleanUp = () => {
+      try { xhr.onreadystatechange = null as any; } catch {}
+      try { xhr.onprogress = null as any; } catch {}
+      try { xhr.onerror = null as any; } catch {}
+    };
+    const processChunk = () => {
+      try {
+        const resp = xhr.responseText || '';
+        if (resp.length <= lastIndex) return;
+        const chunk = resp.slice(lastIndex);
+        lastIndex = resp.length;
+        buffer += chunk;
+        // Process complete SSE event blocks separated by two newlines
+        let idx: number;
+        while ((idx = buffer.indexOf('\n\n')) !== -1 || (idx = buffer.indexOf('\r\n\r\n')) !== -1) {
+          const block = buffer.slice(0, idx);
+          buffer = buffer.slice(idx + (buffer.startsWith('\r\n') ? 4 : 2));
+          const lines = block.split(/\r?\n/);
+          for (const line of lines) {
+            const trimmed = line.trim();
+            if (!trimmed) continue;
+            if (!trimmed.startsWith('data:')) continue;
+            const data = trimmed.slice(5).trim();
+            if (data === '[DONE]') {
+              opts.onDone();
+              try { cleanUp(); } catch {}
+              try { xhr.abort(); } catch {}
+              return;
+            }
+            try {
+              const json = JSON.parse(data);
+              opts.onEvent(json);
+            } catch {}
+          }
+        }
+      } catch {}
+    };
+    xhr.onprogress = processChunk;
+    xhr.onreadystatechange = () => {
+      if (xhr.readyState === xhr.LOADING /* 3 */ || xhr.readyState === xhr.DONE /* 4 */) {
+        processChunk();
+        if (xhr.readyState === xhr.DONE) {
+          opts.onDone();
+          cleanUp();
+        }
+      }
+    };
+    xhr.onerror = (e) => {
+      cleanUp();
+      opts.onError(e);
+    };
+    opts.controller.signal.addEventListener('abort', () => {
+      try { xhr.abort(); } catch {}
+      cleanUp();
+    });
+    xhr.send(opts.body ?? null);
+  } catch (e) {
+    opts.onError(e);
+  }
+}
+
 export async function streamOpenAIChat(opts: {
   connectionId: string;
   messages: Array<{ role: 'system' | 'user' | 'assistant'; content: string }>;
@@ -42,6 +125,8 @@ export async function streamOpenAIChat(opts: {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        Accept: 'text/event-stream',
+        'Cache-Control': 'no-cache, no-transform',
         Authorization: `Bearer ${apiKey}`,
       },
       body: JSON.stringify(body),
@@ -49,7 +134,23 @@ export async function streamOpenAIChat(opts: {
     });
     onDebug?.({ provider: 'openai', url, phase: 'request', request: body });
     const anyRes = res as any;
-    if (!res.ok || !anyRes.body) throw new Error(`HTTP ${res.status}`);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    if (!anyRes.body) {
+      // Fallback to XHR progressive streaming
+      await streamSSEWithXHR({
+        url,
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}`, Accept: 'text/event-stream', 'Cache-Control': 'no-cache, no-transform' },
+        body: JSON.stringify(body),
+        controller,
+        onEvent: (json) => {
+          const delta = json.choices?.[0]?.delta?.content;
+          if (delta) onToken?.(delta);
+        },
+        onDone: () => onDone?.(),
+        onError: (e) => { onError?.(e); onDebug?.({ provider: 'openai', url, phase: 'error', error: String(e) }); },
+      });
+      return;
+    }
 
     const reader = anyRes.body.getReader();
     let done = false;
@@ -154,6 +255,8 @@ export async function streamClaudeChat(opts: {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        Accept: 'text/event-stream',
+        'Cache-Control': 'no-cache, no-transform',
         'x-api-key': apiKey,
         'anthropic-version': '2023-06-01',
       },
@@ -162,7 +265,25 @@ export async function streamClaudeChat(opts: {
     });
     onDebug?.({ provider: 'claude', url, phase: 'request', request: body });
     const anyRes = res as any;
-    if (!res.ok || !anyRes.body) throw new Error(`HTTP ${res.status}`);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    if (!anyRes.body) {
+      await streamSSEWithXHR({
+        url,
+        headers: { 'Content-Type': 'application/json', 'x-api-key': apiKey, 'anthropic-version': '2023-06-01', Accept: 'text/event-stream', 'Cache-Control': 'no-cache, no-transform' },
+        body: JSON.stringify(body),
+        controller,
+        onEvent: (json) => {
+          const type = json.type as string | undefined;
+          if (type === 'content_block_delta') {
+            const t = json.delta?.text ?? json.delta?.partial ?? json.delta;
+            if (t) onToken?.(String(t));
+          }
+        },
+        onDone: () => onDone?.(),
+        onError: (e) => { onError?.(e); onDebug?.({ provider: 'claude', url, phase: 'error', error: String(e) }); },
+      });
+      return;
+    }
 
     const reader = anyRes.body.getReader();
     let done = false;
@@ -512,19 +633,42 @@ export async function streamGeminiChat(opts: {
       headers: {
         'Content-Type': 'application/json',
         Accept: 'text/event-stream',
+        'Cache-Control': 'no-cache, no-transform',
       },
       body: JSON.stringify(body),
       signal: controller.signal,
     });
     onDebug?.({ provider: 'gemini', url, phase: 'request', request: body });
     const anyRes = res as any;
-    if (!res.ok || !anyRes.body) {
+    if (!res.ok) {
       let respText: any = undefined;
       try { respText = await res.text(); } catch {}
       onDebug?.({ provider: 'gemini', url, phase: 'response', status: res.status, response: respText });
       throw new Error(`HTTP ${res.status}`);
     }
+    // Success path
+    if (!anyRes.body) {
+      // Fallback to XHR progressive SSE
+      await streamSSEWithXHR({
+        url,
+        headers: { 'Content-Type': 'application/json', Accept: 'text/event-stream', 'Cache-Control': 'no-cache, no-transform' },
+        body: JSON.stringify(body),
+        controller,
+        onEvent: (evt) => {
+          const parts = evt?.candidates?.[0]?.content?.parts;
+          if (Array.isArray(parts)) {
+            for (const p of parts) {
+              const t = p?.text; if (t) onToken?.(String(t));
+            }
+          }
+        },
+        onDone: () => onDone?.(),
+        onError: (e) => { onError?.(e); onDebug?.({ provider: 'gemini', url, phase: 'error', error: String(e) }); },
+      });
+      return;
+    }
 
+    onDebug?.({ provider: 'gemini', url, phase: 'response', status: res.status, response: 'SSE stream opened' });
     const reader = anyRes.body.getReader();
     let done = false;
     let leftover = '';
