@@ -32,9 +32,10 @@
 - 完整导出：`useChatStore.exportSessionJSONL(id)`
 - 会话删除：`useChatStore.deleteSession(id)` 会移除文件并更新当前会话
 
-## 里程碑 M4：角色创建/导入（3-5d）
+## 里程碑 M4：角色创建/导入（3-5d） 一定要参考src/ 下的sillytarven的web实现方式，要用移植代码的方式进行，参考对应的代码进行移植
 - [ ] 新建角色（头像/名称/系统提示）
 - [ ] JSON 导入（MVP）
+- [ ] URL 导入
 - [ ] 角色关联会话与默认系统提示注入
 
 ## 里程碑 M5：增强与收尾（3-5d）
