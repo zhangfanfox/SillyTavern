@@ -77,7 +77,9 @@ export const useChatStore = create<ChatState>()(
         const id = `${characterName} - ${humanizedISO8601DateTime()}`;
         const filePath = `${CHATS_DIR}${encodeURIComponent(id)}.jsonl`;
         const integrity = createEmptySTChat(userName, characterName).header.chat_metadata.integrity || '';
-        const session: Session = { id, title: title || id, userName, characterName, createdAt: humanizedISO8601DateTime(), filePath, integrity, messages: [] };
+        const sessionTitle = title || `和${characterName}的聊天`;
+        const session: Session = { id, title: sessionTitle, userName, characterName, createdAt: humanizedISO8601DateTime(), filePath, integrity, messages: [] };
+        try { console.log('[Chat] createSession', { userName, characterName, id, title: sessionTitle }); } catch {}
         set((s) => ({ sessions: [session, ...s.sessions].slice(0, 5), currentId: id }));
         await saveSessionToDisk(session);
         return session;
@@ -87,13 +89,17 @@ export const useChatStore = create<ChatState>()(
         const id = `${characterName} - ${humanizedISO8601DateTime()}`;
         const filePath = `${CHATS_DIR}${encodeURIComponent(id)}.jsonl`;
         const integrity = createEmptySTChat(userName, characterName).header.chat_metadata.integrity || '';
-        const session: Session = { id, title: id, userName, characterName, avatar: role.avatar, createdAt: humanizedISO8601DateTime(), filePath, integrity, messages: [] } as Session;
+        const title = `和${characterName}的聊天`;
+        const session: Session = { id, title, userName, characterName, avatar: role.avatar, createdAt: humanizedISO8601DateTime(), filePath, integrity, messages: [] } as Session;
         // Inject system prompt if provided
         const sys = (role.system_prompt || '').trim();
         if (sys) {
           const sysMsg: STMessage = { name: 'System', is_user: false, is_system: true, send_date: Date.now(), mes: sys } as STMessage;
           session.messages = [sysMsg];
         }
+        try {
+          console.log('[Chat] createSessionFromRole', { characterName, title, hasSystemPrompt: !!sys, sysLen: sys.length });
+        } catch {}
         set((s) => ({ sessions: [session, ...s.sessions].slice(0, 5), currentId: id }));
         await saveSessionToDisk(session);
         return session;

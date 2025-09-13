@@ -9,11 +9,13 @@ import MessageList from '../../components/MessageList';
 import ChatInput from '../../components/ChatInput';
 import DraggableDebugPanel from '../../components/DraggableDebugPanel';
 import { postProcessPrompt, PROMPT_PROCESSING_TYPE } from '../../src/services/prompt-converters';
+import { useRolesStore } from '../../src/stores/roles';
 
 export default function ChatScreen() {
   const [input, setInput] = useState('');
   const [streamEnabled, setStreamEnabled] = useState(true);
   const [debugVisible, setDebugVisible] = useState(false);
+  const assistantBufferRef = useRef<string>('');
   const items = useConnectionsStore((s) => s.items);
   const defaultConn = items.find((x) => x.isDefault);
   const chat = useChatStore();
@@ -91,9 +93,23 @@ export default function ChatScreen() {
     };
 
     try {
-      const allMsgs = (latestSession?.messages || session.messages);
+      let allMsgs = (latestSession?.messages || session.messages);
       // Exclude the assistant placeholder itself from the prompt
-      const promptMsgs = allMsgs.filter((_, idx) => idx !== assistantIndex);
+      let promptMsgs = allMsgs.filter((_, idx) => idx !== assistantIndex);
+      // If there is no system message yet, try to inject from the matched role by characterName
+      const hasSysInPrompt = promptMsgs.some((m) => (m as any).is_system);
+      if (!hasSysInPrompt) {
+        try {
+          const rolesState = useRolesStore.getState();
+          const role = rolesState.roles.find((r) => r.name === session.characterName);
+          const sys = role?.system_prompt?.trim();
+          if (sys) {
+            const sysMsg: STMessage = { name: 'System', is_user: false, is_system: true, send_date: Date.now(), mes: sys } as STMessage;
+            promptMsgs = [sysMsg, ...promptMsgs];
+            try { console.log('[Chat] Injected role system prompt', { role: role?.name, sysLen: sys.length }); } catch {}
+          }
+        } catch {}
+      }
       const mapped = promptMsgs.map((m) => ({
         role: (m as any).is_system ? ('system' as const) : (m.is_user ? ('user' as const) : ('assistant' as const)),
         content: m.mes,
@@ -105,14 +121,35 @@ export default function ChatScreen() {
         onError: (e: any) => {
           chat.setStreaming(false);
           const dump = buildErrorDump();
+          try { console.error('[Chat] Request failed', e, '\
+', dump); } catch {}
           chat.appendToMessage(session.id, assistantIndex, `\n[Error] ${String(e)}\n${dump}`);
         },
-  onDebug: (evt: any) => { debugEventsRef.current?.push(evt); },
+  onDebug: (evt: any) => { debugEventsRef.current?.push(evt); try {
+    const safe = (o: any) => { try { return typeof o === 'string' ? o : JSON.stringify(o); } catch { return String(o); } };
+    if (evt.phase === 'error') console.error('[LLM][DEBUG]', evt.provider, evt.phase, evt.url, safe(evt));
+    else console.log('[LLM][DEBUG]', evt.provider, evt.phase, evt.url, safe(evt));
+  } catch {} },
       };
 
-      // Compose provider-agnostic ChatML
+  // Compose provider-agnostic ChatML
       const hasSystem = mapped.some((m) => m.role === 'system');
-      let payload = (hasSystem ? mapped : [{ role: 'system', content: 'You are a helpful assistant.' }, ...mapped]) as Array<{ role: 'system' | 'user' | 'assistant'; content: string }>;
+      // Derive a system prompt from role when missing
+      let derivedSys: string | undefined;
+      if (!hasSystem) {
+        try {
+          const { roles } = useRolesStore.getState();
+          const role = roles.find((r) => r.name === session.characterName);
+          if (role) {
+            const base = (role.system_prompt || '').trim();
+            if (base) derivedSys = base;
+            else if (role.description) derivedSys = `You are ${role.name}. ${role.description}. Stay in character and speak in first person as ${role.name}.`;
+          }
+        } catch {}
+      }
+      if (!hasSystem && !derivedSys) derivedSys = 'You are a helpful assistant.';
+      let payload = (hasSystem ? mapped : [{ role: 'system', content: derivedSys! }, ...mapped]) as Array<{ role: 'system' | 'user' | 'assistant'; content: string }>;
+  try { console.log('[Chat] Selected systemPrompt', { source: hasSystem ? 'existing' : (derivedSys === 'You are a helpful assistant.' ? 'fallback' : 'role'), len: (payload.find(m => m.role === 'system')?.content || '').length }); } catch {}
       // Minimal ST-like merge post-processing
       payload = postProcessPrompt(payload as any, PROMPT_PROCESSING_TYPE.MERGE, {
         charName: session.characterName,
@@ -125,6 +162,7 @@ export default function ChatScreen() {
       // Gemini v1 models don't accept systemInstruction; emulate ST by prepending system text into the first user message
       const provider = defaultConn?.provider;
       if (provider === 'gemini') {
+        // Fold system into first user for Gemini v1
         const sys = payload.find((m) => m.role === 'system')?.content?.trim();
         if (sys) {
           const idx = payload.findIndex((m) => m.role !== 'system');
@@ -136,20 +174,28 @@ export default function ChatScreen() {
           }
           // Remove the system message to avoid being ignored downstream
           payload = payload.filter((m) => m.role !== 'system');
+          try { console.log('[Chat] Gemini folded system into user', { sysLen: sys.length, firstUserLen: (payload[0]?.content || '').length }); } catch {}
         }
       }
+      assistantBufferRef.current = '';
+      try { console.log('[Chat] Sending', { provider, payload }); } catch {}
       if (streamEnabled) {
-        await streamChat({ messages: payload, ...common });
+        await streamChat({
+          messages: payload,
+          ...common,
+          onToken: (t: string) => { assistantBufferRef.current += t; common.onToken?.(t); },
+          onDone: () => { try { console.log('[Chat] Response done', { provider, length: assistantBufferRef.current.length, preview: assistantBufferRef.current.slice(0, 120) }); } catch {} common.onDone?.(); },
+        });
       } else {
         if (provider === 'openai' || provider === 'openrouter') {
-          await nonStreamOpenAIChat({ connectionId: defaultConn.id, messages: payload, ...common });
+          await nonStreamOpenAIChat({ connectionId: defaultConn.id, messages: payload, ...common, onToken: (t) => { assistantBufferRef.current += t; common.onToken?.(t); }, onDone: () => { try { console.log('[Chat] Response done', { provider, length: assistantBufferRef.current.length, preview: assistantBufferRef.current.slice(0, 120) }); } catch {} common.onDone?.(); } });
         } else if (provider === 'claude') {
-          await nonStreamClaudeChat({ connectionId: defaultConn.id, messages: payload, ...common });
+          await nonStreamClaudeChat({ connectionId: defaultConn.id, messages: payload, ...common, onToken: (t) => { assistantBufferRef.current += t; common.onToken?.(t); }, onDone: () => { try { console.log('[Chat] Response done', { provider, length: assistantBufferRef.current.length, preview: assistantBufferRef.current.slice(0, 120) }); } catch {} common.onDone?.(); } });
         } else if (provider === 'gemini') {
-          await nonStreamGeminiChat({ connectionId: defaultConn.id, messages: payload, ...common });
+          await nonStreamGeminiChat({ connectionId: defaultConn.id, messages: payload, ...common, onToken: (t) => { assistantBufferRef.current += t; common.onToken?.(t); }, onDone: () => { try { console.log('[Chat] Response done', { provider, length: assistantBufferRef.current.length, preview: assistantBufferRef.current.slice(0, 120) }); } catch {} common.onDone?.(); } });
         } else {
           // fallback try streaming
-          await streamChat({ messages: payload, ...common });
+          await streamChat({ messages: payload, ...common, onToken: (t: string) => { assistantBufferRef.current += t; common.onToken?.(t); }, onDone: () => { try { console.log('[Chat] Response done', { provider, length: assistantBufferRef.current.length, preview: assistantBufferRef.current.slice(0, 120) }); } catch {} common.onDone?.(); } });
         }
       }
     } finally {
@@ -165,7 +211,7 @@ export default function ChatScreen() {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Text variant="titleLarge">聊天</Text>
+        <Text variant="titleLarge">{session?.title || '聊天'}</Text>
         <IconButton icon={debugVisible ? 'bug-check' : 'bug'} onPress={() => setDebugVisible((v) => !v)} accessibilityLabel="切换调试面板" />
       </View>
       <View style={styles.listContainer}>

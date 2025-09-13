@@ -154,6 +154,8 @@ export async function streamOpenAIChat(opts: {
       onDebug?.({ provider: 'openai', url, phase: 'response', status: res.status, response: respText });
       throw new Error(`HTTP ${res.status}`);
     }
+    // Successful streaming response opened
+    onDebug?.({ provider: 'openai', url, phase: 'response', status: res.status, response: 'SSE stream opened' });
     if (!anyRes.body) {
       // Fallback to XHR progressive streaming
       await streamSSEWithXHR({
@@ -231,6 +233,7 @@ export async function nonStreamOpenAIChat(opts: {
     onDebug?.({ provider: 'openai', url, phase: 'request', request: body });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const json = await res.json();
+    onDebug?.({ provider: 'openai', url, phase: 'response', status: 200, response: json });
     const text = json?.choices?.[0]?.message?.content ?? '';
     if (text) onToken?.(text);
     onDone?.();
@@ -290,6 +293,8 @@ export async function streamClaudeChat(opts: {
       onDebug?.({ provider: 'claude', url, phase: 'response', status: res.status, response: respText });
       throw new Error(`HTTP ${res.status}`);
     }
+    // Successful streaming response opened
+    onDebug?.({ provider: 'claude', url, phase: 'response', status: res.status, response: 'SSE stream opened' });
     if (!anyRes.body) {
       await streamSSEWithXHR({
         url,
@@ -372,6 +377,7 @@ export async function nonStreamClaudeChat(opts: {
     onDebug?.({ provider: 'claude', url, phase: 'request', request: body });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const json = await res.json();
+    onDebug?.({ provider: 'claude', url, phase: 'response', status: 200, response: json });
     // Non-stream response has content blocks
     const text = json?.content?.map((b: any) => b?.text).filter(Boolean).join('') ?? '';
     if (text) onToken?.(text);
