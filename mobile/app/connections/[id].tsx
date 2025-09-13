@@ -42,7 +42,7 @@ export default function EditConnectionScreen() {
         setApiKey(key ?? '');
       }
     })();
-  }, [id]);
+  }, [id, getSecretKey]);
 
   if (!conn) return <View style={styles.container}><Text>未找到连接</Text></View>;
 

@@ -1,113 +1,107 @@
-import { useRef, useState } from 'react';
-import { View, StyleSheet, Platform, ScrollView, NativeSyntheticEvent, NativeScrollEvent } from 'react-native';
-import { Button, Text, TextInput, Divider } from 'react-native-paper';
-import { createAbortController, streamChat } from '../../src/services/llm';
+import React, { useEffect, useMemo, useState } from 'react';
+import { View, StyleSheet } from 'react-native';
+import { Text } from 'react-native-paper';
+import { createAbortController, streamChat, nonStreamOpenAIChat, nonStreamClaudeChat, nonStreamGeminiChat } from '../../src/services/llm';
 import { useConnectionsStore } from '../../src/stores/connections';
+import { STMessage } from '../../src/services/chat-serialization';
+import { scheduleSaveCurrent, useChatStore } from '../../src/stores/chat';
+import MessageList from '../../components/MessageList';
+import ChatInput from '../../components/ChatInput';
 
 export default function ChatScreen() {
-  const [input, setInput] = useState('你好！请用一两句话介绍一下你自己。');
-  const [output, setOutput] = useState('');
-  const [loading, setLoading] = useState(false);
-  const abortRef = useRef<AbortController | null>(null);
+  const [input, setInput] = useState('');
+  const [streamEnabled, setStreamEnabled] = useState(true);
   const items = useConnectionsStore((s) => s.items);
   const defaultConn = items.find((x) => x.isDefault);
-  const [debugLogs, setDebugLogs] = useState<Array<{ provider: string; url: string; phase: string; status?: number; request?: any; response?: any; error?: any }>>([]);
-  const scrollRef = useRef<ScrollView | null>(null);
-  const atBottomRef = useRef(true);
+  const chat = useChatStore();
+  const session = useMemo(() => chat.currentId ? chat.sessions.find(s => s.id === chat.currentId) : undefined, [chat.currentId, chat.sessions]);
 
-  const pushDebug = (d: any) => setDebugLogs((prev) => [...prev, d].slice(-20));
+  useEffect(() => {
+    (async () => {
+      await chat.loadAllSessions();
+      const hasAny = useChatStore.getState().sessions.length > 0;
+      if (!hasAny) await chat.createSession('User', 'Assistant');
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const onSend = async () => {
+    if (!input.trim()) return;
+    if (!session) return;
     if (!defaultConn) {
-      setOutput('请先在左侧“API 连接”里创建并设置一个默认连接');
+      const msg: STMessage = { name: 'System', is_user: false, is_system: true, send_date: Date.now(), mes: '请在左侧 API 连接里创建并设置一个默认连接。' };
+      await chat.addMessage(session.id, msg);
       return;
     }
-    setOutput('');
-    setLoading(true);
-    setDebugLogs([]);
+
+    const userMsg: STMessage = { name: 'User', is_user: true, send_date: Date.now(), mes: input } as STMessage;
+    // Clear input immediately after capturing text
+    setInput('');
+    await chat.addMessage(session.id, userMsg);
+
+    // Append an assistant placeholder, then compute its actual index from the latest store to avoid stale references
+    const assistantMsg: STMessage = { name: 'Assistant', is_user: false, send_date: Date.now(), mes: '' } as STMessage;
+    await chat.addMessage(session.id, assistantMsg);
+    const latest = useChatStore.getState();
+    const latestSession = latest.sessions.find((s) => s.id === session.id);
+    const assistantIndex = latestSession ? latestSession.messages.length - 1 : 0;
+
     const controller = createAbortController();
-    abortRef.current = controller;
+    chat.setAbortController(controller);
+    chat.setStreaming(true);
     try {
-      await streamChat({
-        messages: [
-          { role: 'system', content: 'You are a helpful assistant.' },
-          { role: 'user', content: input },
-        ],
+      const allMsgs = (latestSession?.messages || session.messages);
+      // Exclude the assistant placeholder itself from the prompt
+      const promptMsgs = allMsgs.filter((_, idx) => idx !== assistantIndex);
+      const mapped = promptMsgs.map((m) => ({
+        role: (m as any).is_system ? ('system' as const) : (m.is_user ? ('user' as const) : ('assistant' as const)),
+        content: m.mes,
+      }));
+      const common = {
         controller,
-        onToken: (t) => setOutput((prev) => prev + t),
-        onDone: () => setLoading(false),
-        onError: (e) => {
-          setLoading(false);
-          setOutput(String(e?.message ?? e));
-        },
-        onDebug: (d) => pushDebug(d),
-      });
+        onToken: (t: string) => { chat.appendToMessage(session.id, assistantIndex, t); scheduleSaveCurrent(400); },
+        onDone: () => { chat.setStreaming(false); scheduleSaveCurrent(0); },
+        onError: (e: any) => { chat.setStreaming(false); chat.appendToMessage(session.id, assistantIndex, `\n[Error] ${String(e)}`); },
+      };
+
+      const payload = [{ role: 'system', content: 'You are a helpful assistant.' }, ...mapped] as Array<{ role: 'system' | 'user' | 'assistant'; content: string }>;
+      if (streamEnabled) {
+        await streamChat({ messages: payload, ...common });
+      } else {
+        const provider = defaultConn?.provider;
+        if (provider === 'openai' || provider === 'openrouter') {
+          await nonStreamOpenAIChat({ connectionId: defaultConn.id, messages: payload, ...common });
+        } else if (provider === 'claude') {
+          await nonStreamClaudeChat({ connectionId: defaultConn.id, messages: payload, ...common });
+        } else if (provider === 'gemini') {
+          await nonStreamGeminiChat({ connectionId: defaultConn.id, messages: payload, ...common });
+        } else {
+          // fallback try streaming
+          await streamChat({ messages: payload, ...common });
+        }
+      }
     } finally {
-      abortRef.current = null;
+      chat.setAbortController(null);
     }
   };
 
   const onStop = () => {
-    abortRef.current?.abort();
-    setLoading(false);
-  };
-
-  const handleScroll = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
-    const { contentOffset, contentSize, layoutMeasurement } = e.nativeEvent;
-    const distanceFromBottom = contentSize.height - (contentOffset.y + layoutMeasurement.height);
-    atBottomRef.current = distanceFromBottom < 48; // within 48px considers at bottom
-  };
-
-  const handleContentSizeChange = () => {
-    // Auto-scroll only when streaming且用户当前接近底部
-    if (loading && atBottomRef.current) {
-      scrollRef.current?.scrollToEnd({ animated: true });
-    }
+    chat.stream.abortController?.abort();
+    chat.setStreaming(false);
   };
 
   return (
-    <ScrollView
-      ref={scrollRef}
-      style={{ flex: 1 }}
-      contentContainerStyle={styles.container}
-      onScroll={handleScroll}
-      onContentSizeChange={handleContentSizeChange}
-      scrollEventThrottle={16}
-    >
-      <Text variant="titleLarge">聊天（测试发送）</Text>
-      <TextInput
-        label="你的消息"
-        mode="outlined"
-        value={input}
-        onChangeText={setInput}
-        multiline
-      />
-      <View style={{ flexDirection: 'row', gap: 8 }}>
-        <Button mode="contained" onPress={onSend} disabled={loading}>
-          发送
-        </Button>
-        <Button mode="outlined" onPress={onStop} disabled={!loading}>
-          停止
-        </Button>
+    <View style={styles.container}>
+      <Text variant="titleLarge">聊天</Text>
+      <View style={styles.listContainer}>
+        <MessageList messages={session?.messages || []} userName={session?.userName || 'User'} characterName={session?.characterName || 'Assistant'} streaming={!!chat.stream.streaming} />
       </View>
-      <Text style={{ opacity: 0.7 }}>默认连接：{defaultConn ? `${defaultConn.name} (${defaultConn.provider})` : '未设置'}</Text>
-      <Text selectable style={{ marginTop: 12 }}>{output || '（等待输出）'}</Text>
-      <Divider style={{ marginVertical: 12 }} />
-      <Text variant="titleMedium">调试</Text>
-      {debugLogs.length === 0 ? (
-        <Text style={{ opacity: 0.7 }}>(无)</Text>
-      ) : (
-        debugLogs.map((d, i) => (
-          <Text key={i} selectable style={{ fontFamily: Platform.select({ ios: 'Menlo', android: 'monospace' }), fontSize: 12 }}>
-            {JSON.stringify(d)}
-          </Text>
-        ))
-      )}
-      <View style={{ height: 24 }} />
-    </ScrollView>
+      <ChatInput value={input} onChangeText={setInput} onSend={onSend} onStop={onStop} loading={!!chat.stream.streaming} streamEnabled={streamEnabled} onToggleStream={() => setStreamEnabled((v) => !v)} />
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { padding: 16, paddingBottom: 24, gap: 12 }
+  container: { flex: 1, padding: 12, gap: 8 },
+  listContainer: { flex: 1 },
 });

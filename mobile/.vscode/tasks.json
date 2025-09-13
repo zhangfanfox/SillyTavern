@@ -10,6 +10,17 @@
 				"$tsc"
 			],
 			"group": "build"
+		},
+		{
+			"label": "Expo mobile: start dev server",
+			"type": "shell",
+			"command": "npm run start",
+			"args": [],
+			"isBackground": true,
+			"problemMatcher": [
+				"$eslint - stylish"
+			],
+			"group": "build"
 		}
 	]
 }
