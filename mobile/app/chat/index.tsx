@@ -1,5 +1,5 @@
-import { useRef, useState, useEffect } from 'react';
-import { View, StyleSheet, Platform, ScrollView } from 'react-native';
+import { useRef, useState } from 'react';
+import { View, StyleSheet, Platform, ScrollView, NativeSyntheticEvent, NativeScrollEvent } from 'react-native';
 import { Button, Text, TextInput, Divider } from 'react-native-paper';
 import { createAbortController, streamChat } from '../../src/services/llm';
 import { useConnectionsStore } from '../../src/stores/connections';
@@ -13,6 +13,7 @@ export default function ChatScreen() {
   const defaultConn = items.find((x) => x.isDefault);
   const [debugLogs, setDebugLogs] = useState<Array<{ provider: string; url: string; phase: string; status?: number; request?: any; response?: any; error?: any }>>([]);
   const scrollRef = useRef<ScrollView | null>(null);
+  const atBottomRef = useRef(true);
 
   const pushDebug = (d: any) => setDebugLogs((prev) => [...prev, d].slice(-20));
 
@@ -51,13 +52,28 @@ export default function ChatScreen() {
     setLoading(false);
   };
 
-  // Auto scroll to bottom on new output or logs
-  useEffect(() => {
-    scrollRef.current?.scrollToEnd({ animated: true });
-  }, [output, debugLogs.length]);
+  const handleScroll = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
+    const { contentOffset, contentSize, layoutMeasurement } = e.nativeEvent;
+    const distanceFromBottom = contentSize.height - (contentOffset.y + layoutMeasurement.height);
+    atBottomRef.current = distanceFromBottom < 48; // within 48px considers at bottom
+  };
+
+  const handleContentSizeChange = () => {
+    // Auto-scroll only when streaming且用户当前接近底部
+    if (loading && atBottomRef.current) {
+      scrollRef.current?.scrollToEnd({ animated: true });
+    }
+  };
 
   return (
-    <ScrollView ref={scrollRef} style={{ flex: 1 }} contentContainerStyle={styles.container}>
+    <ScrollView
+      ref={scrollRef}
+      style={{ flex: 1 }}
+      contentContainerStyle={styles.container}
+      onScroll={handleScroll}
+      onContentSizeChange={handleContentSizeChange}
+      scrollEventThrottle={16}
+    >
       <Text variant="titleLarge">聊天（测试发送）</Text>
       <TextInput
         label="你的消息"

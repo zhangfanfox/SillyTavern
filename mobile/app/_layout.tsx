@@ -5,6 +5,7 @@ import { Drawer } from 'expo-router/drawer';
 import { Slot, useNavigation } from 'expo-router';
 import { IconButton, PaperProvider } from 'react-native-paper';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { View } from 'react-native';
 import { useEffect } from 'react';
 import { LogBox } from 'react-native';
 import RightParamsDrawer from '../components/RightParamsDrawer';
@@ -47,18 +48,20 @@ export default function RootLayout() {
   return (
     <SafeAreaProvider>
       <PaperProvider theme={paperTheme}>
-        {/* Left navigation drawer via expo-router */}
-        <Drawer screenOptions={{ headerLeft: HeaderMenuButton, headerRight: HeaderParamsButton }}>
-          {/* Declare key routes to appear in left drawer */}
-          <Drawer.Screen name="index" options={{ title: '主页' }} />
-          <Drawer.Screen name="chat/index" options={{ title: '聊天' }} />
-          <Drawer.Screen name="roles/index" options={{ title: '角色' }} />
-          <Drawer.Screen name="roles/create" options={{ title: '新建角色' }} />
-          <Drawer.Screen name="connections/index" options={{ title: 'API 连接' }} />
-        </Drawer>
+        <View style={{ flex: 1 }}>
+          {/* Left navigation drawer via expo-router */}
+          <Drawer screenOptions={{ headerLeft: HeaderMenuButton, headerRight: HeaderParamsButton }}>
+            {/* Declare key routes to appear in left drawer */}
+            <Drawer.Screen name="index" options={{ title: '主页' }} />
+            <Drawer.Screen name="chat/index" options={{ title: '聊天' }} />
+            <Drawer.Screen name="roles/index" options={{ title: '角色' }} />
+            <Drawer.Screen name="roles/create" options={{ title: '新建角色' }} />
+            <Drawer.Screen name="connections/index" options={{ title: 'API 连接' }} />
+          </Drawer>
 
-        {/* Right side parameters panel overlay */}
-        <RightParamsDrawer />
+          {/* Right side parameters panel overlay */}
+          <RightParamsDrawer />
+        </View>
       </PaperProvider>
     </SafeAreaProvider>
   );

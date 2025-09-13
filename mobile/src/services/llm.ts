@@ -32,7 +32,7 @@ async function streamSSEWithXHR(opts: {
     if (opts.headers) {
       for (const [k, v] of Object.entries(opts.headers)) xhr.setRequestHeader(k, v);
     }
-    // Encourage progressive delivery from proxies
+  // Encourage progressive delivery from proxies
     try { xhr.setRequestHeader('Cache-Control', 'no-cache, no-transform'); } catch {}
     try { xhr.setRequestHeader('Accept', 'text/event-stream'); } catch {}
     const cleanUp = () => {
@@ -47,11 +47,16 @@ async function streamSSEWithXHR(opts: {
         const chunk = resp.slice(lastIndex);
         lastIndex = resp.length;
         buffer += chunk;
-        // Process complete SSE event blocks separated by two newlines
-        let idx: number;
-        while ((idx = buffer.indexOf('\n\n')) !== -1 || (idx = buffer.indexOf('\r\n\r\n')) !== -1) {
-          const block = buffer.slice(0, idx);
-          buffer = buffer.slice(idx + (buffer.startsWith('\r\n') ? 4 : 2));
+        // Process complete SSE event blocks separated by two newlines (handle both \n\n and \r\n\r\n)
+        let sepIdx = -1;
+        while (true) {
+          const lfIdx = buffer.indexOf('\n\n');
+          const crlfIdx = buffer.indexOf('\r\n\r\n');
+          if (lfIdx === -1 && crlfIdx === -1) break;
+          sepIdx = lfIdx !== -1 && (crlfIdx === -1 || lfIdx < crlfIdx) ? lfIdx : crlfIdx;
+          const sepLen = sepIdx === lfIdx ? 2 : 4;
+          const block = buffer.slice(0, sepIdx);
+          buffer = buffer.slice(sepIdx + sepLen);
           const lines = block.split(/\r?\n/);
           for (const line of lines) {
             const trimmed = line.trim();
@@ -121,6 +126,7 @@ export async function streamOpenAIChat(opts: {
   };
 
   try {
+    onDebug?.({ provider: 'openai', url, phase: 'request', request: body });
     const res = await fetch(url, {
       method: 'POST',
       headers: {
@@ -132,7 +138,6 @@ export async function streamOpenAIChat(opts: {
       body: JSON.stringify(body),
       signal: controller.signal,
     });
-    onDebug?.({ provider: 'openai', url, phase: 'request', request: body });
     const anyRes = res as any;
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     if (!anyRes.body) {
@@ -251,6 +256,7 @@ export async function streamClaudeChat(opts: {
   } as any;
 
   try {
+    onDebug?.({ provider: 'claude', url, phase: 'request', request: body });
     const res = await fetch(url, {
       method: 'POST',
       headers: {
@@ -263,7 +269,6 @@ export async function streamClaudeChat(opts: {
       body: JSON.stringify(body),
       signal: controller.signal,
     });
-    onDebug?.({ provider: 'claude', url, phase: 'request', request: body });
     const anyRes = res as any;
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     if (!anyRes.body) {
@@ -628,6 +633,7 @@ export async function streamGeminiChat(opts: {
   if (Object.keys(generationConfig).length > 0) body.generationConfig = generationConfig;
 
   try {
+    onDebug?.({ provider: 'gemini', url, phase: 'request', request: body });
     const res = await fetch(url, {
       method: 'POST',
       headers: {
@@ -638,7 +644,6 @@ export async function streamGeminiChat(opts: {
       body: JSON.stringify(body),
       signal: controller.signal,
     });
-    onDebug?.({ provider: 'gemini', url, phase: 'request', request: body });
     const anyRes = res as any;
     if (!res.ok) {
       let respText: any = undefined;
