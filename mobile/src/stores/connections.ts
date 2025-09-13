@@ -12,6 +12,7 @@ export interface ApiConnectionMeta {
   baseUrl?: string;
   model?: string;
   isDefault?: boolean;
+  isValid?: boolean;
 }
 
 export interface ApiConnectionWithSecret extends ApiConnectionMeta {
@@ -26,9 +27,10 @@ interface ConnectionsState {
   remove: (id: string) => Promise<void>;
   setDefault: (id: string) => void;
   getSecretKey: (id: string) => Promise<string | null>;
+  setValidity: (id: string, valid: boolean) => void;
 }
 
-const SECRET_PREFIX = 'conn-secret:';
+const SECRET_PREFIX = 'conn_secret_';
 
 export const useConnectionsStore = create<ConnectionsState>()(
   persist(
@@ -44,6 +46,7 @@ export const useConnectionsStore = create<ConnectionsState>()(
           baseUrl: c.baseUrl,
           model: c.model,
           isDefault: c.isDefault ?? false,
+          isValid: undefined,
         };
         set((s) => ({ items: [...s.items, meta] }));
       },
@@ -67,6 +70,7 @@ export const useConnectionsStore = create<ConnectionsState>()(
         }));
       },
       getSecretKey: async (id) => getSecret(SECRET_PREFIX + id),
+      setValidity: (id, valid) => set((s) => ({ items: s.items.map((x) => (x.id === id ? { ...x, isValid: valid } : x)) })),
     }),
     {
       name: 'connections-store',

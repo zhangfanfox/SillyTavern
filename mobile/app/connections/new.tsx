@@ -1,9 +1,10 @@
 import { useEffect, useMemo, useState } from 'react';
 import { View, StyleSheet, ScrollView } from 'react-native';
-import { Button, Text, TextInput, RadioButton, Portal, Modal, List } from 'react-native-paper';
+import { Button, Text, TextInput, RadioButton, Portal, Modal, List, HelperText } from 'react-native-paper';
 import { useConnectionsStore, type ProviderId } from '../../src/stores/connections';
 import { getProviderMeta } from '../../src/services/providerMeta';
 import { router } from 'expo-router';
+import { testConnection, testConnectionRaw } from '../../src/services/llm';
 
 function uuid() {
   return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
@@ -35,9 +36,23 @@ export default function NewConnectionScreen() {
     if (m.models?.length) setModel((prev) => (m.models.includes(prev) ? prev : m.models[0]));
   }, [provider, META]);
 
+  const [testing, setTesting] = useState(false);
+  const [lastValid, setLastValid] = useState<boolean | undefined>(undefined);
+
+  const onTest = async (id: string) => {
+    setTesting(true);
+    try {
+      const ok = await testConnectionRaw({ provider, baseUrl, model }, apiKey);
+      setLastValid(ok);
+    } finally {
+      setTesting(false);
+    }
+  };
+
   const onSave = async () => {
     const id = uuid();
     await add({ id, name, provider, apiKey, baseUrl, model, isDefault: true });
+    await onTest(id);
     router.back();
   };
 
@@ -53,6 +68,11 @@ export default function NewConnectionScreen() {
         <View style={styles.row}><RadioButton value="openrouter" /><Text>OpenRouter</Text></View>
       </RadioButton.Group>
       <TextInput label={META[provider].apiKeyLabel} value={apiKey} onChangeText={setApiKey} secureTextEntry mode="outlined" />
+      {lastValid !== undefined && (
+        <HelperText type={lastValid ? 'info' : 'error'}>
+          {lastValid ? '连接有效' : '连接无效，请检查密钥/模型/网络'}
+        </HelperText>
+      )}
       {/* Base URL 不暴露在新建页面，跟随 provider 自动设置（如需修改可到编辑页） */}
   <Text>{getProviderMeta(provider).modelLabel}</Text>
       <Button mode="outlined" onPress={() => setModelPickerOpen(true)}>{model}</Button>
@@ -74,7 +94,10 @@ export default function NewConnectionScreen() {
           <Button style={{ marginTop: 8 }} mode="contained" onPress={() => setModelPickerOpen(false)}>完成</Button>
         </Modal>
       </Portal>
-      <Button mode="contained" onPress={onSave}>保存并设为默认</Button>
+      <View style={{ flexDirection: 'row', gap: 8 }}>
+        <Button mode="contained" onPress={onSave} loading={testing} disabled={testing}>保存并设为默认</Button>
+        <Button mode="outlined" onPress={async () => { await onTest('raw'); }} loading={testing} disabled={testing}>测试</Button>
+      </View>
     </View>
   );
 }

@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react';
-import { View, StyleSheet } from 'react-native';
-import { Button, Text, TextInput } from 'react-native-paper';
+import { View, StyleSheet, Platform } from 'react-native';
+import { Button, Text, TextInput, Divider } from 'react-native-paper';
 import { createAbortController, streamChat } from '../../src/services/llm';
 import { useConnectionsStore } from '../../src/stores/connections';
 
@@ -11,6 +11,9 @@ export default function ChatScreen() {
   const abortRef = useRef<AbortController | null>(null);
   const items = useConnectionsStore((s) => s.items);
   const defaultConn = items.find((x) => x.isDefault);
+  const [debugLogs, setDebugLogs] = useState<Array<{ provider: string; url: string; phase: string; status?: number; request?: any; response?: any; error?: any }>>([]);
+
+  const pushDebug = (d: any) => setDebugLogs((prev) => [...prev, d].slice(-20));
 
   const onSend = async () => {
     if (!defaultConn) {
@@ -19,6 +22,7 @@ export default function ChatScreen() {
     }
     setOutput('');
     setLoading(true);
+    setDebugLogs([]);
     const controller = createAbortController();
     abortRef.current = controller;
     try {
@@ -34,6 +38,7 @@ export default function ChatScreen() {
           setLoading(false);
           setOutput(String(e?.message ?? e));
         },
+        onDebug: (d) => pushDebug(d),
       });
     } finally {
       abortRef.current = null;
@@ -65,6 +70,17 @@ export default function ChatScreen() {
       </View>
       <Text style={{ opacity: 0.7 }}>默认连接：{defaultConn ? `${defaultConn.name} (${defaultConn.provider})` : '未设置'}</Text>
       <Text selectable style={{ marginTop: 12 }}>{output || '（等待输出）'}</Text>
+      <Divider style={{ marginVertical: 12 }} />
+      <Text variant="titleMedium">调试</Text>
+      {debugLogs.length === 0 ? (
+        <Text style={{ opacity: 0.7 }}>(无)</Text>
+      ) : (
+        debugLogs.map((d, i) => (
+          <Text key={i} selectable style={{ fontFamily: Platform.select({ ios: 'Menlo', android: 'monospace' }), fontSize: 12 }}>
+            {JSON.stringify(d)}
+          </Text>
+        ))
+      )}
     </View>
   );
 }
