@@ -1,16 +1,19 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { View, StyleSheet } from 'react-native';
-import { Text } from 'react-native-paper';
+import { IconButton, Text } from 'react-native-paper';
 import { createAbortController, streamChat, nonStreamOpenAIChat, nonStreamClaudeChat, nonStreamGeminiChat } from '../../src/services/llm';
 import { useConnectionsStore } from '../../src/stores/connections';
 import { STMessage } from '../../src/services/chat-serialization';
 import { scheduleSaveCurrent, useChatStore } from '../../src/stores/chat';
 import MessageList from '../../components/MessageList';
 import ChatInput from '../../components/ChatInput';
+import DraggableDebugPanel from '../../components/DraggableDebugPanel';
+import { postProcessPrompt, PROMPT_PROCESSING_TYPE } from '../../src/services/prompt-converters';
 
 export default function ChatScreen() {
   const [input, setInput] = useState('');
   const [streamEnabled, setStreamEnabled] = useState(true);
+  const [debugVisible, setDebugVisible] = useState(false);
   const items = useConnectionsStore((s) => s.items);
   const defaultConn = items.find((x) => x.isDefault);
   const chat = useChatStore();
@@ -104,14 +107,40 @@ export default function ChatScreen() {
           const dump = buildErrorDump();
           chat.appendToMessage(session.id, assistantIndex, `\n[Error] ${String(e)}\n${dump}`);
         },
-        onDebug: (evt) => { debugEventsRef.current?.push(evt); },
+  onDebug: (evt: any) => { debugEventsRef.current?.push(evt); },
       };
 
-      const payload = [{ role: 'system', content: 'You are a helpful assistant.' }, ...mapped] as Array<{ role: 'system' | 'user' | 'assistant'; content: string }>;
+      // Compose provider-agnostic ChatML
+      const hasSystem = mapped.some((m) => m.role === 'system');
+      let payload = (hasSystem ? mapped : [{ role: 'system', content: 'You are a helpful assistant.' }, ...mapped]) as Array<{ role: 'system' | 'user' | 'assistant'; content: string }>;
+      // Minimal ST-like merge post-processing
+      payload = postProcessPrompt(payload as any, PROMPT_PROCESSING_TYPE.MERGE, {
+        charName: session.characterName,
+        userName: session.userName,
+        groupNames: [],
+        startsWithGroupName: () => false,
+      }) as any;
+
+      // Provider-specific pre-adjustments:
+      // Gemini v1 models don't accept systemInstruction; emulate ST by prepending system text into the first user message
+      const provider = defaultConn?.provider;
+      if (provider === 'gemini') {
+        const sys = payload.find((m) => m.role === 'system')?.content?.trim();
+        if (sys) {
+          const idx = payload.findIndex((m) => m.role !== 'system');
+          if (idx >= 0) {
+            const first = payload[idx];
+            const joined = first.content ? `${sys}\n\n${first.content}` : sys;
+            payload = [...payload];
+            payload[idx] = { ...first, content: joined } as any;
+          }
+          // Remove the system message to avoid being ignored downstream
+          payload = payload.filter((m) => m.role !== 'system');
+        }
+      }
       if (streamEnabled) {
         await streamChat({ messages: payload, ...common });
       } else {
-        const provider = defaultConn?.provider;
         if (provider === 'openai' || provider === 'openrouter') {
           await nonStreamOpenAIChat({ connectionId: defaultConn.id, messages: payload, ...common });
         } else if (provider === 'claude') {
@@ -135,16 +164,29 @@ export default function ChatScreen() {
 
   return (
     <View style={styles.container}>
-      <Text variant="titleLarge">聊天</Text>
+      <View style={styles.header}>
+        <Text variant="titleLarge">聊天</Text>
+        <IconButton icon={debugVisible ? 'bug-check' : 'bug'} onPress={() => setDebugVisible((v) => !v)} accessibilityLabel="切换调试面板" />
+      </View>
       <View style={styles.listContainer}>
         <MessageList messages={session?.messages || []} userName={session?.userName || 'User'} characterName={session?.characterName || 'Assistant'} streaming={!!chat.stream.streaming} />
       </View>
       <ChatInput value={input} onChangeText={setInput} onSend={onSend} onStop={onStop} loading={!!chat.stream.streaming} streamEnabled={streamEnabled} onToggleStream={() => setStreamEnabled((v) => !v)} />
+      <DraggableDebugPanel visible={debugVisible} onClose={() => setDebugVisible(false)} content={(function () {
+        const arr = debugEventsRef.current || [];
+        const safe = (o: any) => { try { return typeof o === 'string' ? o : JSON.stringify(o, null, 2); } catch { return String(o); } };
+        return arr.map((e) => `# ${e.phase.toUpperCase()} - ${e.provider}\nURL: ${e.url}\n` +
+          (e.request ? `Request:\n${safe(e.request)}\n` : '') +
+          (e.status !== undefined ? `Status: ${e.status}\n` : '') +
+          (e.response !== undefined ? `Response:\n${safe(e.response)}\n` : '') +
+          (e.error ? `Error:\n${safe(e.error)}\n` : '')).join('\n');
+      })()} />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1, padding: 12, gap: 8 },
+  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   listContainer: { flex: 1 },
 });

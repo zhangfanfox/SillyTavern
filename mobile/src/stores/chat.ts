@@ -37,6 +37,7 @@ type ChatState = {
   stream: StreamState;
   // actions
   createSession: (userName: string, characterName: string, title?: string) => Promise<Session>;
+  createSessionFromRole: (role: { name: string; avatar?: string; system_prompt?: string }, userName?: string) => Promise<Session>;
   loadSession: (id: string) => Promise<Session | null>;
   addMessage: (id: string, msg: STMessage) => Promise<void>;
   patchMessage: (id: string, index: number, patch: Partial<STMessage>) => void;
@@ -77,6 +78,22 @@ export const useChatStore = create<ChatState>()(
         const filePath = `${CHATS_DIR}${encodeURIComponent(id)}.jsonl`;
         const integrity = createEmptySTChat(userName, characterName).header.chat_metadata.integrity || '';
         const session: Session = { id, title: title || id, userName, characterName, createdAt: humanizedISO8601DateTime(), filePath, integrity, messages: [] };
+        set((s) => ({ sessions: [session, ...s.sessions].slice(0, 5), currentId: id }));
+        await saveSessionToDisk(session);
+        return session;
+      },
+      createSessionFromRole: async (role, userName = 'User') => {
+        const characterName = role.name || 'Assistant';
+        const id = `${characterName} - ${humanizedISO8601DateTime()}`;
+        const filePath = `${CHATS_DIR}${encodeURIComponent(id)}.jsonl`;
+        const integrity = createEmptySTChat(userName, characterName).header.chat_metadata.integrity || '';
+        const session: Session = { id, title: id, userName, characterName, avatar: role.avatar, createdAt: humanizedISO8601DateTime(), filePath, integrity, messages: [] } as Session;
+        // Inject system prompt if provided
+        const sys = (role.system_prompt || '').trim();
+        if (sys) {
+          const sysMsg: STMessage = { name: 'System', is_user: false, is_system: true, send_date: Date.now(), mes: sys } as STMessage;
+          session.messages = [sysMsg];
+        }
         set((s) => ({ sessions: [session, ...s.sessions].slice(0, 5), currentId: id }));
         await saveSessionToDisk(session);
         return session;

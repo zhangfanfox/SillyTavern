@@ -1,29 +1,41 @@
 import { View, StyleSheet } from 'react-native';
 import { Button, IconButton, List, Text } from 'react-native-paper';
-import { Link } from 'expo-router';
+import { Link, router } from 'expo-router';
 import { useEffect } from 'react';
 import { useRolesStore } from '../../src/stores/roles';
+import { useChatStore } from '../../src/stores/chat';
+
+function RoleActions({ onStart, onDelete }: { onStart: () => void; onDelete: () => void }) {
+  return (
+    <View style={styles.rowCenter}>
+      <Button mode="text" onPress={onStart} accessibilityLabel="开始聊天">开始聊天</Button>
+      <IconButton icon="delete" onPress={onDelete} accessibilityLabel="删除角色" />
+    </View>
+  );
+}
 
 export default function RolesScreen() {
   const { roles, loadAllRoles, deleteRole } = useRolesStore();
+  const chat = useChatStore();
   useEffect(() => { loadAllRoles(); }, [loadAllRoles]);
   return (
     <View style={styles.container}>
       <Text variant="titleLarge">角色</Text>
       <Text>列出本地角色，可以新建/导入。</Text>
       <View style={styles.flex1}>
-        {roles.map((r) => (
-          <List.Item
-            key={r.id}
-            title={r.name}
-            description={r.description}
-            right={() => (
-              <View style={styles.rowCenter}>
-                <IconButton icon="delete" onPress={() => deleteRole(r.id)} accessibilityLabel="删除角色" />
-              </View>
-            )}
-          />
-        ))}
+        {roles.map((r) => {
+          const onStart = async () => {
+            await chat.createSessionFromRole({ name: r.name, avatar: r.avatar, system_prompt: r.system_prompt });
+            router.push('/chat');
+          };
+          const onDelete = () => deleteRole(r.id);
+          return (
+            <View key={r.id} style={styles.roleItem}>
+              <List.Item title={r.name} description={r.description} />
+              <RoleActions onStart={onStart} onDelete={onDelete} />
+            </View>
+          );
+        })}
         {roles.length === 0 && <Text style={styles.empty}>暂无角色</Text>}
       </View>
       <Link href="/roles/create" asChild>
@@ -38,4 +50,5 @@ const styles = StyleSheet.create({
   flex1: { flex: 1 },
   rowCenter: { flexDirection: 'row', alignItems: 'center' },
   empty: { opacity: 0.6 },
+  roleItem: { marginBottom: 8, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: '#ddd' },
 });
