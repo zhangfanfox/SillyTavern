@@ -1,34 +1,44 @@
 import React, { useState } from 'react';
 import { View, StyleSheet, ScrollView } from 'react-native';
-import { Button, Text, TextInput, HelperText } from 'react-native-paper';
+import { Button, Text, TextInput, HelperText, Snackbar } from 'react-native-paper';
 import { useRolesStore } from '../../src/stores/roles';
 
 export default function RoleImportScreen() {
   const [url, setUrl] = useState('');
   const [json, setJson] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
   const importFromURL = useRolesStore((s) => s.importRoleFromURL);
   const importFromJSON = useRolesStore((s) => s.importRoleFromJSON);
   const jsonPlaceholder = '{\n  "name": "..."\n}';
 
   const onImportURL = async () => {
     setError(null);
+    setSuccess(null);
     try {
       if (!url.trim()) return;
-      await importFromURL(url.trim());
+      console.info('[ImportScreen] Importing from URL:', url.trim());
+      const role = await importFromURL(url.trim());
+      console.info('[ImportScreen] Import success, role:', role?.name);
       setUrl('');
+      setSuccess(`导入成功：${role?.name ?? '角色'}`);
     } catch (e: any) {
+      console.error('[ImportScreen] Import URL failed', e);
       setError(String(e?.message || e));
     }
   };
 
   const onImportJSON = async () => {
     setError(null);
+    setSuccess(null);
     try {
       if (!json.trim()) return;
-      await importFromJSON(json.trim());
+      console.info('[ImportScreen] Importing from JSON');
+      const role = await importFromJSON(json.trim());
       setJson('');
+      setSuccess(`导入成功：${role?.name ?? '角色'}`);
     } catch (e: any) {
+      console.error('[ImportScreen] Import JSON failed', e);
       setError(String(e?.message || e));
     }
   };
@@ -52,6 +62,7 @@ export default function RoleImportScreen() {
           <HelperText type="error" visible={!!error}>{error}</HelperText>
         </View>
       )}
+      <Snackbar visible={!!success} onDismiss={() => setSuccess(null)} duration={4000}>{success}</Snackbar>
     </ScrollView>
   );
 }

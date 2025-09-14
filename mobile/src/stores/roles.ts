@@ -172,7 +172,12 @@ export const useRolesStore = create<RoleState>()(
         set({ roles: rest, currentId: rest[0]?.id });
       },
       importRoleFromJSON: async (text) => {
+        console.info('[roles.store] importRoleFromJSON start');
         const p: ImportedRole = parseGenericJSON(text);
+        if (!p?.name && !p?.description) {
+          console.error('[roles.store] Parsed empty role from JSON');
+          throw new Error('解析失败：未找到角色信息');
+        }
         const role = await get().createRole({
           name: p.name,
           avatar: p.avatar,
@@ -188,10 +193,16 @@ export const useRolesStore = create<RoleState>()(
           extra: p.extra,
           raw: p.raw,
         } as Omit<STRole, 'id' | 'filePath' | 'createdAt'>);
+        console.info('[roles.store] importRoleFromJSON success ->', role.name);
         return role;
       },
       importRoleFromURL: async (url) => {
+        console.info('[roles.store] importRoleFromURL start', url);
         const p = await parseRoleFromURL(url);
+        if (!p?.name && !p?.description) {
+          console.error('[roles.store] Parsed empty role from URL');
+          throw new Error('解析失败：未找到角色信息');
+        }
         const role = await get().createRole({
           name: p.name,
           avatar: p.avatar,
@@ -207,6 +218,7 @@ export const useRolesStore = create<RoleState>()(
           extra: p.extra,
           raw: p.raw,
         } as Omit<STRole, 'id' | 'filePath' | 'createdAt'>);
+        console.info('[roles.store] importRoleFromURL success ->', role.name);
         return role;
       },
     }),

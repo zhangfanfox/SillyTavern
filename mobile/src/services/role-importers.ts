@@ -1,3 +1,4 @@
+import { Buffer } from 'buffer';
 export type ImportedRole = {
   name: string;
   avatar?: string;
@@ -23,6 +24,20 @@ async function fetchText(url: string): Promise<string> {
   } catch (e) {
     throw e;
   }
+}
+
+// Helper: fetch ArrayBuffer (for PNG and binary)
+async function fetchArrayBuffer(url: string, init?: any): Promise<ArrayBuffer> {
+  const res = await (globalThis.fetch as any)(url, init);
+  if (!res.ok) {
+    const text = await safeReadText(res);
+    throw new Error(`HTTP ${res.status} ${res.statusText} ${text ? `- ${text}` : ''}`);
+  }
+  return await res.arrayBuffer();
+}
+
+async function safeReadText(res: any): Promise<string | null> {
+  try { return await res.text(); } catch { return null; }
 }
 
 // Generic JSON card (SillyTavern v2/v3/plain)
@@ -63,6 +78,79 @@ export function parseRoleFromJSON(text: string): ImportedRole {
     extra: json.extra ?? undefined,
     raw: json,
   };
+}
+
+// Parse character card JSON from a PNG or JSON buffer
+function parseCharacterCardFromBuffer(buf: ArrayBuffer): string {
+  const u8 = new Uint8Array(buf);
+  // PNG signature: 89 50 4E 47 0D 0A 1A 0A
+  const isPng = u8.length >= 8 && u8[0] === 0x89 && u8[1] === 0x50 && u8[2] === 0x4e && u8[3] === 0x47 && u8[4] === 0x0d && u8[5] === 0x0a && u8[6] === 0x1a && u8[7] === 0x0a;
+  if (!isPng) {
+    // Try text decode as JSON
+    try {
+      const text = Buffer.from(u8).toString('utf-8');
+      JSON.parse(text); // validate
+      return text;
+    } catch (e) {
+      console.error('[role-importers] Not PNG and not JSON text');
+      throw new Error('Unsupported content format');
+    }
+  }
+  // Iterate PNG chunks
+  let offset = 8; // after signature
+  type TextChunk = { keyword: string; text: string };
+  const textChunks: TextChunk[] = [];
+  while (offset + 8 <= u8.length) {
+  const dv = new DataView(u8.buffer, u8.byteOffset, u8.byteLength);
+  const length = dv.getUint32(offset, false /* big-endian */); offset += 4;
+    if (offset + 4 > u8.length) break;
+    const type = String.fromCharCode(u8[offset], u8[offset + 1], u8[offset + 2], u8[offset + 3]);
+    offset += 4;
+    if (offset + length + 4 > u8.length) break; // data + CRC
+    if (type === 'tEXt') {
+      const data = u8.subarray(offset, offset + length);
+      const nullIdx = data.indexOf(0x00);
+      let keyword = '';
+      let text = '';
+      if (nullIdx >= 0) {
+        keyword = asciiDecode(data.subarray(0, nullIdx));
+        text = asciiDecode(data.subarray(nullIdx + 1));
+      } else {
+        // No separator; treat all as text
+        text = asciiDecode(data);
+      }
+      textChunks.push({ keyword: keyword.toLowerCase(), text });
+    }
+    offset += length; // skip data
+    offset += 4; // skip CRC
+    if (type === 'IEND') break;
+  }
+  const ccv3 = textChunks.find((c) => c.keyword === 'ccv3');
+  const chara = textChunks.find((c) => c.keyword === 'chara');
+  const encoded = (ccv3?.text || chara?.text);
+  if (!encoded) {
+    console.error('[role-importers] PNG has no ccv3/chara tEXt chunks');
+    throw new Error('No character data in PNG');
+  }
+  try {
+    const jsonText = base64ToUtf8(encoded);
+    JSON.parse(jsonText); // validate
+    return jsonText;
+  } catch (e) {
+    console.error('[role-importers] Failed to decode base64 JSON from PNG tEXt', e);
+    throw new Error('Bad character data in PNG');
+  }
+}
+
+function asciiDecode(arr: Uint8Array): string {
+  let s = '';
+  for (let i = 0; i < arr.length; i++) s += String.fromCharCode(arr[i]);
+  return s;
+}
+
+function base64ToUtf8(b64: string): string {
+  // Prefer Buffer which is available via react-native 'buffer' polyfill
+  return Buffer.from(b64, 'base64').toString('utf-8');
 }
 
 // Try to parse JanitorAI HTML
@@ -139,20 +227,62 @@ function decodeHTMLEntities(s: string): string {
 }
 
 export async function parseRoleFromURL(url: string): Promise<ImportedRole> {
+  console.info('[role-importers] parseRoleFromURL start', url);
   const host = (() => {
     try {
       const m = String(url).replace(/^[a-zA-Z]+:\/\//, '').split('/')[0] || '';
       return m.toLowerCase();
     } catch { return ''; }
   })();
-  const html = await fetchText(url);
-  // Platform-specific strategies
-  if (host.includes('janitorai.com')) {
-    const r = parseJanitorAI(html);
-    if (r) return r;
+  // JanitorAI: prefer API path (like web)
+  if (host.includes('janitorai')) {
+    const uuid = getUuidFromUrl(url);
+    console.info('[role-importers] JanitorAI detected, uuid:', uuid);
+    if (!uuid) {
+      console.warn('[role-importers] No UUID in URL, attempting HTML scrape fallback');
+      const html = await fetchText(url);
+      const scraped = parseJanitorAI(html);
+      if (scraped) return scraped;
+      throw new Error('无法从链接解析出角色 UUID');
+    }
+    try {
+      // 1) Ask Janny API for download URL
+      const apiUrl = 'https://api.jannyai.com/api/v1/download';
+      console.info('[role-importers] POST', apiUrl);
+      const apiRes = await (globalThis.fetch as any)(apiUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ characterId: uuid }),
+      });
+      if (!apiRes.ok) {
+        const t = await safeReadText(apiRes);
+        console.error('[role-importers] Janny API failed', apiRes.status, t);
+        throw new Error(`Janny API 错误: ${apiRes.status}`);
+      }
+      const apiJson = await apiRes.json();
+      const downloadUrl = apiJson?.downloadUrl;
+      if (!downloadUrl) {
+        console.error('[role-importers] Janny API no downloadUrl', apiJson);
+        throw new Error('Janny API 未返回下载地址');
+      }
+      console.info('[role-importers] Downloading card', downloadUrl);
+      const buf = await fetchArrayBuffer(downloadUrl);
+      console.info('[role-importers] Downloaded bytes', (buf as any).byteLength || 0);
+      const jsonText = parseCharacterCardFromBuffer(buf);
+      const role = parseRoleFromJSON(jsonText);
+      console.info('[role-importers] Parsed role name:', role.name);
+      return role;
+    } catch (e: any) {
+      console.error('[role-importers] JanitorAI import failed', e);
+      throw e;
+    }
   }
-  // More platforms can be added similarly with their HTML/json embedded structures.
-  // Generic fallback: try to find JSON-LD and og: tags
+  // Fallback: fetch page and scrape generic metadata or JSON-LD
+  const html = await fetchText(url);
+  // HTML-based strategies
+  const r = parseJanitorAI(html);
+  if (r) return r;
+  // Generic JSON-LD
   const ldjsonMatches = Array.from(html.matchAll(/<script[^>]*type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi));
   for (const m of ldjsonMatches) {
     try {
@@ -171,6 +301,7 @@ export async function parseRoleFromURL(url: string): Promise<ImportedRole> {
       }
     } catch {}
   }
+  // Meta tags fallback
   const titleMatch = html.match(/<meta[^>]+property=["']og:title["'][^>]+content=["']([^"']+)/i) || html.match(/<title>([^<]+)/i);
   const descMatch = html.match(/<meta[^>]+property=["']og:description["'][^>]+content=["']([^"']+)/i);
   const imgMatch = html.match(/<meta[^>]+property=["']og:image["'][^>]+content=["']([^"']+)/i);
@@ -178,4 +309,10 @@ export async function parseRoleFromURL(url: string): Promise<ImportedRole> {
   const description = descMatch ? decodeHTMLEntities(descMatch[1]) : '';
   const avatar = imgMatch ? decodeHTMLEntities(imgMatch[1]) : undefined;
   return { name, description, avatar, system_prompt: undefined, raw: { source: 'generic-meta' } };
+}
+
+function getUuidFromUrl(u: string): string | null {
+  const uuidRegex = /[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}/i;
+  const m = u.match(uuidRegex);
+  return m ? m[0] : null;
 }

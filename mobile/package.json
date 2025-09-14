@@ -11,6 +11,7 @@
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
     "test:serde": "tsx scripts/test-serialization.ts",
+    "test:importer": "tsx scripts/test-role-importer.ts",
     "i": "npm install --legacy-peer-deps"
   },
   "dependencies": {
