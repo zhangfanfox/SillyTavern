@@ -121,8 +121,8 @@ export async function streamOpenAIChat(opts: {
 
   // Resolve connection
   const { items, getSecretKey } = useConnectionsStore.getState();
-  const meta = items.find((x) => x.id === connectionId) ?? items.find((x) => x.isDefault);
-  if (!meta) throw new Error('No default API connection configured');
+  const meta = items.find((x) => x.id === connectionId) ?? items.find((x) => x.id === useConnectionsStore.getState().currentId) ?? items[0];
+  if (!meta) throw new Error('No API connection selected');
   const apiKey = await getSecretKey(meta.id);
   if (!apiKey) throw new Error('API key missing for selected connection');
 
@@ -221,8 +221,8 @@ export async function nonStreamOpenAIChat(opts: {
   const { connectionId, messages, params, onToken, onDone, onError, onDebug } = opts;
   const controller = opts.controller ?? new AbortController();
   const { items, getSecretKey } = useConnectionsStore.getState();
-  const meta = items.find((x) => x.id === connectionId) ?? items.find((x) => x.isDefault);
-  if (!meta) throw new Error('No default API connection configured');
+  const meta = items.find((x) => x.id === connectionId) ?? items.find((x) => x.id === useConnectionsStore.getState().currentId) ?? items[0];
+  if (!meta) throw new Error('No API connection selected');
   const apiKey = await getSecretKey(meta.id);
   if (!apiKey) throw new Error('API key missing for selected connection');
 
@@ -252,8 +252,8 @@ export async function streamClaudeChat(opts: {
   const controller = opts.controller ?? new AbortController();
 
   const { items, getSecretKey } = useConnectionsStore.getState();
-  const meta = items.find((x) => x.id === connectionId) ?? items.find((x) => x.isDefault);
-  if (!meta) throw new Error('No default API connection configured');
+  const meta = items.find((x) => x.id === connectionId) ?? items.find((x) => x.id === useConnectionsStore.getState().currentId) ?? items[0];
+  if (!meta) throw new Error('No API connection selected');
   const apiKey = await getSecretKey(meta.id);
   if (!apiKey) throw new Error('API key missing for selected connection');
 
@@ -364,8 +364,8 @@ export async function nonStreamClaudeChat(opts: {
   const { connectionId, messages, params, onToken, onDone, onError, onDebug } = opts;
   const controller = opts.controller ?? new AbortController();
   const { items, getSecretKey } = useConnectionsStore.getState();
-  const meta = items.find((x) => x.id === connectionId) ?? items.find((x) => x.isDefault);
-  if (!meta) throw new Error('No default API connection configured');
+  const meta = items.find((x) => x.id === connectionId) ?? items.find((x) => x.id === useConnectionsStore.getState().currentId) ?? items[0];
+  if (!meta) throw new Error('No API connection selected');
   const apiKey = await getSecretKey(meta.id);
   if (!apiKey) throw new Error('API key missing for selected connection');
   const url = (meta.baseUrl ?? 'https://api.anthropic.com') + '/v1/messages';
@@ -395,8 +395,8 @@ export async function streamChat(opts: {
   const { items } = useConnectionsStore.getState();
   const meta = opts.connectionId
     ? items.find((x) => x.id === opts.connectionId)
-    : items.find((x) => x.isDefault);
-  if (!meta) throw new Error('No default API connection configured');
+    : items.find((x) => x.id === useConnectionsStore.getState().currentId) ?? items[0];
+  if (!meta) throw new Error('No API connection selected');
 
   const params = useParamsStore.getState().get(meta.id) ?? {};
 
@@ -422,8 +422,8 @@ export async function streamChat(opts: {
 // Quick connectivity test, similar to web's "连接/发送测试消息" idea. Returns boolean and updates validity flag in store.
 export async function testConnection(connectionId?: string, opts?: { onDebug?: (e: { provider: string; url: string; phase: 'request' | 'response' | 'error'; request?: any; response?: any; status?: number; error?: any }) => void }): Promise<boolean> {
   const { items, getSecretKey, setValidity } = useConnectionsStore.getState();
-  const meta = connectionId ? items.find((x) => x.id === connectionId) : items.find((x) => x.isDefault);
-  if (!meta) throw new Error('No default API connection configured');
+  const meta = connectionId ? items.find((x) => x.id === connectionId) : items.find((x) => x.id === useConnectionsStore.getState().currentId) ?? items[0];
+  if (!meta) throw new Error('No API connection selected');
   const apiKey = await getSecretKey(meta.id);
   if (!apiKey) {
     setValidity(meta.id, false);
@@ -625,8 +625,8 @@ export async function streamGeminiChat(opts: {
   const controller = opts.controller ?? new AbortController();
 
   const { items, getSecretKey } = useConnectionsStore.getState();
-  const meta = items.find((x) => x.id === connectionId) ?? items.find((x) => x.isDefault);
-  if (!meta) throw new Error('No default API connection configured');
+  const meta = items.find((x) => x.id === connectionId) ?? items.find((x) => x.id === useConnectionsStore.getState().currentId) ?? items[0];
+  if (!meta) throw new Error('No API connection selected');
   const apiKey = await getSecretKey(meta.id);
   if (!apiKey) throw new Error('API key missing for selected connection');
 
@@ -764,8 +764,8 @@ export async function nonStreamGeminiChat(opts: {
   const { connectionId, messages, params, onToken, onDone, onError, onDebug } = opts;
   const controller = opts.controller ?? new AbortController();
   const { items, getSecretKey } = useConnectionsStore.getState();
-  const meta = items.find((x) => x.id === connectionId) ?? items.find((x) => x.isDefault);
-  if (!meta) throw new Error('No default API connection configured');
+  const meta = items.find((x) => x.id === connectionId) ?? items.find((x) => x.id === useConnectionsStore.getState().currentId) ?? items[0];
+  if (!meta) throw new Error('No API connection selected');
   const apiKey = await getSecretKey(meta.id);
   if (!apiKey) throw new Error('API key missing for selected connection');
 

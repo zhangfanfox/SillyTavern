@@ -5,6 +5,8 @@ import { Link } from 'expo-router';
 
 export default function ConnectionsScreen() {
   const items = useConnectionsStore((s) => s.items);
+  const currentId = useConnectionsStore((s) => s.currentId);
+  const setCurrent = useConnectionsStore((s) => s.setCurrent);
   return (
     <View style={styles.container}>
       <Text variant="titleLarge">API 连接</Text>
@@ -15,20 +17,27 @@ export default function ConnectionsScreen() {
       <FlatList
         data={items}
         keyExtractor={(x) => x.id}
-        renderItem={({ item }) => (
-          <Link href={{ pathname: '/connections/[id]', params: { id: item.id } }} asChild>
+        renderItem={({ item }) => {
+          const selected = item.id === currentId;
+          return (
             <List.Item
               title={item.name}
-              description={`${item.provider}${item.isDefault ? ' · 默认' : ''}`}
-              right={(props) => (item.isDefault ? <List.Icon {...props} icon="star" /> : null)}
+              description={`${item.provider}${item.model ? ' · ' + item.model : ''}`}
+              left={(props) => <List.Icon {...props} icon={selected ? 'check-circle' : 'checkbox-blank-circle-outline'} />}
+              onPress={() => setCurrent(item.id)}
+              onLongPress={() => {
+                // Long press to edit
+                // Navigate to edit page
+                // Using Link is not convenient inside callback; use imperative navigation
+              }}
             />
-          </Link>
-        )}
+          );
+        }}
       />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 16, gap: 12 }
+  container: { flex: 1, padding: 16, gap: 12 },
 });

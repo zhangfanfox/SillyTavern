@@ -20,8 +20,9 @@ export default function ChatScreen() {
   const [paramsVisible, setParamsVisible] = useState(false);
   const assistantBufferRef = useRef<string>('');
   const items = useConnectionsStore((s) => s.items);
-  const defaultConn = items.find((x) => x.isDefault);
-  const selectedParams = useParamsStore((s) => (defaultConn ? s.get(defaultConn.id) : undefined)) || {};
+  const currentConnId = useConnectionsStore((s) => s.currentId);
+  const selectedConn = useMemo(() => items.find((x) => x.id === currentConnId) || items[0], [items, currentConnId]);
+  const selectedParams = useParamsStore((s) => (selectedConn ? s.get(selectedConn.id) : undefined)) || {};
   const chat = useChatStore();
   const session = useMemo(() => chat.currentId ? chat.sessions.find(s => s.id === chat.currentId) : undefined, [chat.currentId, chat.sessions]);
   const rolesList = useRolesStore((s) => s.roles);
@@ -43,8 +44,8 @@ export default function ChatScreen() {
   const onSend = async () => {
     if (!input.trim()) return;
     if (!session) return;
-    if (!defaultConn) {
-      const msg: STMessage = { name: 'System', is_user: false, is_system: true, send_date: Date.now(), mes: '请在左侧 API 连接里创建并设置一个默认连接。' };
+    if (!selectedConn) {
+      const msg: STMessage = { name: 'System', is_user: false, is_system: true, send_date: Date.now(), mes: '请在左侧「API 连接」里创建一个连接并勾选使用。' };
       await chat.addMessage(session.id, msg);
       return;
     }
@@ -177,7 +178,7 @@ export default function ChatScreen() {
 
       // Provider-specific pre-adjustments:
       // Gemini v1 models don't accept systemInstruction; emulate ST by prepending system text into the first user message
-      const provider = defaultConn?.provider;
+  const provider = selectedConn?.provider;
       if (provider === 'gemini') {
         // Fold system into first user for Gemini v1
         const sys = payload.find((m) => m.role === 'system')?.content?.trim();
@@ -198,6 +199,7 @@ export default function ChatScreen() {
       try { console.log('[Chat] Sending', { provider, payload }); } catch {}
       if (streamEnabled) {
         await streamChat({
+          connectionId: selectedConn.id,
           messages: payload,
           ...common,
           onToken: (t: string) => { assistantBufferRef.current += t; common.onToken?.(t); },
@@ -205,14 +207,14 @@ export default function ChatScreen() {
         });
       } else {
         if (provider === 'openai' || provider === 'openrouter') {
-          await nonStreamOpenAIChat({ connectionId: defaultConn.id, messages: payload, ...common, onToken: (t) => { assistantBufferRef.current += t; common.onToken?.(t); }, onDone: () => { try { console.log('[Chat] Response done', { provider, length: assistantBufferRef.current.length, preview: assistantBufferRef.current.slice(0, 120) }); } catch {} common.onDone?.(); } });
+          await nonStreamOpenAIChat({ connectionId: selectedConn.id, messages: payload, ...common, onToken: (t) => { assistantBufferRef.current += t; common.onToken?.(t); }, onDone: () => { try { console.log('[Chat] Response done', { provider, length: assistantBufferRef.current.length, preview: assistantBufferRef.current.slice(0, 120) }); } catch {} common.onDone?.(); } });
         } else if (provider === 'claude') {
-          await nonStreamClaudeChat({ connectionId: defaultConn.id, messages: payload, ...common, onToken: (t) => { assistantBufferRef.current += t; common.onToken?.(t); }, onDone: () => { try { console.log('[Chat] Response done', { provider, length: assistantBufferRef.current.length, preview: assistantBufferRef.current.slice(0, 120) }); } catch {} common.onDone?.(); } });
+          await nonStreamClaudeChat({ connectionId: selectedConn.id, messages: payload, ...common, onToken: (t) => { assistantBufferRef.current += t; common.onToken?.(t); }, onDone: () => { try { console.log('[Chat] Response done', { provider, length: assistantBufferRef.current.length, preview: assistantBufferRef.current.slice(0, 120) }); } catch {} common.onDone?.(); } });
         } else if (provider === 'gemini') {
-          await nonStreamGeminiChat({ connectionId: defaultConn.id, messages: payload, ...common, onToken: (t) => { assistantBufferRef.current += t; common.onToken?.(t); }, onDone: () => { try { console.log('[Chat] Response done', { provider, length: assistantBufferRef.current.length, preview: assistantBufferRef.current.slice(0, 120) }); } catch {} common.onDone?.(); } });
+          await nonStreamGeminiChat({ connectionId: selectedConn.id, messages: payload, ...common, onToken: (t) => { assistantBufferRef.current += t; common.onToken?.(t); }, onDone: () => { try { console.log('[Chat] Response done', { provider, length: assistantBufferRef.current.length, preview: assistantBufferRef.current.slice(0, 120) }); } catch {} common.onDone?.(); } });
         } else {
           // fallback try streaming
-          await streamChat({ messages: payload, ...common, onToken: (t: string) => { assistantBufferRef.current += t; common.onToken?.(t); }, onDone: () => { try { console.log('[Chat] Response done', { provider, length: assistantBufferRef.current.length, preview: assistantBufferRef.current.slice(0, 120) }); } catch {} common.onDone?.(); } });
+          await streamChat({ connectionId: selectedConn.id, messages: payload, ...common, onToken: (t: string) => { assistantBufferRef.current += t; common.onToken?.(t); }, onDone: () => { try { console.log('[Chat] Response done', { provider, length: assistantBufferRef.current.length, preview: assistantBufferRef.current.slice(0, 120) }); } catch {} common.onDone?.(); } });
         }
       }
     } finally {

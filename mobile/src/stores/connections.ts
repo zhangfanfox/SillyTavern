@@ -27,6 +27,7 @@ interface ConnectionsState {
   update: (id: string, patch: Partial<ApiConnectionWithSecret>) => Promise<void>;
   remove: (id: string) => Promise<void>;
   setDefault: (id: string) => void;
+  setCurrent: (id: string) => void;
   getSecretKey: (id: string) => Promise<string | null>;
   setValidity: (id: string, valid: boolean) => void;
 }
@@ -35,7 +36,7 @@ const SECRET_PREFIX = 'conn_secret_';
 
 export const useConnectionsStore = create<ConnectionsState>()(
   persist(
-    (set, get) => ({
+    (set) => ({
       items: [],
       currentId: undefined,
       add: async (c) => {
@@ -50,7 +51,11 @@ export const useConnectionsStore = create<ConnectionsState>()(
           isValid: undefined,
           preferStream: true,
         };
-        set((s) => ({ items: [...s.items, meta] }));
+        set((s) => {
+          const items = [...s.items, meta];
+          const currentId = s.currentId || meta.id; // select first added by default if none
+          return { items, currentId };
+        });
       },
       update: async (id, patch) => {
         if (patch.apiKey !== undefined) {
@@ -71,6 +76,7 @@ export const useConnectionsStore = create<ConnectionsState>()(
           currentId: id,
         }));
       },
+      setCurrent: (id) => set(() => ({ currentId: id })),
       getSecretKey: async (id) => getSecret(SECRET_PREFIX + id),
       setValidity: (id, valid) => set((s) => ({ items: s.items.map((x) => (x.id === id ? { ...x, isValid: valid } : x)) })),
     }),
