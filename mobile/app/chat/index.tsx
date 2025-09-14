@@ -24,6 +24,11 @@ export default function ChatScreen() {
   const selectedParams = useParamsStore((s) => (defaultConn ? s.get(defaultConn.id) : undefined)) || {};
   const chat = useChatStore();
   const session = useMemo(() => chat.currentId ? chat.sessions.find(s => s.id === chat.currentId) : undefined, [chat.currentId, chat.sessions]);
+  const rolesList = useRolesStore((s) => s.roles);
+  const roleAvatar = useMemo(() => {
+    if (!session?.characterName) return session?.avatar;
+    return session?.avatar || rolesList.find((r) => r.name === session.characterName)?.avatar;
+  }, [session?.avatar, session?.characterName, rolesList]);
   const debugEventsRef = useRef<Array<{ provider: string; url: string; phase: 'request' | 'response' | 'error'; request?: any; response?: any; status?: number; error?: any }>>([]);
 
   useEffect(() => {
@@ -50,7 +55,7 @@ export default function ChatScreen() {
     await chat.addMessage(session.id, userMsg);
 
     // Append an assistant placeholder, then compute its actual index from the latest store to avoid stale references
-    const assistantMsg: STMessage = { name: 'Assistant', is_user: false, send_date: Date.now(), mes: '' } as STMessage;
+  const assistantMsg: STMessage = { name: 'Assistant', is_user: false, send_date: Date.now(), mes: '', extra: { force_avatar: roleAvatar } as any } as STMessage;
     await chat.addMessage(session.id, assistantMsg);
     const latest = useChatStore.getState();
     const latestSession = latest.sessions.find((s) => s.id === session.id);
@@ -237,7 +242,13 @@ export default function ChatScreen() {
         </View>
       </View>
       <View style={styles.listContainer}>
-        <MessageList messages={session?.messages || []} userName={session?.userName || 'User'} characterName={session?.characterName || 'Assistant'} streaming={!!chat.stream.streaming} />
+        <MessageList
+          messages={session?.messages || []}
+          userName={session?.userName || 'User'}
+          characterName={session?.characterName || 'Assistant'}
+          characterAvatar={roleAvatar}
+          streaming={!!chat.stream.streaming}
+        />
       </View>
       <ChatInput value={input} onChangeText={setInput} onSend={onSend} onStop={onStop} loading={!!chat.stream.streaming} streamEnabled={streamEnabled} onToggleStream={() => setStreamEnabled((v) => !v)} />
       <DraggableDebugPanel visible={debugVisible} onClose={() => setDebugVisible(false)} content={(function () {

@@ -7,11 +7,14 @@ export type MessageListProps = {
   messages: STMessage[];
   userName: string;
   characterName: string;
+  /** Optional default avatar URIs used when message doesn't specify one via extra.force_avatar */
+  characterAvatar?: string;
+  userAvatar?: string;
   height?: number | string;
   streaming?: boolean;
 };
 
-export default function MessageList({ messages, userName, characterName, streaming }: MessageListProps) {
+export default function MessageList({ messages, userName, characterName, streaming, characterAvatar, userAvatar }: MessageListProps) {
   const data = useMemo(() => messages.map((m, i) => ({ key: String(i), item: m, index: i })), [messages]);
 
   const listRef = useRef<FlatList<any>>(null);
@@ -49,7 +52,14 @@ export default function MessageList({ messages, userName, characterName, streami
         const m = item.item;
         const isTyping = !!streaming && isLast && !m.is_user && (!m.mes || m.mes.length === 0);
         return (
-          <MessageBubble message={m} userName={userName} characterName={characterName} isTyping={isTyping} />
+          <MessageBubble
+            message={m}
+            userName={userName}
+            characterName={characterName}
+            characterAvatar={characterAvatar}
+            userAvatar={userAvatar}
+            isTyping={isTyping}
+          />
         );
       }}
       keyExtractor={(i) => i.key}
@@ -59,7 +69,7 @@ export default function MessageList({ messages, userName, characterName, streami
   );
 }
 
-function MessageBubble({ message, userName, characterName, isTyping }: { message: STMessage; userName: string; characterName: string; isTyping?: boolean; }) {
+function MessageBubble({ message, userName, characterName, characterAvatar, userAvatar, isTyping }: { message: STMessage; userName: string; characterName: string; characterAvatar?: string; userAvatar?: string; isTyping?: boolean; }) {
   const isUser = !!message.is_user;
   const name = message.name || (isUser ? userName : characterName);
   const text = (message.extra as any)?.display_text ?? message.mes;
@@ -67,7 +77,7 @@ function MessageBubble({ message, userName, characterName, isTyping }: { message
   return (
     <View style={[styles.bubbleRow, isUser ? styles.right : styles.left]}>
       {!isUser && (
-        <Image source={{ uri: message.extra?.force_avatar ?? 'https://placehold.co/40x40/png' }} style={styles.avatar} />
+        <Image source={{ uri: message.extra?.force_avatar ?? characterAvatar ?? 'https://placehold.co/40x40/png' }} style={styles.avatar} />
       )}
       <View style={[styles.bubble, isUser ? styles.userBubble : styles.charBubble]}>
         <View style={styles.headerRow}>
@@ -81,7 +91,7 @@ function MessageBubble({ message, userName, characterName, isTyping }: { message
         )}
       </View>
       {isUser && (
-        <Image source={{ uri: message.extra?.force_avatar ?? 'https://placehold.co/40x40/png?text=U' }} style={styles.avatar} />
+        <Image source={{ uri: message.extra?.force_avatar ?? userAvatar ?? 'https://placehold.co/40x40/png?text=U' }} style={styles.avatar} />
       )}
     </View>
   );
