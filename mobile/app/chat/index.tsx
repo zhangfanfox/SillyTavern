@@ -145,9 +145,16 @@ export default function ChatScreen() {
           const { roles } = useRolesStore.getState();
           const role = roles.find((r) => r.name === session.characterName);
           if (role) {
-            const base = (role.system_prompt || '').trim();
-            if (base) derivedSys = base;
-            else if (role.description) derivedSys = `You are ${role.name}. ${role.description}. Stay in character and speak in first person as ${role.name}.`;
+            const parts: string[] = [];
+            const sys = (role.system_prompt || '').trim();
+            if (sys) parts.push(sys);
+            const desc = (role.description || '').trim();
+            const pers = (role.personality || '').trim();
+            const intro = `You are ${role.name}.`;
+            const behavior = `Stay in character and speak in first person as ${role.name}.`;
+            const summary = [intro, desc || undefined, pers ? `Personality: ${pers}` : undefined, behavior].filter(Boolean).join(' ');
+            if (!sys || (desc || pers)) parts.push(summary);
+            derivedSys = parts.filter(Boolean).join('\n\n').trim();
           }
         } catch {}
       }

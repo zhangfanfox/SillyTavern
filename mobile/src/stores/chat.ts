@@ -91,10 +91,19 @@ export const useChatStore = create<ChatState>()(
         const integrity = createEmptySTChat(userName, characterName).header.chat_metadata.integrity || '';
         const title = `和${characterName}的聊天`;
   const session: Session = { id, title, userName, characterName, avatar: role.avatar, createdAt: humanizedISO8601DateTime(), filePath, integrity, messages: [] } as Session;
-        // Inject system prompt if provided
+        // Inject system prompt: combine system_prompt with description/personality to give the model enough context
+        const sysParts: string[] = [];
         const sys = (role.system_prompt || '').trim();
-        if (sys) {
-          const sysMsg: STMessage = { name: 'System', is_user: false, is_system: true, send_date: Date.now(), mes: sys } as STMessage;
+        if (sys) sysParts.push(sys);
+        const desc = (role as any).description?.trim?.() || '';
+        const pers = (role as any).personality?.trim?.() || '';
+        const behavior = `Stay in character and speak in first person as ${characterName}.`;
+        const intro = `You are ${characterName}.`;
+        const summary = [intro, desc || undefined, pers ? `Personality: ${pers}` : undefined, behavior].filter(Boolean).join(' ');
+        if (!sys || desc || pers) sysParts.push(summary);
+        const combinedSys = sysParts.filter(Boolean).join('\n\n').trim();
+        if (combinedSys) {
+          const sysMsg: STMessage = { name: 'System', is_user: false, is_system: true, send_date: Date.now(), mes: combinedSys } as STMessage;
           session.messages = [sysMsg];
         }
         // Inject first assistant message if provided (SillyTavern: first_mes)

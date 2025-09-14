@@ -12,6 +12,7 @@
     "typecheck": "tsc --noEmit",
     "test:serde": "tsx scripts/test-serialization.ts",
     "test:importer": "tsx scripts/test-role-importer.ts",
+  "fetch:card": "tsx scripts/fetch-janny-card.ts",
     "i": "npm install --legacy-peer-deps"
   },
   "dependencies": {

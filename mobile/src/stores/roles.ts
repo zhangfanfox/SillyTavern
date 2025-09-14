@@ -19,6 +19,7 @@ export type STRole = {
   name: string;
   avatar?: string; // reserved for future use
   description?: string;
+  personality?: string;
   system_prompt?: string;
   first_message?: string;
   creator_notes?: string;
@@ -86,6 +87,7 @@ async function saveRoleToDisk(role: STRole) {
     name: role.name,
     avatar: role.avatar ?? null,
     description: role.description ?? '',
+    personality: role.personality ?? '',
     system_prompt: role.system_prompt ?? '',
     first_message: role.first_message ?? '',
     creator_notes: role.creator_notes ?? '',
@@ -112,6 +114,7 @@ async function loadRoleFromDisk(filePath: string): Promise<STRole | null> {
       name,
       avatar: json.avatar ?? undefined,
       description: json.description ?? undefined,
+      personality: json.personality ?? undefined,
       system_prompt: json.system_prompt ?? undefined,
       first_message: json.first_message ?? json.first_mes ?? undefined,
       creator_notes: json.creator_notes ?? undefined,
@@ -211,6 +214,7 @@ export const useRolesStore = create<RoleState>()(
           name: p.name,
           avatar: p.avatar,
           description: p.description,
+          personality: p.personality,
           system_prompt: p.system_prompt,
           first_message: p.first_message,
           creator_notes: p.creator_notes,
@@ -252,6 +256,7 @@ export const useRolesStore = create<RoleState>()(
           name: p.name,
           avatar: avatarUri || p.avatar,
           description: p.description,
+          personality: p.personality,
           system_prompt: p.system_prompt,
           first_message: p.first_message,
           creator_notes: p.creator_notes,

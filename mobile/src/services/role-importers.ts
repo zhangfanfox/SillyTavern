@@ -3,6 +3,7 @@ export type ImportedRole = {
   name: string;
   avatar?: string;
   description?: string;
+  personality?: string;
   system_prompt?: string;
   first_message?: string;
   creator_notes?: string;
@@ -38,40 +39,54 @@ async function safeReadText(res: any): Promise<string | null> {
 export function parseRoleFromJSON(text: string): ImportedRole {
   let json: any;
   try { json = JSON.parse(text); } catch { throw new Error('Invalid JSON'); }
-  if ((json.spec && String(json.spec).toLowerCase().includes('chara_card_v3')) || json.data) {
-    const d = json.data ?? json;
-    const ext = d.extensions?.sillytavern ?? d.extensions?.sillytavern;
-    return {
-      name: d.name ?? 'Unknown',
-      avatar: d.avatar ?? ext?.avatar ?? undefined,
-      description: d.description ?? ext?.description ?? '',
-      system_prompt: d.system_prompt ?? ext?.system_prompt ?? '',
-      first_message: d.first_mes ?? ext?.first_message ?? '',
-      creator_notes: d.creator_notes ?? ext?.creator_notes ?? '',
-      summary: d.summary ?? ext?.summary ?? '',
-      scenario: d.scenario ?? ext?.scenario ?? '',
-      depth: typeof (ext?.depth ?? d.depth) === 'number' ? (ext?.depth ?? d.depth) : undefined,
-      speak_frequency: typeof (ext?.speak_frequency ?? d.speak_frequency) === 'number' ? (ext?.speak_frequency ?? d.speak_frequency) : undefined,
-      tags: Array.isArray(ext?.tags ?? d.tags) ? (ext?.tags ?? d.tags) : undefined,
-      extra: ext?.extra ?? undefined,
-      raw: json,
-    };
-  }
-  return {
-    name: json.name ?? 'Unknown',
-    avatar: json.avatar,
-    description: json.description ?? json.personality ?? json.scenario ?? '',
-    system_prompt: json.system_prompt ?? '',
-    first_message: json.first_message ?? json.first_mes ?? '',
-    creator_notes: json.creator_notes ?? '',
-    summary: json.summary ?? '',
-    scenario: json.scenario ?? '',
-    depth: typeof json.depth === 'number' ? json.depth : undefined,
-    speak_frequency: typeof json.speak_frequency === 'number' ? json.speak_frequency : undefined,
-    tags: Array.isArray(json.tags) ? json.tags : undefined,
-    extra: json.extra ?? undefined,
+  const isV3 = (json.spec && String(json.spec).toLowerCase().includes('chara_card_v3')) || json.data;
+  const d = isV3 ? (json.data ?? json) : json;
+  const ext = d.extensions?.sillytavern ?? d.extensions?.sillytavern;
+  let role: ImportedRole = {
+    name: d.name ?? json.name ?? 'Unknown',
+    avatar: d.avatar ?? ext?.avatar ?? json.avatar ?? undefined,
+    description: (isV3 ? (d.description ?? ext?.description) : (json.description ?? json.personality ?? json.scenario)) ?? '',
+    personality: (isV3 ? (d.personality ?? ext?.personality) : (json.personality)) ?? undefined,
+    system_prompt: (isV3 ? (d.system_prompt ?? ext?.system_prompt) : json.system_prompt) ?? '',
+    first_message: (isV3 ? (d.first_mes ?? ext?.first_message) : (json.first_message ?? json.first_mes)) ?? '',
+    creator_notes: (isV3 ? (d.creator_notes ?? ext?.creator_notes) : json.creator_notes) ?? '',
+    summary: (isV3 ? (d.summary ?? ext?.summary) : json.summary) ?? '',
+    scenario: (isV3 ? (d.scenario ?? ext?.scenario) : json.scenario) ?? '',
+    depth: typeof (ext?.depth ?? d.depth ?? json.depth) === 'number' ? (ext?.depth ?? d.depth ?? json.depth) : undefined,
+    speak_frequency: typeof (ext?.speak_frequency ?? d.speak_frequency ?? json.speak_frequency) === 'number' ? (ext?.speak_frequency ?? d.speak_frequency ?? json.speak_frequency) : undefined,
+    tags: Array.isArray(ext?.tags ?? d.tags ?? json.tags) ? (ext?.tags ?? d.tags ?? json.tags) : undefined,
+    extra: ext?.extra ?? json.extra ?? undefined,
     raw: json,
   };
+  // Replace known placeholders with richer fields if available
+  const isPlaceholder = (s?: string) => {
+    if (!s) return false;
+    const t = s.trim().toLowerCase();
+    return t === 'placeholder - to be updated' || t === 'placeholder–to be updated' || t === 'placeholder';
+  };
+  const stripHtml = (html?: string): string => {
+    if (!html) return '';
+    // Remove tags and decode a few entities
+    const txt = html.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+    return decodeHTMLEntities(txt);
+  };
+  // Prefer personality if description is missing or placeholder
+  if ((role.description === '' || isPlaceholder(role.description))) {
+    const sourcePers = (typeof role.personality === 'string' ? role.personality : (typeof json.personality === 'string' ? json.personality : undefined));
+    const p = stripHtml(sourcePers);
+    if (p) role.description = p;
+  }
+  // Normalize personality to plain text
+  if (role.personality) role.personality = stripHtml(role.personality);
+  // If scenario is placeholder but there is personality, consider using a shorter version
+  if ((role.scenario === '' || isPlaceholder(role.scenario)) && typeof json.scenario === 'string' && !isPlaceholder(json.scenario)) {
+    role.scenario = stripHtml(json.scenario);
+  }
+  // If first message is placeholder and no better alternative, leave empty
+  if (isPlaceholder(role.first_message)) role.first_message = '';
+  // If system prompt is placeholder, clear
+  if (isPlaceholder(role.system_prompt)) role.system_prompt = '';
+  return role;
 }
 
 // Parse character card JSON from a PNG or JSON buffer
