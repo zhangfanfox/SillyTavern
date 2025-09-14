@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { View, StyleSheet, ScrollView } from 'react-native';
-import { Button, Text, TextInput, HelperText, Snackbar } from 'react-native-paper';
+import { Button, Dialog, Portal, ProgressBar, Text, TextInput, HelperText, Snackbar } from 'react-native-paper';
 import { useRolesStore } from '../../src/stores/roles';
 
 export default function RoleImportScreen() {
@@ -8,7 +8,10 @@ export default function RoleImportScreen() {
   const [json, setJson] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
-  const importFromURL = useRolesStore((s) => s.importRoleFromURL);
+  const [inProgress, setInProgress] = useState(false);
+  const [progressText, setProgressText] = useState<string>('');
+  const abortRef = useRef<AbortController | null>(null);
+  const importFromURL = useRolesStore((s) => s.importRoleFromURL) as unknown as (url: string, opts?: { signal?: AbortSignal; onProgress?: (stage: string) => void }) => Promise<any>;
   const importFromJSON = useRolesStore((s) => s.importRoleFromJSON);
   const jsonPlaceholder = '{\n  "name": "..."\n}';
 
@@ -18,13 +21,22 @@ export default function RoleImportScreen() {
     try {
       if (!url.trim()) return;
       console.info('[ImportScreen] Importing from URL:', url.trim());
-      const role = await importFromURL(url.trim());
+      setInProgress(true);
+      setProgressText('准备中…');
+      abortRef.current = new AbortController();
+  const role = await importFromURL(url.trim(), { signal: abortRef.current.signal, onProgress: (s: string) => setProgressText(s) });
       console.info('[ImportScreen] Import success, role:', role?.name);
       setUrl('');
       setSuccess(`导入成功：${role?.name ?? '角色'}`);
     } catch (e: any) {
       console.error('[ImportScreen] Import URL failed', e);
-      setError(String(e?.message || e));
+      const msg = String(e?.message || e);
+      if (msg?.toLowerCase?.().includes('aborted')) setError('已取消导入');
+      else setError(msg);
+    } finally {
+      setInProgress(false);
+      setProgressText('');
+      abortRef.current = null;
     }
   };
 
@@ -34,12 +46,17 @@ export default function RoleImportScreen() {
     try {
       if (!json.trim()) return;
       console.info('[ImportScreen] Importing from JSON');
+      setInProgress(true);
+      abortRef.current = new AbortController();
       const role = await importFromJSON(json.trim());
       setJson('');
       setSuccess(`导入成功：${role?.name ?? '角色'}`);
     } catch (e: any) {
       console.error('[ImportScreen] Import JSON failed', e);
       setError(String(e?.message || e));
+    } finally {
+      setInProgress(false);
+      abortRef.current = null;
     }
   };
 
@@ -63,6 +80,22 @@ export default function RoleImportScreen() {
         </View>
       )}
       <Snackbar visible={!!success} onDismiss={() => setSuccess(null)} duration={4000}>{success}</Snackbar>
+      <Portal>
+        <Dialog visible={inProgress} dismissable={false} onDismiss={() => {}}>
+          <Dialog.Title>正在导入</Dialog.Title>
+          <Dialog.Content>
+            <Text>{progressText || '下载与解析中…'}</Text>
+            <ProgressBar indeterminate style={styles.modalProgress} />
+          </Dialog.Content>
+          <Dialog.Actions>
+            <Button
+              onPress={() => {
+                try { abortRef.current?.abort(); console.log('[ImportScreen] User canceled import'); } catch {}
+              }}
+            >取消</Button>
+          </Dialog.Actions>
+        </Dialog>
+      </Portal>
     </ScrollView>
   );
 }
@@ -71,4 +104,5 @@ const styles = StyleSheet.create({
   container: { padding: 16, gap: 12 },
   section: { marginTop: 12, gap: 8 },
   mt8: { marginTop: 8 },
+  modalProgress: { marginTop: 12 },
 });

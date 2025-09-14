@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { View, StyleSheet } from 'react-native';
-import { IconButton, Text } from 'react-native-paper';
+import { Avatar, IconButton, Text } from 'react-native-paper';
 import { createAbortController, streamChat, nonStreamOpenAIChat, nonStreamClaudeChat, nonStreamGeminiChat } from '../../src/services/llm';
 import { useConnectionsStore } from '../../src/stores/connections';
 import { STMessage } from '../../src/services/chat-serialization';
@@ -216,7 +216,14 @@ export default function ChatScreen() {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Text variant="titleLarge">{session?.title || '聊天'}</Text>
+        <View style={styles.headerTitle}>
+          {session?.avatar ? (
+            <Avatar.Image size={36} source={{ uri: session.avatar }} />
+          ) : (
+            <Avatar.Icon size={36} icon="account" />
+          )}
+          <Text variant="titleLarge">{session?.title || '聊天'}</Text>
+        </View>
         <View style={styles.headerActions}>
           <IconButton icon="tune" onPress={() => setParamsVisible(true)} accessibilityLabel="打开参数面板" />
           <IconButton icon={debugVisible ? 'bug-check' : 'bug'} onPress={() => setDebugVisible((v) => !v)} accessibilityLabel="切换调试面板" />
@@ -243,6 +250,7 @@ export default function ChatScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, padding: 12, gap: 8 },
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  headerTitle: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   headerActions: { flexDirection: 'row' },
   listContainer: { flex: 1 },
 });

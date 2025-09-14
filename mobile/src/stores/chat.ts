@@ -90,7 +90,7 @@ export const useChatStore = create<ChatState>()(
         const filePath = `${CHATS_DIR}${encodeURIComponent(id)}.jsonl`;
         const integrity = createEmptySTChat(userName, characterName).header.chat_metadata.integrity || '';
         const title = `和${characterName}的聊天`;
-        const session: Session = { id, title, userName, characterName, avatar: role.avatar, createdAt: humanizedISO8601DateTime(), filePath, integrity, messages: [] } as Session;
+  const session: Session = { id, title, userName, characterName, avatar: role.avatar, createdAt: humanizedISO8601DateTime(), filePath, integrity, messages: [] } as Session;
         // Inject system prompt if provided
         const sys = (role.system_prompt || '').trim();
         if (sys) {

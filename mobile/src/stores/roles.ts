@@ -2,13 +2,16 @@ import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as FileSystem from 'expo-file-system';
-import { parseRoleFromJSON as parseGenericJSON, parseRoleFromURL, ImportedRole } from '../services/role-importers';
+import { Buffer } from 'buffer';
+import { parseRoleFromJSON as parseGenericJSON, parseRoleFromURL, ImportedRole, ImportProgress } from '../services/role-importers';
 
 const ROOT_DIR = FileSystem.documentDirectory + 'st-mobile/';
 const ROLES_DIR = ROOT_DIR + 'roles/';
+const AVATARS_DIR = ROOT_DIR + 'avatars/';
 
 async function ensureDirs() {
   try { await FileSystem.makeDirectoryAsync(ROLES_DIR, { intermediates: true }); } catch {}
+  try { await FileSystem.makeDirectoryAsync(AVATARS_DIR, { intermediates: true }); } catch {}
 }
 
 export type STRole = {
@@ -38,13 +41,39 @@ type RoleState = {
   updateRole: (id: string, patch: Partial<STRole>) => Promise<STRole | null>;
   deleteRole: (id: string) => Promise<void>;
   importRoleFromJSON: (text: string) => Promise<STRole>;
-  importRoleFromURL: (url: string) => Promise<STRole>;
+  importRoleFromURL: (url: string, opts?: { signal?: AbortSignal; onProgress?: ImportProgress }) => Promise<STRole>;
 };
 
 function nowIso() {
   const d = new Date();
   const pad = (n: number) => (n < 10 ? `0${n}` : String(n));
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+}
+
+function guessExtFromMime(mime?: string): string {
+  if (!mime) return '.png';
+  if (mime.includes('png')) return '.png';
+  if (mime.includes('jpeg') || mime.includes('jpg')) return '.jpg';
+  if (mime.includes('webp')) return '.webp';
+  return '.png';
+}
+
+async function writeAvatarFromArrayBuffer(name: string, buf: ArrayBuffer, mime?: string): Promise<string> {
+  await ensureDirs();
+  const safe = sanitizeFileName(name);
+  const ext = guessExtFromMime(mime);
+  const filePath = `${AVATARS_DIR}${safe}-${Date.now()}${ext}`;
+  const b64 = Buffer.from(new Uint8Array(buf)).toString('base64');
+  await FileSystem.writeAsStringAsync(filePath, b64, { encoding: FileSystem.EncodingType.Base64 });
+  return filePath;
+}
+
+async function fetchArrayBuffer(url: string, init?: any): Promise<{ buf: ArrayBuffer; mime?: string }> {
+  const res = await (globalThis.fetch as any)(url, init);
+  if (!res.ok) throw new Error(`下载头像失败 HTTP ${res.status}`);
+  const mime = (typeof res.headers?.get === 'function') ? (res.headers.get('content-type') || undefined) : undefined;
+  const buf = await res.arrayBuffer();
+  return { buf, mime };
 }
 
 function sanitizeFileName(name: string) {
@@ -196,16 +225,32 @@ export const useRolesStore = create<RoleState>()(
         console.info('[roles.store] importRoleFromJSON success ->', role.name);
         return role;
       },
-      importRoleFromURL: async (url) => {
+      importRoleFromURL: async (url, opts) => {
         console.info('[roles.store] importRoleFromURL start', url);
-        const p = await parseRoleFromURL(url);
+        const p = await parseRoleFromURL(url, { signal: opts?.signal, onProgress: opts?.onProgress });
         if (!p?.name && !p?.description) {
           console.error('[roles.store] Parsed empty role from URL');
           throw new Error('解析失败：未找到角色信息');
         }
+        // Save avatar locally if available
+        let avatarUri: string | undefined = undefined;
+        try {
+          if (p.avatarBinary) {
+            opts?.onProgress?.('保存头像');
+            avatarUri = await writeAvatarFromArrayBuffer(p.name || 'avatar', p.avatarBinary, p.avatarMime);
+          } else if (p.avatar && /^https?:\/\//i.test(p.avatar)) {
+            opts?.onProgress?.('下载头像');
+            const { buf, mime } = await fetchArrayBuffer(p.avatar, { signal: opts?.signal });
+            avatarUri = await writeAvatarFromArrayBuffer(p.name || 'avatar', buf, mime);
+          } else if (p.avatar && p.avatar.startsWith('file://')) {
+            avatarUri = p.avatar;
+          }
+        } catch (e) {
+          console.warn('[roles.store] 保存头像失败，忽略', e);
+        }
         const role = await get().createRole({
           name: p.name,
-          avatar: p.avatar,
+          avatar: avatarUri || p.avatar,
           description: p.description,
           system_prompt: p.system_prompt,
           first_message: p.first_message,

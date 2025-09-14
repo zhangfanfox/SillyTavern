@@ -13,12 +13,15 @@ export type ImportedRole = {
   tags?: string[];
   extra?: Record<string, any>;
   raw?: any;
+  // When source is a PNG card, we expose the avatar binary (the PNG itself)
+  avatarBinary?: ArrayBuffer;
+  avatarMime?: string;
 };
 
 // Helper: fetch text using global fetch (React Native provides fetch)
-async function fetchText(url: string): Promise<string> {
+async function fetchText(url: string, init?: any): Promise<string> {
   try {
-    const res = await (globalThis.fetch as any)(url);
+    const res = await (globalThis.fetch as any)(url, init);
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     return await res.text();
   } catch (e) {
@@ -26,15 +29,6 @@ async function fetchText(url: string): Promise<string> {
   }
 }
 
-// Helper: fetch ArrayBuffer (for PNG and binary)
-async function fetchArrayBuffer(url: string, init?: any): Promise<ArrayBuffer> {
-  const res = await (globalThis.fetch as any)(url, init);
-  if (!res.ok) {
-    const text = await safeReadText(res);
-    throw new Error(`HTTP ${res.status} ${res.statusText} ${text ? `- ${text}` : ''}`);
-  }
-  return await res.arrayBuffer();
-}
 
 async function safeReadText(res: any): Promise<string | null> {
   try { return await res.text(); } catch { return null; }
@@ -226,7 +220,8 @@ function decodeHTMLEntities(s: string): string {
     .replace(/&#039;/g, "'");
 }
 
-export async function parseRoleFromURL(url: string): Promise<ImportedRole> {
+export type ImportProgress = (stage: string) => void;
+export async function parseRoleFromURL(url: string, opts?: { signal?: AbortSignal; onProgress?: ImportProgress }): Promise<ImportedRole> {
   console.info('[role-importers] parseRoleFromURL start', url);
   const host = (() => {
     try {
@@ -240,7 +235,7 @@ export async function parseRoleFromURL(url: string): Promise<ImportedRole> {
     console.info('[role-importers] JanitorAI detected, uuid:', uuid);
     if (!uuid) {
       console.warn('[role-importers] No UUID in URL, attempting HTML scrape fallback');
-      const html = await fetchText(url);
+      const html = await fetchText(url, { signal: opts?.signal });
       const scraped = parseJanitorAI(html);
       if (scraped) return scraped;
       throw new Error('无法从链接解析出角色 UUID');
@@ -253,6 +248,7 @@ export async function parseRoleFromURL(url: string): Promise<ImportedRole> {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ characterId: uuid }),
+        signal: opts?.signal,
       });
       if (!apiRes.ok) {
         const t = await safeReadText(apiRes);
@@ -265,11 +261,21 @@ export async function parseRoleFromURL(url: string): Promise<ImportedRole> {
         console.error('[role-importers] Janny API no downloadUrl', apiJson);
         throw new Error('Janny API 未返回下载地址');
       }
+      opts?.onProgress?.('下载卡片');
       console.info('[role-importers] Downloading card', downloadUrl);
-      const buf = await fetchArrayBuffer(downloadUrl);
+      const res = await (globalThis.fetch as any)(downloadUrl, { signal: opts?.signal });
+      if (!res.ok) throw new Error(`下载失败 HTTP ${res.status}`);
+      const contentType = (typeof res.headers?.get === 'function') ? (res.headers.get('content-type') || '') : '';
+      const buf = await res.arrayBuffer();
       console.info('[role-importers] Downloaded bytes', (buf as any).byteLength || 0);
+      opts?.onProgress?.('解析卡片');
       const jsonText = parseCharacterCardFromBuffer(buf);
       const role = parseRoleFromJSON(jsonText);
+      // Attach avatar binary if PNG
+      if ((contentType || '').includes('image/png')) {
+        (role as ImportedRole).avatarBinary = buf;
+        (role as ImportedRole).avatarMime = 'image/png';
+      }
       console.info('[role-importers] Parsed role name:', role.name);
       return role;
     } catch (e: any) {
@@ -278,7 +284,7 @@ export async function parseRoleFromURL(url: string): Promise<ImportedRole> {
     }
   }
   // Fallback: fetch page and scrape generic metadata or JSON-LD
-  const html = await fetchText(url);
+  const html = await fetchText(url, { signal: opts?.signal });
   // HTML-based strategies
   const r = parseJanitorAI(html);
   if (r) return r;

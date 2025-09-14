@@ -1,5 +1,5 @@
 import { View, StyleSheet } from 'react-native';
-import { Button, IconButton, List, Text } from 'react-native-paper';
+import { Avatar, Button, IconButton, List, Text } from 'react-native-paper';
 import { Link, router } from 'expo-router';
 import { useEffect } from 'react';
 import { useRolesStore } from '../../src/stores/roles';
@@ -33,7 +33,18 @@ export default function RolesScreen() {
           const onEdit = () => router.push(`/roles/${encodeURIComponent(r.id)}` as any);
           return (
             <View key={r.id} style={styles.roleItem}>
-              <List.Item title={r.name} description={r.description} />
+              <View style={styles.roleMain}>
+                {r.avatar ? (
+                  <Avatar.Image size={40} source={{ uri: r.avatar }} />
+                ) : (
+                  <Avatar.Icon size={40} icon="account" />
+                )}
+                <List.Item
+                  title={r.name}
+                  description={r.description}
+                  style={styles.roleListItem}
+                />
+              </View>
               <RoleActions onStart={onStart} onEdit={onEdit} onDelete={onDelete} />
             </View>
           );
@@ -56,4 +67,6 @@ const styles = StyleSheet.create({
   rowCenter: { flexDirection: 'row', alignItems: 'center' },
   empty: { opacity: 0.6 },
   roleItem: { marginBottom: 8, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: '#ddd', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  roleMain: { flexDirection: 'row', alignItems: 'center', flex: 1, gap: 8 },
+  roleListItem: { flex: 1 },
 });
