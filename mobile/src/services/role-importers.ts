@@ -3,6 +3,14 @@ export type ImportedRole = {
   avatar?: string;
   description?: string;
   system_prompt?: string;
+  first_message?: string;
+  creator_notes?: string;
+  summary?: string;
+  scenario?: string;
+  depth?: number;
+  speak_frequency?: number;
+  tags?: string[];
+  extra?: Record<string, any>;
   raw?: any;
 };
 
@@ -29,6 +37,14 @@ export function parseRoleFromJSON(text: string): ImportedRole {
       avatar: d.avatar ?? ext?.avatar ?? undefined,
       description: d.description ?? ext?.description ?? '',
       system_prompt: d.system_prompt ?? ext?.system_prompt ?? '',
+      first_message: d.first_mes ?? ext?.first_message ?? '',
+      creator_notes: d.creator_notes ?? ext?.creator_notes ?? '',
+      summary: d.summary ?? ext?.summary ?? '',
+      scenario: d.scenario ?? ext?.scenario ?? '',
+      depth: typeof (ext?.depth ?? d.depth) === 'number' ? (ext?.depth ?? d.depth) : undefined,
+      speak_frequency: typeof (ext?.speak_frequency ?? d.speak_frequency) === 'number' ? (ext?.speak_frequency ?? d.speak_frequency) : undefined,
+      tags: Array.isArray(ext?.tags ?? d.tags) ? (ext?.tags ?? d.tags) : undefined,
+      extra: ext?.extra ?? undefined,
       raw: json,
     };
   }
@@ -37,6 +53,14 @@ export function parseRoleFromJSON(text: string): ImportedRole {
     avatar: json.avatar,
     description: json.description ?? json.personality ?? json.scenario ?? '',
     system_prompt: json.system_prompt ?? '',
+    first_message: json.first_message ?? json.first_mes ?? '',
+    creator_notes: json.creator_notes ?? '',
+    summary: json.summary ?? '',
+    scenario: json.scenario ?? '',
+    depth: typeof json.depth === 'number' ? json.depth : undefined,
+    speak_frequency: typeof json.speak_frequency === 'number' ? json.speak_frequency : undefined,
+    tags: Array.isArray(json.tags) ? json.tags : undefined,
+    extra: json.extra ?? undefined,
     raw: json,
   };
 }
@@ -99,7 +123,7 @@ function parseJanitorAI(html: string): ImportedRole | null {
     const description = descMatch ? decodeHTMLEntities(descMatch[1]) : undefined;
     const avatar = imgMatch ? decodeHTMLEntities(imgMatch[1]) : undefined;
     if (name || description) {
-      return { name: name || 'Unknown', description, avatar, system_prompt: undefined, raw: { source: 'janitorai-meta' } };
+  return { name: name || 'Unknown', description, avatar, system_prompt: undefined, raw: { source: 'janitorai-meta' } };
     }
   } catch {}
   return null;

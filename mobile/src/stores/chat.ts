@@ -37,7 +37,7 @@ type ChatState = {
   stream: StreamState;
   // actions
   createSession: (userName: string, characterName: string, title?: string) => Promise<Session>;
-  createSessionFromRole: (role: { name: string; avatar?: string; system_prompt?: string }, userName?: string) => Promise<Session>;
+  createSessionFromRole: (role: { name: string; avatar?: string; system_prompt?: string; first_message?: string }, userName?: string) => Promise<Session>;
   loadSession: (id: string) => Promise<Session | null>;
   addMessage: (id: string, msg: STMessage) => Promise<void>;
   patchMessage: (id: string, index: number, patch: Partial<STMessage>) => void;
@@ -96,6 +96,11 @@ export const useChatStore = create<ChatState>()(
         if (sys) {
           const sysMsg: STMessage = { name: 'System', is_user: false, is_system: true, send_date: Date.now(), mes: sys } as STMessage;
           session.messages = [sysMsg];
+        }
+        // Inject first assistant message if provided (SillyTavern: first_mes)
+        const first = (role as any).first_message?.trim?.() || '';
+        if (first) {
+          session.messages = [...session.messages, { name: 'Assistant', is_user: false, send_date: Date.now(), mes: first } as STMessage];
         }
         try {
           console.log('[Chat] createSessionFromRole', { characterName, title, hasSystemPrompt: !!sys, sysLen: sys.length });

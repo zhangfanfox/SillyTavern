@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as FileSystem from 'expo-file-system';
-import { parseRoleFromJSON as parseGenericJSON, parseRoleFromURL } from '../services/role-importers';
+import { parseRoleFromJSON as parseGenericJSON, parseRoleFromURL, ImportedRole } from '../services/role-importers';
 
 const ROOT_DIR = FileSystem.documentDirectory + 'st-mobile/';
 const ROLES_DIR = ROOT_DIR + 'roles/';
@@ -17,6 +17,14 @@ export type STRole = {
   avatar?: string; // reserved for future use
   description?: string;
   system_prompt?: string;
+  first_message?: string;
+  creator_notes?: string;
+  summary?: string;
+  scenario?: string;
+  depth?: number;
+  speak_frequency?: number;
+  tags?: string[];
+  extra?: Record<string, any>;
   raw?: any; // original imported JSON for compatibility
   filePath: string;
   createdAt: string;
@@ -27,6 +35,7 @@ type RoleState = {
   currentId?: string; // selected role
   loadAllRoles: () => Promise<void>;
   createRole: (r: Omit<STRole, 'id' | 'filePath' | 'createdAt'>) => Promise<STRole>;
+  updateRole: (id: string, patch: Partial<STRole>) => Promise<STRole | null>;
   deleteRole: (id: string) => Promise<void>;
   importRoleFromJSON: (text: string) => Promise<STRole>;
   importRoleFromURL: (url: string) => Promise<STRole>;
@@ -49,6 +58,14 @@ async function saveRoleToDisk(role: STRole) {
     avatar: role.avatar ?? null,
     description: role.description ?? '',
     system_prompt: role.system_prompt ?? '',
+    first_message: role.first_message ?? '',
+    creator_notes: role.creator_notes ?? '',
+    summary: role.summary ?? '',
+    scenario: role.scenario ?? '',
+    depth: role.depth ?? null,
+    speak_frequency: role.speak_frequency ?? null,
+    tags: role.tags ?? null,
+    extra: role.extra ?? null,
     raw: role.raw ?? null,
     createdAt: role.createdAt,
   };
@@ -67,6 +84,14 @@ async function loadRoleFromDisk(filePath: string): Promise<STRole | null> {
       avatar: json.avatar ?? undefined,
       description: json.description ?? undefined,
       system_prompt: json.system_prompt ?? undefined,
+      first_message: json.first_message ?? json.first_mes ?? undefined,
+      creator_notes: json.creator_notes ?? undefined,
+      summary: json.summary ?? undefined,
+      scenario: json.scenario ?? undefined,
+      depth: typeof json.depth === 'number' ? json.depth : undefined,
+      speak_frequency: typeof json.speak_frequency === 'number' ? json.speak_frequency : undefined,
+      tags: Array.isArray(json.tags) ? json.tags : undefined,
+      extra: json.extra ?? undefined,
       raw: json.raw ?? undefined,
       filePath,
       createdAt: json.createdAt ?? nowIso(),
@@ -130,6 +155,14 @@ export const useRolesStore = create<RoleState>()(
         set((s) => ({ roles: [role, ...s.roles], currentId: role.id }));
         return role;
       },
+      updateRole: async (id, patch) => {
+        const role = get().roles.find((r) => r.id === id);
+        if (!role) return null;
+        const next: STRole = { ...role, ...patch } as STRole;
+        await saveRoleToDisk(next);
+        set((s) => ({ roles: s.roles.map((r) => (r.id === id ? next : r)), currentId: id }));
+        return next;
+      },
       deleteRole: async (id) => {
         const role = get().roles.find((r) => r.id === id);
         if (role) {
@@ -139,14 +172,41 @@ export const useRolesStore = create<RoleState>()(
         set({ roles: rest, currentId: rest[0]?.id });
       },
       importRoleFromJSON: async (text) => {
-        // Use generic parser that mirrors SillyTavern tolerance
-        const parsed = parseGenericJSON(text);
-        const role = await get().createRole({ name: parsed.name, avatar: parsed.avatar, description: parsed.description, system_prompt: parsed.system_prompt, raw: parsed.raw } as Omit<STRole, 'id' | 'filePath' | 'createdAt'>);
+        const p: ImportedRole = parseGenericJSON(text);
+        const role = await get().createRole({
+          name: p.name,
+          avatar: p.avatar,
+          description: p.description,
+          system_prompt: p.system_prompt,
+          first_message: p.first_message,
+          creator_notes: p.creator_notes,
+          summary: p.summary,
+          scenario: p.scenario,
+          depth: p.depth,
+          speak_frequency: p.speak_frequency,
+          tags: p.tags,
+          extra: p.extra,
+          raw: p.raw,
+        } as Omit<STRole, 'id' | 'filePath' | 'createdAt'>);
         return role;
       },
       importRoleFromURL: async (url) => {
-        const parsed = await parseRoleFromURL(url);
-        const role = await get().createRole({ name: parsed.name, avatar: parsed.avatar, description: parsed.description, system_prompt: parsed.system_prompt, raw: parsed.raw } as Omit<STRole, 'id' | 'filePath' | 'createdAt'>);
+        const p = await parseRoleFromURL(url);
+        const role = await get().createRole({
+          name: p.name,
+          avatar: p.avatar,
+          description: p.description,
+          system_prompt: p.system_prompt,
+          first_message: p.first_message,
+          creator_notes: p.creator_notes,
+          summary: p.summary,
+          scenario: p.scenario,
+          depth: p.depth,
+          speak_frequency: p.speak_frequency,
+          tags: p.tags,
+          extra: p.extra,
+          raw: p.raw,
+        } as Omit<STRole, 'id' | 'filePath' | 'createdAt'>);
         return role;
       },
     }),
