@@ -37,7 +37,7 @@ type ChatState = {
   stream: StreamState;
   // actions
   createSession: (userName: string, characterName: string, title?: string) => Promise<Session>;
-  createSessionFromRole: (role: { name: string; avatar?: string; system_prompt?: string; first_message?: string }, userName?: string) => Promise<Session>;
+  createSessionFromRole: (role: { name: string; avatar?: string; system_prompt?: string; first_message?: string; description?: string; personality?: string }, userName?: string) => Promise<Session>;
   loadSession: (id: string) => Promise<Session | null>;
   addMessage: (id: string, msg: STMessage) => Promise<void>;
   patchMessage: (id: string, index: number, patch: Partial<STMessage>) => void;

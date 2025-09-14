@@ -658,22 +658,34 @@ export async function streamGeminiChat(opts: {
 
   try {
     onDebug?.({ provider: 'gemini', url, phase: 'request', request: body });
-    const res = await fetch(url, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Accept: 'text/event-stream',
-        'Cache-Control': 'no-cache, no-transform',
-      },
-      body: JSON.stringify(body),
-      signal: controller.signal,
-    });
-    const anyRes = res as any;
-    if (!res.ok) {
+    // Retry on 503 UNAVAILABLE a few times with exponential backoff
+    const maxAttempts = 3;
+    let attempt = 0;
+    let res: Response | null = null;
+    while (attempt < maxAttempts) {
+      attempt++;
+      res = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Accept: 'text/event-stream',
+          'Cache-Control': 'no-cache, no-transform',
+        },
+        body: JSON.stringify(body),
+        signal: controller.signal,
+      });
+      if (res.status !== 503) break;
+      onDebug?.({ provider: 'gemini', url, phase: 'response', status: res.status, response: 'Model overloaded, retrying...' });
+      // backoff: 500ms, 1500ms
+      const delay = 500 * Math.pow(3, attempt - 1);
+      await new Promise<void>((resolve) => setTimeout(resolve, delay));
+    }
+    const anyRes = (res as Response) as any;
+    if (!res || !res.ok) {
       let respText: any = undefined;
-      try { respText = await res.text(); } catch {}
-      onDebug?.({ provider: 'gemini', url, phase: 'response', status: res.status, response: respText });
-      throw new Error(`HTTP ${res.status}`);
+      try { respText = await res?.text(); } catch {}
+      onDebug?.({ provider: 'gemini', url, phase: 'response', status: res?.status, response: respText });
+      throw new Error(`HTTP ${res?.status}`);
     }
     // Success path
     if (!anyRes.body) {
@@ -697,7 +709,7 @@ export async function streamGeminiChat(opts: {
       return;
     }
 
-    onDebug?.({ provider: 'gemini', url, phase: 'response', status: res.status, response: 'SSE stream opened' });
+  onDebug?.({ provider: 'gemini', url, phase: 'response', status: (res as Response).status, response: 'SSE stream opened' });
     const reader = anyRes.body.getReader();
     let done = false;
     let leftover = '';
@@ -777,15 +789,26 @@ export async function nonStreamGeminiChat(opts: {
   if (Object.keys(generationConfig).length > 0) body.generationConfig = generationConfig;
 
   try {
-    const res = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body), signal: controller.signal });
-    onDebug?.({ provider: 'gemini', url, phase: 'request', request: body });
-    if (!res.ok) {
-      let respText: any = undefined;
-      try { respText = await res.text(); } catch {}
-      onDebug?.({ provider: 'gemini', url, phase: 'response', status: res.status, response: respText });
-      throw new Error(`HTTP ${res.status}`);
+    // Retry on 503
+    const maxAttempts = 3;
+    let attempt = 0;
+    let res: Response | null = null;
+    while (attempt < maxAttempts) {
+      attempt++;
+      res = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body), signal: controller.signal });
+      if (res.status !== 503) break;
+      onDebug?.({ provider: 'gemini', url, phase: 'response', status: res.status, response: 'Model overloaded, retrying...' });
+      const delay = 500 * Math.pow(3, attempt - 1);
+      await new Promise<void>((resolve) => setTimeout(resolve, delay));
     }
-    const json = await res.json();
+    onDebug?.({ provider: 'gemini', url, phase: 'request', request: body });
+    if (!res || !res.ok) {
+      let respText: any = undefined;
+      try { respText = await res?.text(); } catch {}
+      onDebug?.({ provider: 'gemini', url, phase: 'response', status: res?.status, response: respText });
+      throw new Error(`HTTP ${res?.status}`);
+    }
+    const json = await (res as Response).json();
     onDebug?.({ provider: 'gemini', url, phase: 'response', status: 200, response: json });
     const text = (json?.candidates?.[0]?.content?.parts || []).map((p: any) => p?.text).filter(Boolean).join('');
     if (text) onToken?.(text);
