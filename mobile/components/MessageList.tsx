@@ -9,12 +9,13 @@ export type MessageListProps = {
   characterName: string;
   /** Optional default avatar URIs used when message doesn't specify one via extra.force_avatar */
   characterAvatar?: string;
+  characterShortName?: string;
   userAvatar?: string;
   height?: number | string;
   streaming?: boolean;
 };
 
-export default function MessageList({ messages, userName, characterName, streaming, characterAvatar, userAvatar }: MessageListProps) {
+export default function MessageList({ messages, userName, characterName, streaming, characterAvatar, userAvatar, characterShortName }: MessageListProps) {
   const data = useMemo(() => messages.map((m, i) => ({ key: String(i), item: m, index: i })), [messages]);
 
   const listRef = useRef<FlatList<any>>(null);
@@ -56,6 +57,7 @@ export default function MessageList({ messages, userName, characterName, streami
             message={m}
             userName={userName}
             characterName={characterName}
+            characterShortName={characterShortName}
             characterAvatar={characterAvatar}
             userAvatar={userAvatar}
             isTyping={isTyping}
@@ -69,9 +71,9 @@ export default function MessageList({ messages, userName, characterName, streami
   );
 }
 
-function MessageBubble({ message, userName, characterName, characterAvatar, userAvatar, isTyping }: { message: STMessage; userName: string; characterName: string; characterAvatar?: string; userAvatar?: string; isTyping?: boolean; }) {
+function MessageBubble({ message, userName, characterName, characterShortName, characterAvatar, userAvatar, isTyping }: { message: STMessage; userName: string; characterName: string; characterShortName?: string; characterAvatar?: string; userAvatar?: string; isTyping?: boolean; }) {
   const isUser = !!message.is_user;
-  const name = message.name || (isUser ? userName : characterName);
+  const name = message.name || (isUser ? userName : (characterShortName || characterName));
   const text = (message.extra as any)?.display_text ?? message.mes;
   const ts = formatTimestamp(message.send_date);
   return (

@@ -30,6 +30,11 @@ export default function ChatScreen() {
     if (!session?.characterName) return session?.avatar;
     return session?.avatar || rolesList.find((r) => r.name === session.characterName)?.avatar;
   }, [session?.avatar, session?.characterName, rolesList]);
+  const characterShortName = useMemo(() => {
+    if (!session?.characterName) return 'Assistant';
+    const r = rolesList.find((x) => x.name === session.characterName);
+    return r?.short_name || session.characterName;
+  }, [rolesList, session?.characterName]);
   const debugEventsRef = useRef<Array<{ provider: string; url: string; phase: 'request' | 'response' | 'error'; request?: any; response?: any; status?: number; error?: any }>>([]);
 
   useEffect(() => {
@@ -56,7 +61,7 @@ export default function ChatScreen() {
     await chat.addMessage(session.id, userMsg);
 
     // Append an assistant placeholder, then compute its actual index from the latest store to avoid stale references
-  const assistantMsg: STMessage = { name: 'Assistant', is_user: false, send_date: Date.now(), mes: '', extra: { force_avatar: roleAvatar } as any } as STMessage;
+  const assistantMsg: STMessage = { name: characterShortName || 'Assistant', is_user: false, send_date: Date.now(), mes: '', extra: { force_avatar: roleAvatar } as any } as STMessage;
     await chat.addMessage(session.id, assistantMsg);
     const latest = useChatStore.getState();
     const latestSession = latest.sessions.find((s) => s.id === session.id);
@@ -231,12 +236,12 @@ export default function ChatScreen() {
     <View style={styles.container}>
       <View style={styles.header}>
         <View style={styles.headerTitle}>
-          {session?.avatar ? (
-            <Avatar.Image size={36} source={{ uri: session.avatar }} />
+          {roleAvatar ? (
+            <Avatar.Image size={36} source={{ uri: roleAvatar }} />
           ) : (
             <Avatar.Icon size={36} icon="account" />
           )}
-          <Text variant="titleLarge">{session?.title || '聊天'}</Text>
+          <Text variant="titleLarge">{session?.characterName ? `和${session.characterName}的聊天` : '聊天'}</Text>
         </View>
         <View style={styles.headerActions}>
           <IconButton icon="tune" onPress={() => setParamsVisible(true)} accessibilityLabel="打开参数面板" />
@@ -249,6 +254,7 @@ export default function ChatScreen() {
           userName={session?.userName || 'User'}
           characterName={session?.characterName || 'Assistant'}
           characterAvatar={roleAvatar}
+          characterShortName={characterShortName}
           streaming={!!chat.stream.streaming}
         />
       </View>

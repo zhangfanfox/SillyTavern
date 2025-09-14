@@ -4,6 +4,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as FileSystem from 'expo-file-system';
 import { Buffer } from 'buffer';
 import { parseRoleFromJSON as parseGenericJSON, parseRoleFromURL, ImportedRole, ImportProgress } from '../services/role-importers';
+import { computeShortName } from '../utils/text';
 
 const ROOT_DIR = FileSystem.documentDirectory + 'st-mobile/';
 const ROLES_DIR = ROOT_DIR + 'roles/';
@@ -22,6 +23,7 @@ export type STRole = {
   personality?: string;
   system_prompt?: string;
   first_message?: string;
+  short_name?: string;
   creator_notes?: string;
   summary?: string;
   scenario?: string;
@@ -90,6 +92,7 @@ async function saveRoleToDisk(role: STRole) {
     personality: role.personality ?? '',
     system_prompt: role.system_prompt ?? '',
     first_message: role.first_message ?? '',
+    short_name: role.short_name ?? '',
     creator_notes: role.creator_notes ?? '',
     summary: role.summary ?? '',
     scenario: role.scenario ?? '',
@@ -109,7 +112,7 @@ async function loadRoleFromDisk(filePath: string): Promise<STRole | null> {
     const json = JSON.parse(text);
     const name: string = json.name ?? 'Unknown';
     const id = decodeURIComponent(filePath.split('/').pop()!.replace(/\.json$/i, ''));
-    return {
+    const r: STRole = {
       id,
       name,
       avatar: json.avatar ?? undefined,
@@ -117,6 +120,7 @@ async function loadRoleFromDisk(filePath: string): Promise<STRole | null> {
       personality: json.personality ?? undefined,
       system_prompt: json.system_prompt ?? undefined,
       first_message: json.first_message ?? json.first_mes ?? undefined,
+      short_name: json.short_name ?? undefined,
       creator_notes: json.creator_notes ?? undefined,
       summary: json.summary ?? undefined,
       scenario: json.scenario ?? undefined,
@@ -128,6 +132,12 @@ async function loadRoleFromDisk(filePath: string): Promise<STRole | null> {
       filePath,
       createdAt: json.createdAt ?? nowIso(),
     } as STRole;
+    // Ensure short_name
+    if (!r.short_name && r.name) {
+      r.short_name = computeShortName(r.name);
+      try { await FileSystem.writeAsStringAsync(filePath, JSON.stringify({ ...json, short_name: r.short_name }, null, 2), { encoding: FileSystem.EncodingType.UTF8 }); } catch {}
+    }
+    return r;
   } catch {
     return null;
   }
@@ -182,7 +192,7 @@ export const useRolesStore = create<RoleState>()(
         const id = rInit.name || `角色-${Date.now()}`;
         const safe = sanitizeFileName(id);
         const filePath = `${ROLES_DIR}${safe}.json`;
-        const role: STRole = { id, filePath, createdAt: nowIso(), ...rInit } as STRole;
+        const role: STRole = { id, filePath, createdAt: nowIso(), short_name: rInit.short_name || computeShortName(rInit.name), ...rInit } as STRole;
         await saveRoleToDisk(role);
         set((s) => ({ roles: [role, ...s.roles], currentId: role.id }));
         return role;
@@ -217,6 +227,7 @@ export const useRolesStore = create<RoleState>()(
           personality: p.personality,
           system_prompt: p.system_prompt,
           first_message: p.first_message,
+          short_name: computeShortName(p.name),
           creator_notes: p.creator_notes,
           summary: p.summary,
           scenario: p.scenario,
@@ -259,6 +270,7 @@ export const useRolesStore = create<RoleState>()(
           personality: p.personality,
           system_prompt: p.system_prompt,
           first_message: p.first_message,
+          short_name: computeShortName(p.name),
           creator_notes: p.creator_notes,
           summary: p.summary,
           scenario: p.scenario,

@@ -37,7 +37,7 @@ type ChatState = {
   stream: StreamState;
   // actions
   createSession: (userName: string, characterName: string, title?: string) => Promise<Session>;
-  createSessionFromRole: (role: { name: string; avatar?: string; system_prompt?: string; first_message?: string; description?: string; personality?: string }, userName?: string) => Promise<Session>;
+  createSessionFromRole: (role: { name: string; avatar?: string; system_prompt?: string; first_message?: string; description?: string; personality?: string; short_name?: string }, userName?: string) => Promise<Session>;
   loadSession: (id: string) => Promise<Session | null>;
   addMessage: (id: string, msg: STMessage) => Promise<void>;
   patchMessage: (id: string, index: number, patch: Partial<STMessage>) => void;
@@ -85,7 +85,8 @@ export const useChatStore = create<ChatState>()(
         return session;
       },
       createSessionFromRole: async (role, userName = 'User') => {
-        const characterName = role.name || 'Assistant';
+  const characterName = role.name || 'Assistant';
+  const shortName = (role as any).short_name || characterName;
         const id = `${characterName} - ${humanizedISO8601DateTime()}`;
         const filePath = `${CHATS_DIR}${encodeURIComponent(id)}.jsonl`;
         const integrity = createEmptySTChat(userName, characterName).header.chat_metadata.integrity || '';
@@ -109,7 +110,7 @@ export const useChatStore = create<ChatState>()(
         // Inject first assistant message if provided (SillyTavern: first_mes)
         const first = (role as any).first_message?.trim?.() || '';
         if (first) {
-          session.messages = [...session.messages, { name: 'Assistant', is_user: false, send_date: Date.now(), mes: first } as STMessage];
+          session.messages = [...session.messages, { name: shortName, is_user: false, send_date: Date.now(), mes: first } as STMessage];
         }
         try {
           console.log('[Chat] createSessionFromRole', { characterName, title, hasSystemPrompt: !!sys, sysLen: sys.length });
