@@ -4,8 +4,32 @@
     "slug": "sillytavern-mobile",
     "scheme": "sillytavern",
     "orientation": "portrait",
-    "plugins": ["expo-router"],
-    "ios": { "supportsTablet": true },
-    "android": { "adaptiveIcon": { "backgroundColor": "#000000" } }
+    "plugins": [
+      "expo-router",
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "abiFilters": ["arm64-v8a", "x86"]
+          }
+        }
+      ],
+      [
+        "./plugins/with-android-abi-splits",
+        { "abis": ["arm64-v8a", "x86"] }
+      ]
+      ,[
+        "./plugins/with-android-product-flavors",
+        { "devclientId": "com.foxsoft.chatbot.devclient", "prodId": "com.foxsoft.chatbot.prod", "dimension": "env" }
+      ]
+    ],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.foxai.sillytavern"
+    },
+    "android": {
+      "package": "com.foxai.sillytavern",
+      "adaptiveIcon": { "backgroundColor": "#000000" }
+    }
   }
 }

@@ -46,3 +46,68 @@ OK
 ```
 
 如果要在真机模拟导入（实际访问站点），请注意 JanitorAI 站点 Cloudflare 防护和地区网络环境可能导致失败，建议优先使用 Desktop 版 SillyTavern 或设置代理。
+
+## 本地原生打包（Eject/Prebuild）
+
+先决条件：
+- Android：安装 Android Studio（含 SDK、NDK 可选），设置 `ANDROID_HOME`，并在 SDK Manager 安装对应 API/构建工具；将 `platform-tools` 和 `platforms;android-<API>` 的 `tools` 加入 `PATH`。
+- iOS：需在 macOS 上安装 Xcode（Windows 无法生成/编译 iOS）。
+
+已配置项：
+- `app.json` 中已设置 `ios.bundleIdentifier` 与 `android.package` 为 `com.foxai.sillytavern`。
+
+生成原生工程：
+
+```powershell
+# 在 Windows/PowerShell 下，先进入 mobile 目录
+cd mobile
+npx expo prebuild
+
+# 如需仅生成 Android（Windows 环境建议）
+npx expo prebuild --platform android
+
+# 仅生成 iOS（请在 macOS 运行）
+npx expo prebuild --platform ios
+```
+
+预期在 `mobile/` 下出现 `android/`（Windows 可生成）与 `ios/`（macOS 才能生成）目录。
+
+Android 调试运行：
+
+```powershell
+cd mobile
+npx expo run:android
+```
+
+Android Release 构建（APK/AAB）：
+
+```powershell
+cd mobile/android
+./gradlew.bat assembleRelease   # 生成 APK：app/build/outputs/apk/release/
+./gradlew.bat bundleRelease     # 生成 AAB：app/build/outputs/bundle/release/
+```
+
+### 仅构建 arm64-v8a 与 x86 架构
+
+本仓库已将 Android ABI 限制为 `arm64-v8a` 与 `x86`：
+- 在 `app.json` 中通过 `expo-build-properties` 写入 `android.abiFilters`。
+- 在 `android/app/build.gradle` 中也增加了 `splits { abi { include 'arm64-v8a', 'x86' } }` 作为原生兜底。
+
+说明与建议：
+- `x86` 适配 32 位模拟器（Windows 上常见）；`arm64-v8a` 覆盖绝大多数真机（以及部分基于 ARM 的模拟器）。
+- 如需支持 `x86_64` 或 `armeabi-v7a`，可在 `app.json` 的 `abiFilters` 与 `build.gradle` 的 `include` 中追加。
+- 启用 splits 后，将默认产出分 ABI 的 APK；使用 `bundleRelease` 产出 AAB 供 Play 切分分发。
+
+iOS 构建（需 macOS）：
+
+```sh
+cd mobile
+npx expo run:ios                 # 首次会生成 ios/ 并用 Xcode 构建
+
+# 或者用 Xcode 打开 ios/*.xcworkspace 进行 Archive/签名
+```
+
+常见问题：
+- 如果依赖/版本不匹配，运行 `npx expo install --fix`。
+- Android 如果报 SDK/Gradle 版本问题，使用 Android Studio 的 “Project Structure”/“Gradle Settings” 自动同步；必要时删除 `android/.gradle` 与 `android/build` 后重试。
+- iOS 生成失败请确认在 macOS 上执行，并安装 Command Line Tools：`xcode-select --install`。
