@@ -6,6 +6,12 @@
   "scripts": {
     "start": "expo start",
     "android": "expo run:android",
+    "android:devclient": "cd android; ./gradlew assembleDevDebug",
+    "android:devclient:win": "cd android && .\\gradlew.bat assembleDevDebug",
+    "android:prod": "cd android; ./gradlew assembleProdRelease",
+    "android:prod:win": "cd android && .\\gradlew.bat assembleProdRelease",
+    "android:install:devclient": "adb install -r android/app/build/outputs/apk/dev/debug/app-dev-debug.apk",
+    "android:install:prod": "adb install -r android/app/build/outputs/apk/prod/release/app-prod-release.apk",
     "ios": "expo run:ios",
     "web": "expo start --web",
     "lint": "eslint .",
@@ -13,7 +19,15 @@
     "test:serde": "tsx scripts/test-serialization.ts",
     "test:importer": "tsx scripts/test-role-importer.ts",
     "fetch:card": "tsx scripts/fetch-janny-card.ts",
-    "i": "npm install --legacy-peer-deps"
+    "i": "npm install --legacy-peer-deps",
+    "ad": "npm run android:devclient",
+    "adw": "npm run android:devclient:win",
+    "ap": "npm run android:prod",
+    "apw": "npm run android:prod:win",
+    "aid": "npm run android:install:devclient",
+    "aip": "npm run android:install:prod",
+    "id": "npm run ios:devclient",
+    "ip": "npm run ios:prod"
   },
   "dependencies": {
     "@react-native-async-storage/async-storage": "2.2.0",
