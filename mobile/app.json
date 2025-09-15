@@ -21,7 +21,7 @@
       "bundleIdentifier": "com.foxai.sillytavern"
     },
     "android": {
-      "package": "com.foxai.sillytavern",
+        "package": "com.foxsoft.chatbot.devclient",
       "adaptiveIcon": { "backgroundColor": "#000000" }
     }
   }

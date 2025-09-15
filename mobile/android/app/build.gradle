@@ -89,10 +89,16 @@ android {
         devclient {
             dimension "env"
             applicationId 'com.foxsoft.chatbot.devclient'
+            manifestPlaceholders = [
+                appLabel: "ChatDev"
+            ]
         }
         prod {
             dimension "env"
             applicationId 'com.foxsoft.chatbot.prod'
+            manifestPlaceholders = [
+                appLabel: "ChatProd"
+            ]
         }
     }
     // @sillytavern-product-flavors-end

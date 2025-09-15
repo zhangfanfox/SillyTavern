@@ -4,7 +4,7 @@
   "private": true,
   "main": "expo-router/entry",
   "scripts": {
-    "start": "expo start",
+    "start": "expo start --dev-client",
     "android": "expo run:android",
     "android:devclient": "cd android; ./gradlew assembleDevDebug",
     "android:devclient:win": "cd android && .\\gradlew.bat assembleDevDebug",
@@ -27,7 +27,8 @@
     "aid": "npm run android:install:devclient",
     "aip": "npm run android:install:prod",
     "id": "npm run ios:devclient",
-    "ip": "npm run ios:prod"
+    "ip": "npm run ios:prod",
+    "sc": "expo start --dev-client -c"
   },
   "dependencies": {
     "@react-native-async-storage/async-storage": "2.2.0",
