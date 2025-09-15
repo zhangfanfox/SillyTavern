@@ -82,18 +82,7 @@ def enableMinifyInReleaseBuilds = (findProperty('android.enableMinifyInReleaseBu
 def jscFlavor = 'io.github.react-native-community:jsc-android:2026004.+'
 
 android {
-// @generated begin sillytavern-abi-splits - expo prebuild (DO NOT MODIFY) sync-6ed6d2aa8d78c51f7f6378a0461589a5e8bfa678
-// @sillytavern-abi-splits-start
-    splits {
-        abi {
-            enable true
-            reset()
-            include 'arm64-v8a', 'x86'
-            universalApk false
-        }
-    }
-    // @sillytavern-abi-splits-end
-// @generated end sillytavern-abi-splits
+// Removed ABI splits to produce a single APK including specified ABIs
 // @generated begin sillytavern-product-flavors - expo prebuild (DO NOT MODIFY) sync-46676c71bc4e201c2378a74746744adf24c3f997
 // @sillytavern-product-flavors-start
     productFlavors {
@@ -120,7 +109,7 @@ android {
 
     namespace 'com.foxai.sillytavern'
     defaultConfig {
-// @generated begin sillytavern-ndk-abi-filters - expo prebuild (DO NOT MODIFY) sync-8d91723f83812d710723be28c5547f5b159838c8
+// @generated begin sillytavern-ndk-abi-filters - expo prebuild (DO NOT MODIFY) sync-readded-2
 // @sillytavern-ndk-abi-filters-start
         ndk {
             abiFilters 'arm64-v8a', 'x86'

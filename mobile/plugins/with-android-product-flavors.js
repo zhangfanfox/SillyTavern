@@ -18,32 +18,43 @@ const withAndroidProductFlavors = (config, props) => {
   if (!devId || !prodId) return config;
 
   return withAppBuildGradle(config, (mod) => {
-    const src = mod.modResults.contents;
+    let contents = mod.modResults.contents;
 
-    // 1) Add flavorDimensions
+    // 1) flavorDimensions block
     const dimBlock = `// @${TAG_DIMENSION}-start\n    flavorDimensions "${dimension}"\n    // @${TAG_DIMENSION}-end`;
-    const afterDim = mergeContents({
-      tag: TAG_DIMENSION,
-      src,
-      newSrc: dimBlock,
-      anchor: /android\s*\{/g,
-      offset: 1,
-      comment: '//',
-    });
+    const dimRegex = new RegExp(`// @${TAG_DIMENSION}-start[\\s\\S]*?// @${TAG_DIMENSION}-end`, 'g');
+    if (dimRegex.test(contents)) {
+      contents = contents.replace(dimRegex, dimBlock);
+    } else {
+      const inserted = mergeContents({
+        tag: TAG_DIMENSION,
+        src: contents,
+        newSrc: dimBlock,
+        anchor: /android\s*\{/g,
+        offset: 1,
+        comment: '//',
+      });
+      contents = inserted.contents;
+    }
 
-    // 2) Add productFlavors
+    // 2) productFlavors block
     const flavorsBlock = `// @${TAG_FLAVORS}-start\n    productFlavors {\n        devclient {\n            dimension "${dimension}"\n            applicationId '${devId}'\n        }\n        prod {\n            dimension "${dimension}"\n            applicationId '${prodId}'\n        }\n    }\n    // @${TAG_FLAVORS}-end`;
+    const flavorsRegex = new RegExp(`// @${TAG_FLAVORS}-start[\\s\\S]*?// @${TAG_FLAVORS}-end`, 'g');
+    if (flavorsRegex.test(contents)) {
+      contents = contents.replace(flavorsRegex, flavorsBlock);
+    } else {
+      const inserted2 = mergeContents({
+        tag: TAG_FLAVORS,
+        src: contents,
+        newSrc: flavorsBlock,
+        anchor: /android\s*\{/g,
+        offset: 1,
+        comment: '//',
+      });
+      contents = inserted2.contents;
+    }
 
-    const finalResult = mergeContents({
-      tag: TAG_FLAVORS,
-      src: afterDim.contents,
-      newSrc: flavorsBlock,
-      anchor: /android\s*\{/g,
-      offset: 1,
-      comment: '//',
-    });
-
-    mod.modResults.contents = finalResult.contents;
+    mod.modResults.contents = contents;
     return mod;
   });
 };

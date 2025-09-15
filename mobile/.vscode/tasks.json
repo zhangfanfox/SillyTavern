@@ -21,6 +21,17 @@
 				"$eslint - stylish"
 			],
 			"group": "build"
+		},
+		{
+			"label": "expo prebuild android (cwd mobile)",
+			"type": "shell",
+			"command": "npx expo prebuild --platform android",
+			"args": [],
+			"isBackground": false,
+			"problemMatcher": [
+				"$eslint-stylish"
+			],
+			"group": "build"
 		}
 	]
 }

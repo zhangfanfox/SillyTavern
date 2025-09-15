@@ -87,16 +87,33 @@ cd mobile/android
 ./gradlew.bat bundleRelease     # 生成 AAB：app/build/outputs/bundle/release/
 ```
 
-### 仅构建 arm64-v8a 与 x86 架构
+### 仅构建 arm64-v8a 与 x86 架构（单 APK）
 
-本仓库已将 Android ABI 限制为 `arm64-v8a` 与 `x86`：
-- 在 `app.json` 中通过 `expo-build-properties` 写入 `android.abiFilters`。
-- 在 `android/app/build.gradle` 中也增加了 `splits { abi { include 'arm64-v8a', 'x86' } }` 作为原生兜底。
+本仓库将 Android ABI 限制为 `arm64-v8a` 与 `x86`，并通过 NDK `abiFilters` 生成单个 APK（不再使用 `splits { abi }` 拆分多 APK）。
+
+- 插件会移除旧的 `splits { abi { ... } }` 代码片段，并在 `defaultConfig {}` 注入：
+
+	```gradle
+	// @sillytavern-ndk-abi-filters-start
+	ndk {
+			abiFilters 'arm64-v8a', 'x86'
+	}
+	// @sillytavern-ndk-abi-filters-end
+	```
+
+- 构建产物：
+	- Dev 调试 APK：`android/app/build/outputs/apk/devclient/debug/app-devclient-debug.apk`
+	- Prod 发布 APK：位于 `android/app/build/outputs/apk/prod/release/`
 
 说明与建议：
-- `x86` 适配 32 位模拟器（Windows 上常见）；`arm64-v8a` 覆盖绝大多数真机（以及部分基于 ARM 的模拟器）。
-- 如需支持 `x86_64` 或 `armeabi-v7a`，可在 `app.json` 的 `abiFilters` 与 `build.gradle` 的 `include` 中追加。
-- 启用 splits 后，将默认产出分 ABI 的 APK；使用 `bundleRelease` 产出 AAB 供 Play 切分分发。
+- `x86` 适配 32 位模拟器；`arm64-v8a` 覆盖多数真机。
+- 如需增/减 ABI，请在 `app.json` 的插件参数 `abis` 中调整，例如：
+
+	```jsonc
+	["./plugins/with-android-abi-splits", { "abis": ["arm64-v8a", "x86"] }]
+	```
+
+	然后在 `mobile/` 下执行 `npx expo prebuild --platform android` 以同步到 Gradle。
 
 iOS 构建（需 macOS）：
 

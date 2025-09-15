@@ -6,14 +6,7 @@
     "orientation": "portrait",
     "plugins": [
       "expo-router",
-      [
-        "expo-build-properties",
-        {
-          "android": {
-            "abiFilters": ["arm64-v8a", "x86"]
-          }
-        }
-      ],
+      ["expo-build-properties"],
       [
         "./plugins/with-android-abi-splits",
         { "abis": ["arm64-v8a", "x86"] }
