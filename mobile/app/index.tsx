@@ -13,10 +13,7 @@ export default function Home() {
       const chat = useChatStore.getState();
       // Ensure sessions are loaded from disk
       await chat.loadAllSessions();
-      const hasAny = useChatStore.getState().sessions.length > 0;
-      // If there is any chat, jump directly to chat screen; else go to roles screen
-      if (hasAny) router.replace('/chat');
-      else router.replace('/roles');
+      // Don't auto-redirect, let user choose where to go
     })();
   }, []);
   return (

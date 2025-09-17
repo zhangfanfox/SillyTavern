@@ -8,22 +8,23 @@ if (typeof global !== 'undefined') {
   if (originalFatalError) {
     global.ErrorUtils.reportFatalError = (error: any) => {
       if (error?.message?.includes('Cannot read property \'level\' of undefined')) {
-        console.warn('Suppressed reanimated logger error:', error.message);
+        // Completely suppress this error - don't even log it
         return;
       }
       originalFatalError(error);
     };
   }
 
-  // Patch console methods
+  // Patch console methods to completely suppress reanimated warnings
   const originalWarn = console.warn;
   const originalConsoleError = console.error;
 
   console.warn = (...args: any[]) => {
     const message = String(args[0] || '');
     if (message.includes('Cannot read property \'level\' of undefined') ||
+        message.includes('Suppressed reanimated logger error') ||
         message.includes('Route "./_layout.tsx" is missing the required default export')) {
-      return;
+      return; // Completely suppress these warnings
     }
     originalWarn.apply(console, args);
   };
@@ -31,7 +32,7 @@ if (typeof global !== 'undefined') {
   console.error = (...args: any[]) => {
     const message = String(args[0] || '');
     if (message.includes('Cannot read property \'level\' of undefined')) {
-      return;
+      return; // Completely suppress this error
     }
     originalConsoleError.apply(console, args);
   };

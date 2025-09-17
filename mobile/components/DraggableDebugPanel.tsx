@@ -38,7 +38,7 @@ export default function DraggableDebugPanel({ visible, onClose, content, title =
     <Animated.View style={[styles.container, { transform: pos.getTranslateTransform() }]} {...panResponder.panHandlers}>
       <View style={styles.header}>
         <Text style={styles.title}>{title}</Text>
-  <View style={styles.headerBtns}>
+        <View style={styles.headerBtns}>
           <IconButton
             icon="content-copy"
             onPress={async () => { await Clipboard.setStringAsync(content || ''); }}
