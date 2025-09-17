@@ -34,4 +34,12 @@ module.exports = {
     ...defaultConfig.resolver,
     blockList,
   },
+  transformer: {
+    ...defaultConfig.transformer,
+    minifierConfig: {
+      ...defaultConfig.transformer?.minifierConfig,
+      // Disable some optimizations that might cause issues with reanimated
+      keep_fnames: true,
+    },
+  },
 };

@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import { useMemo } from 'react';
 import { Animated, PanResponder, Dimensions, ScrollView, StyleSheet, View, Platform } from 'react-native';
 import * as Clipboard from 'expo-clipboard';
 import { IconButton, Text } from 'react-native-paper';

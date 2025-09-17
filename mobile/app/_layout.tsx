@@ -1,6 +1,6 @@
 import 'react-native-gesture-handler';
-import 'react-native-reanimated';
 import '../src/polyfills';
+import 'react-native-reanimated';
 import { Drawer } from 'expo-router/drawer';
 import { useNavigation } from 'expo-router';
 import { IconButton, PaperProvider } from 'react-native-paper';
@@ -43,6 +43,8 @@ export default function RootLayout() {
     // RN Reanimated/gesture handler noisy warnings in dev
     LogBox.ignoreLogs([
       'Sending `onAnimatedValueUpdate` with no listeners registered',
+      'Cannot read property \'level\' of undefined',
+      'Route "./_layout.tsx" is missing the required default export',
     ]);
   }, []);
 
