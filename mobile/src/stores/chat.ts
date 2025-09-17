@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import * as FileSystem from 'expo-file-system';
+import * as FileSystem from 'expo-file-system/legacy';
 import { createEmptySTChat, humanizedISO8601DateTime, parseFromJSONL, serializeToJSONL, STMessage } from '../services/chat-serialization';
 
 // We persist sessions to JSONL files under Expo's document directory for compatibility.

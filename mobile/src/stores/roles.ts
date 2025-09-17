@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import * as FileSystem from 'expo-file-system';
+import * as FileSystem from 'expo-file-system/legacy';
 import { Buffer } from 'buffer';
 import { parseRoleFromJSON as parseGenericJSON, parseRoleFromURL, ImportedRole, ImportProgress } from '../services/role-importers';
 import { computeShortName } from '../utils/text';
