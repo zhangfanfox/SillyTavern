@@ -14,11 +14,19 @@
       ,[
         "./plugins/with-android-product-flavors",
         { "devclientId": "com.foxsoft.chatbot.devclient", "prodId": "com.foxsoft.chatbot.prod", "dimension": "env" }
+      ],
+      [
+        "./plugins/with-ios-product-flavors",
+        { "devclientId": "com.foxsoft.chatbot.devclient", "prodId": "com.foxsoft.chatbot.prod" }
+      ],
+      [
+        "./plugins/with-ios-architectures",
+        { "architectures": ["arm64"] }
       ]
     ],
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.foxai.sillytavern"
+      "bundleIdentifier": "com.foxsoft.chatbot.devclient"
     },
     "android": {
         "package": "com.foxsoft.chatbot.devclient",
