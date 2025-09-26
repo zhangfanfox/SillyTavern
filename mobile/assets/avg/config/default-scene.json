@@ -1,0 +1,15 @@
+{
+  "id": "default",
+  "backgroundImage": "assets/avg/backgrounds/default.png",
+  "character": {
+    "name": "Assistant",
+    "image": "assets/avg/characters/default/neutral.png",
+    "position": {
+      "x": 0.5,
+      "y": 0.5,
+      "scale": 1.0
+    },
+    "expression": "neutral"
+  },
+  "ambientText": "欢迎来到AVG故事模式"
+}

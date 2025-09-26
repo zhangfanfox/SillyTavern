@@ -62,6 +62,7 @@ export default function RootLayout() {
             {/* Declare key routes to appear in left drawer */}
             <Drawer.Screen name="index" options={{ title: '主页' }} />
             <Drawer.Screen name="chat/index" options={{ title: '聊天' }} />
+            <Drawer.Screen name="avg/index" options={{ title: 'AVG 故事模式' }} />
             <Drawer.Screen name="roles/index" options={{ title: '角色' }} />
             <Drawer.Screen name="roles/create" options={{ title: '新建角色' }} />
             <Drawer.Screen name="connections/index" options={{ title: 'API 连接' }} />
