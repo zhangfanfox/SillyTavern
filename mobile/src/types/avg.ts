@@ -51,6 +51,7 @@ export interface GameSave {
   currentScene: SceneData;
   dialogueHistory: DialogueEntry[];
   gameVariables: Record<string, any>;
+  version?: string; // For future compatibility
 }
 
 // Canvas Renderer Interface
@@ -163,9 +164,15 @@ export interface AVGState {
   setStreaming: (isStreaming: boolean) => void;
   setChoicePanelVisible: (visible: boolean) => void;
   setInputPanelVisible: (visible: boolean) => void;
-  saveGameState: () => Promise<void>;
-  loadGameState: (sessionId: string) => Promise<void>;
+  saveGameState: () => Promise<boolean>;
+  loadGameState: (sessionId: string) => Promise<boolean>;
   clearSession: () => void;
+  
+  // Save management actions
+  deleteGameSave: (sessionId: string) => Promise<boolean>;
+  listGameSaves: () => Promise<GameSave[]>;
+  saveExists: (sessionId: string) => Promise<boolean>;
+  getSaveMetadata: (sessionId: string) => Promise<Partial<GameSave> | null>;
 }
 
 // Default configurations
