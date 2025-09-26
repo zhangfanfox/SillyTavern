@@ -11,11 +11,11 @@ export const useUIStore = create<UIState>()(
   persist(
     (set) => ({
       rightPanelOpen: false,
-      setRightPanelOpen: (open) => set({ rightPanelOpen: open })
+      setRightPanelOpen: (open) => set({ rightPanelOpen: open }),
     }),
     {
       name: 'ui-store',
-      storage: createJSONStorage(() => AsyncStorage)
+      storage: createJSONStorage(() => AsyncStorage),
     }
   )
 );

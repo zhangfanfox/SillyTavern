@@ -57,7 +57,7 @@ if (typeof global !== 'undefined') {
   if (!global.__reanimatedLoggerConfig) {
     global.__reanimatedLoggerConfig = {
       level: 'warn',
-      strict: false
+      strict: false,
     };
   }
 }

@@ -4,10 +4,10 @@ import { TextInput, Button } from 'react-native-paper';
 import { AVGInputPanelProps } from '../../src/types/avg';
 
 // Placeholder Input Panel component - will be implemented in task 5.3
-export default function AVGInputPanel({ 
-  visible, 
-  onSubmit, 
-  onCancel 
+export default function AVGInputPanel({
+  visible,
+  onSubmit,
+  onCancel,
 }: AVGInputPanelProps) {
   const [text, setText] = useState('');
 
@@ -36,15 +36,15 @@ export default function AVGInputPanel({
         style={styles.input}
       />
       <View style={styles.buttonRow}>
-        <Button 
-          mode="outlined" 
+        <Button
+          mode="outlined"
           onPress={handleCancel}
           style={styles.button}
         >
           取消
         </Button>
-        <Button 
-          mode="contained" 
+        <Button
+          mode="contained"
           onPress={handleSubmit}
           disabled={!text.trim()}
           style={styles.button}

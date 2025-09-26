@@ -4,10 +4,10 @@ import { Button } from 'react-native-paper';
 import { AVGChoicePanelProps } from '../../src/types/avg';
 
 // Placeholder Choice Panel component - will be implemented in task 5.2
-export default function AVGChoicePanel({ 
-  choices, 
-  onChoiceSelect, 
-  visible 
+export default function AVGChoicePanel({
+  choices,
+  onChoiceSelect,
+  visible,
 }: AVGChoicePanelProps) {
   if (!visible) return null;
 

@@ -67,11 +67,11 @@ export interface GameEngine {
   // Game state management
   initializeGame(config: GameConfig): Promise<void>;
   loadScene(sceneId: string): Promise<void>;
-  
+
   // Dialogue system
   processUserInput(input: string): Promise<AIResponse>;
   generateChoices(context: DialogueContext): Promise<Choice[]>;
-  
+
   // Rendering control
   updateVisuals(scene: SceneData): void;
   playDialogue(text: string, character: string): void;
@@ -103,7 +103,7 @@ export interface AVGAIService {
     context: DialogueContext,
     userInput: string
   ): Promise<AIResponse>;
-  
+
   streamResponse(
     context: DialogueContext,
     userInput: string,
@@ -145,16 +145,16 @@ export interface AVGState {
   currentScene: SceneData;
   dialogueHistory: DialogueEntry[];
   gameConfig?: GameConfig;
-  
+
   // UI state
   isDialogueActive: boolean;
   isChoicePanelVisible: boolean;
   isInputPanelVisible: boolean;
-  
+
   // Streaming state
   streamingText: string;
   isStreaming: boolean;
-  
+
   // Actions
   initializeGame: (config: GameConfig) => Promise<void>;
   setScene: (scene: SceneData) => void;

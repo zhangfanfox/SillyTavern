@@ -4,11 +4,11 @@ import { Card } from 'react-native-paper';
 import { AVGDialogueBoxProps } from '../../src/types/avg';
 
 // Placeholder Dialogue Box component - will be implemented in task 5.1
-export default function AVGDialogueBox({ 
-  speaker, 
-  text, 
-  isStreaming, 
-  onComplete 
+export default function AVGDialogueBox({
+  speaker,
+  text,
+  isStreaming,
+  onComplete,
 }: AVGDialogueBoxProps) {
   React.useEffect(() => {
     if (!isStreaming && onComplete) {

@@ -14,18 +14,18 @@ export default function AVGIndexScreen() {
     <View style={styles.container}>
       <Text style={styles.title}>AVG 故事模式</Text>
       <Text style={styles.subtitle}>沉浸式AI故事体验</Text>
-      
+
       <View style={styles.buttonContainer}>
-        <Button 
-          mode="contained" 
+        <Button
+          mode="contained"
           onPress={handleStartNewGame}
           style={styles.button}
         >
           开始新游戏
         </Button>
-        
-        <Button 
-          mode="outlined" 
+
+        <Button
+          mode="outlined"
           onPress={() => {/* TODO: Load saved games */}}
           style={styles.button}
         >

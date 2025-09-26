@@ -57,8 +57,8 @@ describe('role-importers: JanitorAI URL', () => {
         name: 'Shinichi Kudo 🏫',
         description: 'Detective high schooler',
         system_prompt: 'Be deductive',
-        first_mes: 'Hello.'
-      }
+        first_mes: 'Hello.',
+      },
     };
     const cardText = JSON.stringify(cardJson);
     const b64 = Buffer.from(cardText, 'utf-8').toString('base64');
