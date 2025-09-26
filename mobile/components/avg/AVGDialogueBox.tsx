@@ -1,49 +1,147 @@
-import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import React, { useEffect, useRef } from 'react';
+import { View, Text, StyleSheet, Animated, TouchableOpacity } from 'react-native';
 import { Card } from 'react-native-paper';
-import { AVGDialogueBoxProps } from '../../src/types/avg';
+import { useStreamingDialogue } from '../../src/hooks/useStreamingDialogue';
 
-// Placeholder Dialogue Box component - will be implemented in task 5.1
+interface AVGDialogueBoxProps {
+  visible?: boolean;
+  onComplete?: () => void;
+}
+
 export default function AVGDialogueBox({
-  speaker,
-  text,
-  isStreaming,
+  visible = true,
   onComplete,
 }: AVGDialogueBoxProps) {
-  React.useEffect(() => {
-    if (!isStreaming && onComplete) {
+  const { state, skipAnimation } = useStreamingDialogue();
+  const cursorOpacity = useRef(new Animated.Value(1)).current;
+
+  // Cursor blinking animation
+  useEffect(() => {
+    if (state.isStreaming || state.isAnimating) {
+      const blinkAnimation = Animated.loop(
+        Animated.sequence([
+          Animated.timing(cursorOpacity, {
+            toValue: 0,
+            duration: 500,
+            useNativeDriver: true,
+          }),
+          Animated.timing(cursorOpacity, {
+            toValue: 1,
+            duration: 500,
+            useNativeDriver: true,
+          }),
+        ])
+      );
+      blinkAnimation.start();
+      return () => blinkAnimation.stop();
+    } else {
+      cursorOpacity.setValue(0);
+    }
+  }, [state.isStreaming, state.isAnimating, cursorOpacity]);
+
+  // Call onComplete when animation finishes
+  useEffect(() => {
+    if (!state.isStreaming && !state.isAnimating && onComplete) {
       onComplete();
     }
-  }, [isStreaming, onComplete]);
+  }, [state.isStreaming, state.isAnimating, onComplete]);
+
+  if (!visible || (!state.displayText && !state.isStreaming)) {
+    return null;
+  }
+
+  const showCursor = state.isStreaming || state.isAnimating;
 
   return (
-    <Card style={styles.container}>
-      <Card.Content>
-        <Text style={styles.speaker}>{speaker}</Text>
-        <Text style={styles.text}>
-          {text}
-          {isStreaming && <Text style={styles.cursor}>|</Text>}
-        </Text>
-      </Card.Content>
-    </Card>
+    <TouchableOpacity 
+      style={styles.container} 
+      onPress={skipAnimation}
+      activeOpacity={state.canSkip ? 0.7 : 1}
+      disabled={!state.canSkip}
+    >
+      <Card style={styles.card}>
+        <Card.Content style={styles.content}>
+          <View style={styles.header}>
+            <Text style={styles.speaker}>{state.speaker}</Text>
+            {state.canSkip && (
+              <View style={styles.skipHint}>
+                <Text style={styles.skipText}>轻触跳过</Text>
+              </View>
+            )}
+          </View>
+          <View style={styles.textContainer}>
+            <Text style={styles.text}>
+              {state.displayText}
+              {showCursor && (
+                <Animated.Text 
+                  style={[styles.cursor, { opacity: cursorOpacity }]}
+                >
+                  |
+                </Animated.Text>
+              )}
+            </Text>
+          </View>
+        </Card.Content>
+      </Card>
+    </TouchableOpacity>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    margin: 16,
-    minHeight: 80,
+    position: 'absolute',
+    bottom: 20,
+    left: 16,
+    right: 16,
+    zIndex: 10,
+  },
+  card: {
+    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+    borderRadius: 12,
+    elevation: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+  },
+  content: {
+    paddingVertical: 16,
+    paddingHorizontal: 20,
+  },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
   },
   speaker: {
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: 'bold',
-    marginBottom: 8,
+    color: '#ffffff',
+  },
+  skipHint: {
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  skipText: {
+    fontSize: 12,
+    color: '#ffffff',
+    opacity: 0.8,
+  },
+  textContainer: {
+    minHeight: 60,
+    justifyContent: 'center',
   },
   text: {
-    fontSize: 14,
-    lineHeight: 20,
+    fontSize: 16,
+    lineHeight: 24,
+    color: '#ffffff',
   },
   cursor: {
-    opacity: 0.7,
+    fontSize: 16,
+    color: '#ffffff',
+    fontWeight: 'bold',
   },
 });

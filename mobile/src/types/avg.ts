@@ -121,9 +121,7 @@ export interface AVGCanvasProps {
 }
 
 export interface AVGDialogueBoxProps {
-  speaker: string;
-  text: string;
-  isStreaming: boolean;
+  visible?: boolean;
   onComplete?: () => void;
 }
 
@@ -167,6 +165,11 @@ export interface AVGState {
   saveGameState: () => Promise<boolean>;
   loadGameState: (sessionId: string) => Promise<boolean>;
   clearSession: () => void;
+  
+  // Streaming actions
+  startStreamingResponse: (userInput: string) => Promise<void>;
+  stopStreaming: () => void;
+  interruptStreaming: () => boolean;
   
   // Save management actions
   deleteGameSave: (sessionId: string) => Promise<boolean>;

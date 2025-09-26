@@ -9,8 +9,12 @@ import {
   GameSave,
   DEFAULT_SCENE,
   DEFAULT_GAME_CONFIG,
+  StreamCallbacks,
+  DialogueContext,
 } from '../types/avg';
 import { avgSaveManager } from '../services/avg-save-manager';
+import { avgStreamingService } from '../services/avg-streaming';
+import { avgAIService } from '../services/avg-ai';
 
 export const useAVGStore = create<AVGState>()(
   persist(
@@ -217,6 +221,126 @@ export const useAVGStore = create<AVGState>()(
           console.error('[AVG] Failed to get save metadata:', metadataResult.error);
           return null;
         }
+      },
+
+      // Streaming actions
+      startStreamingResponse: async (userInput: string) => {
+        const state = get();
+        if (!state.gameConfig) {
+          console.error('[AVG] Cannot start streaming: no game config');
+          return;
+        }
+
+        // Add user input to dialogue history
+        const userEntry: DialogueEntry = {
+          id: `user-${Date.now()}`,
+          timestamp: Date.now(),
+          speaker: state.gameConfig.userName,
+          text: userInput,
+          type: 'user',
+          sceneId: state.currentScene.id,
+        };
+        get().addDialogue(userEntry);
+
+        // Build dialogue context
+        const context: DialogueContext = {
+          characterName: state.gameConfig.characterName,
+          userName: state.gameConfig.userName,
+          systemPrompt: state.gameConfig.systemPrompt || '',
+          recentHistory: state.dialogueHistory,
+          currentScene: state.currentScene,
+        };
+
+        // Set up streaming state
+        set({ 
+          isStreaming: true, 
+          streamingText: '',
+          isDialogueActive: true,
+          isChoicePanelVisible: false,
+          isInputPanelVisible: false,
+        });
+
+        // Start streaming
+        const callbacks: StreamCallbacks = {
+          onToken: (token: string) => {
+            set((state) => ({
+              streamingText: state.streamingText + token,
+            }));
+          },
+          onComplete: (fullText: string) => {
+            // Add AI response to dialogue history
+            const aiEntry: DialogueEntry = {
+              id: `ai-${Date.now()}`,
+              timestamp: Date.now(),
+              speaker: state.gameConfig!.characterName,
+              text: fullText,
+              type: 'character',
+              sceneId: state.currentScene.id,
+            };
+            get().addDialogue(aiEntry);
+
+            // Update state
+            set({
+              isStreaming: false,
+              streamingText: '',
+              isDialogueActive: true,
+            });
+
+            console.log('[AVG] Streaming response completed');
+          },
+          onError: (error: Error) => {
+            console.error('[AVG] Streaming error:', error);
+            
+            // Add error message to dialogue
+            const errorEntry: DialogueEntry = {
+              id: `error-${Date.now()}`,
+              timestamp: Date.now(),
+              speaker: 'System',
+              text: '抱歉，发生了错误。请稍后再试。',
+              type: 'system',
+              sceneId: state.currentScene.id,
+            };
+            get().addDialogue(errorEntry);
+
+            set({
+              isStreaming: false,
+              streamingText: '',
+              isDialogueActive: true,
+            });
+          },
+        };
+
+        avgStreamingService.startStreaming(callbacks, (streamingState) => {
+          set({
+            isStreaming: streamingState.isStreaming,
+            streamingText: streamingState.currentText,
+          });
+        });
+
+        try {
+          await avgAIService.streamResponse(context, userInput, callbacks);
+        } catch (error) {
+          console.error('[AVG] Failed to start streaming:', error);
+          callbacks.onError(error as Error);
+        }
+      },
+
+      stopStreaming: () => {
+        avgStreamingService.stopStreaming();
+        set({
+          isStreaming: false,
+          streamingText: '',
+        });
+      },
+
+      interruptStreaming: () => {
+        const interrupted = avgStreamingService.interruptStreaming();
+        if (interrupted) {
+          set({
+            isStreaming: false,
+          });
+        }
+        return interrupted;
       },
     }),
     {
