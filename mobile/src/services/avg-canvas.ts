@@ -1,5 +1,5 @@
 import { CanvasRenderer, Position } from '../types/avg';
-import { avgAssetService } from './avg-assets';
+import { avgAssetService, AssetLoadResult } from './avg-assets';
 
 /**
  * Canvas Renderer Service for AVG
@@ -56,67 +56,82 @@ export class AVGCanvasService implements CanvasRenderer {
   }
 
   /**
-   * Load background image
+   * Load background image with enhanced error handling
    */
-  async loadBackground(imagePath: string): Promise<void> {
-    return new Promise(async (resolve, reject) => {
-      try {
-        // Load asset through asset service for caching and error handling
-        const assetInfo = await avgAssetService.loadBackgroundImage(imagePath);
+  async loadBackground(imagePath: string): Promise<{ success: boolean; isPlaceholder?: boolean; error?: string }> {
+    try {
+      // Load asset through asset service for caching and error handling
+      const result = await avgAssetService.loadBackgroundImage(imagePath);
 
+      return new Promise((resolve) => {
         this.executeWhenReady(() => {
           try {
-            this.sendMessage('loadBackground', { imagePath: assetInfo.uri });
-            resolve();
+            this.sendMessage('loadBackground', { 
+              imagePath: result.asset!.uri,
+              isPlaceholder: result.asset!.isPlaceholder,
+              originalPath: imagePath,
+            });
+            
+            resolve({
+              success: result.success,
+              isPlaceholder: result.asset!.isPlaceholder,
+              error: result.error?.message,
+            });
           } catch (error) {
-            reject(error);
+            resolve({
+              success: false,
+              error: error instanceof Error ? error.message : 'Canvas error',
+            });
           }
         });
-      } catch (error) {
-        // If asset service fails, try direct loading
-        console.warn('[Canvas Service] Asset service failed, trying direct load:', error);
-        this.executeWhenReady(() => {
-          try {
-            this.sendMessage('loadBackground', { imagePath });
-            resolve();
-          } catch (directError) {
-            reject(directError);
-          }
-        });
-      }
-    });
+      });
+    } catch (error) {
+      console.error('[Canvas Service] Failed to load background:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error',
+      };
+    }
   }
 
   /**
-   * Load character image at specified position
+   * Load character image at specified position with enhanced error handling
    */
-  async loadCharacter(imagePath: string, position: Position): Promise<void> {
-    return new Promise(async (resolve, reject) => {
-      try {
-        // Load asset through asset service for caching and error handling
-        const assetInfo = await avgAssetService.loadCharacterImage(imagePath);
+  async loadCharacter(imagePath: string, position: Position): Promise<{ success: boolean; isPlaceholder?: boolean; error?: string }> {
+    try {
+      // Load asset through asset service for caching and error handling
+      const result = await avgAssetService.loadCharacterImage(imagePath);
 
+      return new Promise((resolve) => {
         this.executeWhenReady(() => {
           try {
-            this.sendMessage('loadCharacter', { imagePath: assetInfo.uri, position });
-            resolve();
+            this.sendMessage('loadCharacter', { 
+              imagePath: result.asset!.uri, 
+              position,
+              isPlaceholder: result.asset!.isPlaceholder,
+              originalPath: imagePath,
+            });
+            
+            resolve({
+              success: result.success,
+              isPlaceholder: result.asset!.isPlaceholder,
+              error: result.error?.message,
+            });
           } catch (error) {
-            reject(error);
+            resolve({
+              success: false,
+              error: error instanceof Error ? error.message : 'Canvas error',
+            });
           }
         });
-      } catch (error) {
-        // If asset service fails, try direct loading
-        console.warn('[Canvas Service] Asset service failed for character, trying direct load:', error);
-        this.executeWhenReady(() => {
-          try {
-            this.sendMessage('loadCharacter', { imagePath, position });
-            resolve();
-          } catch (directError) {
-            reject(directError);
-          }
-        });
-      }
-    });
+      });
+    } catch (error) {
+      console.error('[Canvas Service] Failed to load character:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error',
+      };
+    }
   }
 
   /**
@@ -160,6 +175,83 @@ export class AVGCanvasService implements CanvasRenderer {
    */
   isCanvasReady(): boolean {
     return this.isReady;
+  }
+
+  /**
+   * Retry loading a failed background image
+   */
+  async retryBackground(imagePath: string): Promise<{ success: boolean; isPlaceholder?: boolean; error?: string }> {
+    console.log('[Canvas Service] Retrying background:', imagePath);
+    const result = await avgAssetService.retryFailedAsset(imagePath, 'background');
+    
+    return new Promise((resolve) => {
+      this.executeWhenReady(() => {
+        try {
+          this.sendMessage('loadBackground', { 
+            imagePath: result.asset!.uri,
+            isPlaceholder: result.asset!.isPlaceholder,
+            originalPath: imagePath,
+          });
+          
+          resolve({
+            success: result.success,
+            isPlaceholder: result.asset!.isPlaceholder,
+            error: result.error?.message,
+          });
+        } catch (error) {
+          resolve({
+            success: false,
+            error: error instanceof Error ? error.message : 'Canvas error',
+          });
+        }
+      });
+    });
+  }
+
+  /**
+   * Retry loading a failed character image
+   */
+  async retryCharacter(imagePath: string, position: Position): Promise<{ success: boolean; isPlaceholder?: boolean; error?: string }> {
+    console.log('[Canvas Service] Retrying character:', imagePath);
+    const result = await avgAssetService.retryFailedAsset(imagePath, 'character');
+    
+    return new Promise((resolve) => {
+      this.executeWhenReady(() => {
+        try {
+          this.sendMessage('loadCharacter', { 
+            imagePath: result.asset!.uri, 
+            position,
+            isPlaceholder: result.asset!.isPlaceholder,
+            originalPath: imagePath,
+          });
+          
+          resolve({
+            success: result.success,
+            isPlaceholder: result.asset!.isPlaceholder,
+            error: result.error?.message,
+          });
+        } catch (error) {
+          resolve({
+            success: false,
+            error: error instanceof Error ? error.message : 'Canvas error',
+          });
+        }
+      });
+    });
+  }
+
+  /**
+   * Get failed assets from asset service
+   */
+  getFailedAssets(): string[] {
+    return avgAssetService.getFailedAssets();
+  }
+
+  /**
+   * Check network status
+   */
+  async checkNetworkStatus(): Promise<boolean> {
+    return avgAssetService.checkNetworkStatus();
   }
 
   /**

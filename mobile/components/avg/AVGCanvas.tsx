@@ -4,15 +4,22 @@ import { WebView } from 'react-native-webview';
 import { AVGCanvasProps } from '../../src/types/avg';
 
 interface CanvasMessage {
-  type: 'ready' | 'error' | 'imageLoaded' | 'imageError' | 'resize';
+  type: 'ready' | 'error' | 'imageLoaded' | 'imageError' | 'resize' | 'networkError' | 'retrySuccess';
   data?: any;
 }
 
-const AVGCanvas = forwardRef<WebView, AVGCanvasProps>(({
+interface AVGCanvasPropsExtended extends AVGCanvasProps {
+  onImageError?: (error: { type: string; path: string; message: string }) => void;
+  onImageLoaded?: (info: { type: string; path: string; isPlaceholder?: boolean }) => void;
+}
+
+const AVGCanvas = forwardRef<WebView, AVGCanvasPropsExtended>(({
   backgroundImage,
   characterImage,
   characterPosition,
   onCanvasReady,
+  onImageError,
+  onImageLoaded,
   style,
 }, ref) => {
   const webViewRef = useRef<WebView>(null);
@@ -59,18 +66,59 @@ const AVGCanvas = forwardRef<WebView, AVGCanvasProps>(({
           break;
         case 'error':
           console.error('Canvas error:', message.data);
+          if (onImageError) {
+            onImageError({
+              type: 'canvas',
+              path: message.data?.path || 'unknown',
+              message: message.data?.message || 'Canvas error',
+            });
+          }
           break;
         case 'imageLoaded':
           console.log('Image loaded:', message.data);
+          if (onImageLoaded) {
+            onImageLoaded({
+              type: message.data?.type || 'unknown',
+              path: message.data?.path || 'unknown',
+              isPlaceholder: message.data?.isPlaceholder,
+            });
+          }
           break;
         case 'imageError':
           console.warn('Image load error:', message.data);
+          if (onImageError) {
+            onImageError({
+              type: message.data?.type || 'unknown',
+              path: message.data?.path || 'unknown',
+              message: message.data?.error || 'Image load error',
+            });
+          }
+          break;
+        case 'networkError':
+          console.warn('Network error:', message.data);
+          if (onImageError) {
+            onImageError({
+              type: 'network',
+              path: message.data?.path || 'unknown',
+              message: 'Network connection failed',
+            });
+          }
+          break;
+        case 'retrySuccess':
+          console.log('Retry successful:', message.data);
+          if (onImageLoaded) {
+            onImageLoaded({
+              type: message.data?.type || 'unknown',
+              path: message.data?.path || 'unknown',
+              isPlaceholder: false,
+            });
+          }
           break;
       }
     } catch (error) {
       console.error('Failed to parse canvas message:', error);
     }
-  }, [onCanvasReady]);
+  }, [onCanvasReady, onImageError, onImageLoaded]);
 
   // Update background image when prop changes
   useEffect(() => {
@@ -126,9 +174,34 @@ const AVGCanvas = forwardRef<WebView, AVGCanvasProps>(({
             this.imageCache = new Map();
             this.animationFrame = null;
             
+            // Performance optimization properties
+            this.isDirty = true;
+            this.dirtyRegions = [];
+            this.lastRenderTime = 0;
+            this.targetFPS = 60;
+            this.frameInterval = 1000 / this.targetFPS;
+            this.isRendering = false;
+            
+            // Memory management
+            this.maxCacheSize = 20;
+            this.cacheAccessTimes = new Map();
+            
+            // Offscreen canvas for complex operations
+            this.offscreenCanvas = null;
+            this.offscreenCtx = null;
+            
+            // Performance monitoring
+            this.frameCount = 0;
+            this.fpsStartTime = performance.now();
+            this.currentFPS = 0;
+            
             this.addCanvasPolyfills();
             this.setupCanvas();
             this.setupEventListeners();
+            this.setupPerformanceMonitoring();
+            
+            // Start render loop
+            this.startRenderLoop();
             
             // Notify React Native that canvas is ready
             this.postMessage('ready');
@@ -188,6 +261,117 @@ const AVGCanvas = forwardRef<WebView, AVGCanvasProps>(({
               e.preventDefault();
               this.postMessage('touch', { type: 'end' });
             });
+            
+            // Handle visibility changes for performance
+            document.addEventListener('visibilitychange', () => {
+              if (document.hidden) {
+                this.pauseRenderLoop();
+              } else {
+                this.resumeRenderLoop();
+              }
+            });
+          }
+          
+          setupPerformanceMonitoring() {
+            // Monitor FPS every second
+            setInterval(() => {
+              const now = performance.now();
+              const elapsed = now - this.fpsStartTime;
+              
+              if (elapsed >= 1000) {
+                this.currentFPS = Math.round((this.frameCount * 1000) / elapsed);
+                this.frameCount = 0;
+                this.fpsStartTime = now;
+                
+                // Report performance issues
+                if (this.currentFPS < 30) {
+                  console.warn(\`Low FPS detected: \${this.currentFPS}\`);
+                  this.postMessage('performance', { fps: this.currentFPS, warning: 'low_fps' });
+                }
+              }
+            }, 1000);
+            
+            // Memory cleanup every 30 seconds
+            setInterval(() => {
+              this.cleanupImageCache();
+            }, 30000);
+          }
+          
+          startRenderLoop() {
+            const renderFrame = (currentTime) => {
+              if (!this.isRendering) return;
+              
+              // Throttle to target FPS
+              if (currentTime - this.lastRenderTime >= this.frameInterval) {
+                if (this.isDirty) {
+                  this.performRender();
+                  this.isDirty = false;
+                  this.frameCount++;
+                }
+                this.lastRenderTime = currentTime;
+              }
+              
+              this.animationFrame = requestAnimationFrame(renderFrame);
+            };
+            
+            this.isRendering = true;
+            this.animationFrame = requestAnimationFrame(renderFrame);
+          }
+          
+          pauseRenderLoop() {
+            this.isRendering = false;
+            if (this.animationFrame) {
+              cancelAnimationFrame(this.animationFrame);
+              this.animationFrame = null;
+            }
+          }
+          
+          resumeRenderLoop() {
+            if (!this.isRendering) {
+              this.startRenderLoop();
+            }
+          }
+          
+          markDirty(region = null) {
+            this.isDirty = true;
+            if (region) {
+              this.dirtyRegions.push(region);
+            }
+          }
+          
+          cleanupImageCache() {
+            if (this.imageCache.size <= this.maxCacheSize) return;
+            
+            // Sort by access time and remove oldest entries
+            const entries = Array.from(this.cacheAccessTimes.entries())
+              .sort((a, b) => a[1] - b[1]);
+            
+            const toRemove = entries.slice(0, entries.length - this.maxCacheSize);
+            
+            toRemove.forEach(([key]) => {
+              this.imageCache.delete(key);
+              this.cacheAccessTimes.delete(key);
+            });
+            
+            console.log(\`Cleaned up \${toRemove.length} cached images\`);
+          }
+          
+          createOffscreenCanvas(width, height) {
+            if (!this.offscreenCanvas || 
+                this.offscreenCanvas.width !== width || 
+                this.offscreenCanvas.height !== height) {
+              
+              this.offscreenCanvas = document.createElement('canvas');
+              this.offscreenCanvas.width = width;
+              this.offscreenCanvas.height = height;
+              this.offscreenCtx = this.offscreenCanvas.getContext('2d');
+              
+              // Enable image smoothing for better quality
+              this.offscreenCtx.imageSmoothingEnabled = true;
+              this.offscreenCtx.imageSmoothingQuality = 'high';
+            }
+            
+            return { canvas: this.offscreenCanvas, ctx: this.offscreenCtx };
           }
           
           postMessage(type, data = null) {
@@ -196,23 +380,42 @@ const AVGCanvas = forwardRef<WebView, AVGCanvasProps>(({
             }
           }
           
-          async loadImage(src, retries = 3) {
-            if (this.imageCache.has(src)) {
+          async loadImage(src, retries = 3, isRetry = false) {
+            if (this.imageCache.has(src) && !isRetry) {
+              // Update access time for LRU cache
+              this.cacheAccessTimes.set(src, performance.now());
               return this.imageCache.get(src);
             }
             
             for (let attempt = 0; attempt < retries; attempt++) {
               try {
                 const img = await this.loadImageAttempt(src);
+                
+                // Cache management
                 this.imageCache.set(src, img);
+                this.cacheAccessTimes.set(src, performance.now());
+                
+                // Trigger cleanup if cache is getting full
+                if (this.imageCache.size > this.maxCacheSize) {
+                  this.cleanupImageCache();
+                }
+                
                 return img;
               } catch (error) {
                 console.warn(\`Image load attempt \${attempt + 1} failed for: \${src}\`, error);
+                
+                // Report network errors specifically
+                if (error.message.includes('network') || error.message.includes('fetch')) {
+                  this.postMessage('networkError', { path: src, attempt: attempt + 1 });
+                }
+                
                 if (attempt === retries - 1) {
                   throw error;
                 }
-                // Wait before retry
-                await new Promise(resolve => setTimeout(resolve, 1000 * (attempt + 1)));
+                
+                // Exponential backoff for retries
+                const delay = Math.min(1000 * Math.pow(2, attempt), 5000);
+                await new Promise(resolve => setTimeout(resolve, delay));
               }
             }
           }
@@ -221,19 +424,36 @@ const AVGCanvas = forwardRef<WebView, AVGCanvasProps>(({
             return new Promise((resolve, reject) => {
               const img = new Image();
               
-              // Set timeout for loading
+              // Set timeout for loading (longer for network resources)
+              const isNetworkResource = src.startsWith('http');
+              const timeoutMs = isNetworkResource ? 15000 : 10000;
+              
               const timeout = setTimeout(() => {
-                reject(new Error(\`Image load timeout: \${src}\`));
-              }, 10000);
+                reject(new Error(\`Image load timeout after \${timeoutMs}ms: \${src}\`));
+              }, timeoutMs);
               
               img.onload = () => {
                 clearTimeout(timeout);
+                
+                // Validate image dimensions
+                if (img.naturalWidth === 0 || img.naturalHeight === 0) {
+                  reject(new Error(\`Invalid image dimensions: \${src}\`));
+                  return;
+                }
+                
                 resolve(img);
               };
               
-              img.onerror = () => {
+              img.onerror = (event) => {
                 clearTimeout(timeout);
-                reject(new Error(\`Failed to load image: \${src}\`));
+                
+                // Provide more specific error messages
+                let errorMessage = \`Failed to load image: \${src}\`;
+                if (isNetworkResource) {
+                  errorMessage = \`Network error loading image: \${src}\`;
+                }
+                
+                reject(new Error(errorMessage));
               };
               
               // Handle different image sources
@@ -241,8 +461,15 @@ const AVGCanvas = forwardRef<WebView, AVGCanvasProps>(({
                 // Data URI - no CORS needed
                 img.src = src;
               } else if (src.startsWith('http')) {
-                // External URL - set CORS
+                // External URL - set CORS and check network
                 img.crossOrigin = 'anonymous';
+                
+                // Check if we're online before attempting network load
+                if (!navigator.onLine) {
+                  reject(new Error(\`No network connection available for: \${src}\`));
+                  return;
+                }
+                
                 img.src = src;
               } else {
                 // Local file or asset
@@ -251,52 +478,116 @@ const AVGCanvas = forwardRef<WebView, AVGCanvasProps>(({
             });
           }
           
-          async loadBackground(imagePath) {
+          async loadBackground(imagePath, isPlaceholder = false, originalPath = null) {
             try {
               // Clear previous background
               this.backgroundImage = null;
-              this.render();
+              this.markDirty();
               
               // Load new background
-              this.backgroundImage = await this.loadImage(imagePath);
-              this.render();
-              this.postMessage('imageLoaded', { type: 'background', path: imagePath });
+              this.backgroundImage = await this.loadImage(imagePath, 3, originalPath !== null);
+              this.markDirty();
+              
+              if (originalPath && originalPath !== imagePath) {
+                // This was a retry that succeeded
+                this.postMessage('retrySuccess', { 
+                  type: 'background', 
+                  path: originalPath,
+                  actualPath: imagePath 
+                });
+              } else {
+                this.postMessage('imageLoaded', { 
+                  type: 'background', 
+                  path: imagePath,
+                  isPlaceholder: isPlaceholder 
+                });
+              }
             } catch (error) {
               console.error('Failed to load background:', error);
-              this.postMessage('imageError', { type: 'background', path: imagePath, error: error.message });
-              // Create placeholder background
-              this.createPlaceholderBackground();
-              this.render();
+              this.postMessage('imageError', { 
+                type: 'background', 
+                path: originalPath || imagePath, 
+                error: error.message 
+              });
+              
+              // Create placeholder background only if this wasn't already a placeholder
+              if (!isPlaceholder) {
+                this.createPlaceholderBackground();
+                this.markDirty();
+              }
             }
           }
           
-          async loadCharacter(imagePath, position) {
+          async loadCharacter(imagePath, position, isPlaceholder = false, originalPath = null) {
             try {
               // Store previous character for potential fade transition
               const previousCharacter = this.characterImage;
               
+              // Calculate dirty region for character area
+              const rect = this.canvas.getBoundingClientRect();
+              const charRegion = this.getCharacterBounds(rect, position);
+              
               // Load new character
-              const newCharacter = await this.loadImage(imagePath);
+              const newCharacter = await this.loadImage(imagePath, 3, originalPath !== null);
               
               // Update character data
               this.characterImage = newCharacter;
               this.characterPosition = position;
               this.characterOpacity = 1.0;
               
-              // If we had a previous character, we could add a fade transition here
-              // For now, just render immediately
-              this.render();
+              // Mark character area as dirty
+              this.markDirty(charRegion);
               
-              this.postMessage('imageLoaded', { type: 'character', path: imagePath });
+              if (originalPath && originalPath !== imagePath) {
+                // This was a retry that succeeded
+                this.postMessage('retrySuccess', { 
+                  type: 'character', 
+                  path: originalPath,
+                  actualPath: imagePath 
+                });
+              } else {
+                this.postMessage('imageLoaded', { 
+                  type: 'character', 
+                  path: imagePath,
+                  isPlaceholder: isPlaceholder 
+                });
+              }
             } catch (error) {
               console.error('Failed to load character:', error);
-              this.postMessage('imageError', { type: 'character', path: imagePath, error: error.message });
-              // Create placeholder character
-              this.createPlaceholderCharacter();
-              this.characterPosition = position;
-              this.characterOpacity = 1.0;
-              this.render();
+              this.postMessage('imageError', { 
+                type: 'character', 
+                path: originalPath || imagePath, 
+                error: error.message 
+              });
+              
+              // Create placeholder character only if this wasn't already a placeholder
+              if (!isPlaceholder) {
+                this.createPlaceholderCharacter();
+                this.characterPosition = position;
+                this.characterOpacity = 1.0;
+                this.markDirty();
+              }
             }
+          }
+          
+          getCharacterBounds(rect, position) {
+            if (!this.characterImage) return null;
+            
+            const char = this.characterImage;
+            const pos = position;
+            const scale = pos.scale || 1.0;
+            const charWidth = char.width * scale;
+            const charHeight = char.height * scale;
+            
+            const x = (pos.x * rect.width) - (charWidth / 2);
+            const y = (pos.y * rect.height) - charHeight;
+            
+            return {
+              x: Math.max(0, x),
+              y: Math.max(0, y),
+              width: Math.min(charWidth, rect.width - x),
+              height: Math.min(charHeight, rect.height - y),
+            };
           }
           
           createPlaceholderBackground() {
@@ -429,6 +720,11 @@ const AVGCanvas = forwardRef<WebView, AVGCanvasProps>(({
             const oldPosition = { ...this.characterPosition };
             const newPosition = position;
             
+            // Calculate dirty regions for both old and new positions
+            const rect = this.canvas.getBoundingClientRect();
+            const oldBounds = this.getCharacterBounds(rect, oldPosition);
+            const newBounds = this.getCharacterBounds(rect, newPosition);
+            
             // Update position
             this.characterPosition = newPosition;
             
@@ -447,12 +743,15 @@ const AVGCanvas = forwardRef<WebView, AVGCanvasProps>(({
             if (positionChanged) {
               this.animateCharacterMove(oldPosition, newPosition);
             } else {
-              this.render();
+              // Mark character areas as dirty
+              if (oldBounds) this.markDirty(oldBounds);
+              if (newBounds) this.markDirty(newBounds);
             }
           }
           
           animateCharacterMove(fromPos, toPos, duration = 500) {
             const startTime = performance.now();
+            let animationId = null;
             
             const animate = (currentTime) => {
               const elapsed = currentTime - startTime;
@@ -461,21 +760,28 @@ const AVGCanvas = forwardRef<WebView, AVGCanvasProps>(({
               // Easing function (ease-out)
               const easeOut = 1 - Math.pow(1 - progress, 3);
               
-              // Interpolate position
-              this.characterPosition = {
+              // Calculate current position
+              const currentPos = {
                 x: fromPos.x + (toPos.x - fromPos.x) * easeOut,
                 y: fromPos.y + (toPos.y - fromPos.y) * easeOut,
                 scale: (fromPos.scale || 1.0) + ((toPos.scale || 1.0) - (fromPos.scale || 1.0)) * easeOut,
               };
               
-              this.render();
+              // Mark character area as dirty
+              const rect = this.canvas.getBoundingClientRect();
+              const bounds = this.getCharacterBounds(rect, currentPos);
+              if (bounds) this.markDirty(bounds);
+              
+              // Update position
+              this.characterPosition = currentPos;
               
               if (progress < 1) {
-                this.animationFrame = requestAnimationFrame(animate);
+                animationId = requestAnimationFrame(animate);
               } else {
                 this.characterPosition = toPos; // Ensure final position is exact
-                this.render();
-                this.animationFrame = null;
+                const finalBounds = this.getCharacterBounds(rect, toPos);
+                if (finalBounds) this.markDirty(finalBounds);
+                animationId = null;
               }
             };
             
@@ -484,7 +790,8 @@ const AVGCanvas = forwardRef<WebView, AVGCanvasProps>(({
               cancelAnimationFrame(this.animationFrame);
             }
             
-            this.animationFrame = requestAnimationFrame(animate);
+            animationId = requestAnimationFrame(animate);
+            this.animationFrame = animationId;
           }
           
           fadeCharacter(targetOpacity, duration = 300) {
@@ -498,7 +805,10 @@ const AVGCanvas = forwardRef<WebView, AVGCanvasProps>(({
               // Linear interpolation for opacity
               this.characterOpacity = startOpacity + (targetOpacity - startOpacity) * progress;
               
-              this.render();
+              // Mark character area as dirty
+              const rect = this.canvas.getBoundingClientRect();
+              const bounds = this.getCharacterBounds(rect, this.characterPosition);
+              if (bounds) this.markDirty(bounds);
               
               if (progress < 1) {
                 requestAnimationFrame(animate);
@@ -510,25 +820,52 @@ const AVGCanvas = forwardRef<WebView, AVGCanvasProps>(({
           
           clearCanvas() {
             this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+            this.markDirty();
           }
           
           render() {
+            // Legacy method for compatibility - delegates to performRender
+            this.markDirty();
+          }
+          
+          performRender() {
             const rect = this.canvas.getBoundingClientRect();
-            this.clearCanvas();
+            
+            // Use offscreen canvas for complex rendering
+            const { canvas: offscreen, ctx: offscreenCtx } = this.createOffscreenCanvas(
+              this.canvas.width, 
+              this.canvas.height
+            );
+            
+            // Clear offscreen canvas
+            offscreenCtx.clearRect(0, 0, offscreen.width, offscreen.height);
             
             // Render background with proper scaling
             if (this.backgroundImage) {
-              this.renderBackground(rect);
+              this.renderBackgroundToContext(offscreenCtx, rect);
             }
             
             // Render character
             if (this.characterImage && this.characterPosition) {
-              this.renderCharacter(rect);
+              this.renderCharacterToContext(offscreenCtx, rect);
             }
+            
+            // Copy offscreen canvas to main canvas in one operation
+            this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+            this.ctx.drawImage(offscreen, 0, 0);
+            
+            // Clear dirty regions
+            this.dirtyRegions = [];
           }
           
           renderBackground(rect) {
+            this.renderBackgroundToContext(this.ctx, rect);
+          }
+          
+          renderBackgroundToContext(ctx, rect) {
             const bg = this.backgroundImage;
+            if (!bg) return;
+            
             const canvasAspect = rect.width / rect.height;
             const imageAspect = bg.width / bg.height;
             
@@ -549,13 +886,17 @@ const AVGCanvas = forwardRef<WebView, AVGCanvasProps>(({
             }
             
             // Apply smooth scaling
-            this.ctx.imageSmoothingEnabled = true;
-            this.ctx.imageSmoothingQuality = 'high';
+            ctx.imageSmoothingEnabled = true;
+            ctx.imageSmoothingQuality = 'high';
             
-            this.ctx.drawImage(bg, drawX, drawY, drawWidth, drawHeight);
+            ctx.drawImage(bg, drawX, drawY, drawWidth, drawHeight);
           }
           
           renderCharacter(rect) {
+            this.renderCharacterToContext(this.ctx, rect);
+          }
+          
+          renderCharacterToContext(ctx, rect) {
             if (!this.characterImage) return;
             
             const char = this.characterImage;
@@ -571,30 +912,31 @@ const AVGCanvas = forwardRef<WebView, AVGCanvasProps>(({
             const y = (pos.y * rect.height) - charHeight; // Align to bottom for character sprites
             
             // Save current context state
-            this.ctx.save();
+            ctx.save();
             
             // Apply opacity for fade effects
-            this.ctx.globalAlpha = this.characterOpacity || 1.0;
+            ctx.globalAlpha = this.characterOpacity || 1.0;
             
             // Apply smooth scaling for character
-            this.ctx.imageSmoothingEnabled = true;
-            this.ctx.imageSmoothingQuality = 'high';
+            ctx.imageSmoothingEnabled = true;
+            ctx.imageSmoothingQuality = 'high';
             
             // Handle character positioning with bounds checking
             const clampedX = Math.max(-charWidth * 0.5, Math.min(rect.width - charWidth * 0.5, x));
             const clampedY = Math.max(-charHeight * 0.5, Math.min(rect.height, y));
             
             // Draw character with proper transparency handling
-            this.ctx.drawImage(char, clampedX, clampedY, charWidth, charHeight);
+            ctx.drawImage(char, clampedX, clampedY, charWidth, charHeight);
             
             // Restore context state
-            this.ctx.restore();
+            ctx.restore();
           }
           
           resize(dimensions) {
             // Canvas will auto-resize via CSS, just need to re-render
             setTimeout(() => {
               this.setupCanvas();
+              this.markDirty();
             }, 100);
           }
         }
@@ -609,10 +951,19 @@ const AVGCanvas = forwardRef<WebView, AVGCanvasProps>(({
             
             switch (message.type) {
               case 'loadBackground':
-                renderer.loadBackground(message.data.imagePath);
+                renderer.loadBackground(
+                  message.data.imagePath, 
+                  message.data.isPlaceholder,
+                  message.data.originalPath
+                );
                 break;
               case 'loadCharacter':
-                renderer.loadCharacter(message.data.imagePath, message.data.position);
+                renderer.loadCharacter(
+                  message.data.imagePath, 
+                  message.data.position,
+                  message.data.isPlaceholder,
+                  message.data.originalPath
+                );
                 break;
               case 'updateCharacter':
                 renderer.updateCharacter(message.data.position, message.data.expression);
