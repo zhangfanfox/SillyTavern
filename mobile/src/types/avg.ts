@@ -8,6 +8,7 @@ export interface Position {
 
 export interface SceneData {
   id: string;
+  name?: string;
   backgroundImage: string;
   character?: {
     name: string;
@@ -15,7 +16,13 @@ export interface SceneData {
     position: Position;
     expression?: string;
   };
+  music?: string;
+  soundEffects?: string[];
   ambientText?: string;
+  metadata?: {
+    description?: string;
+    tags?: string[];
+  };
 }
 
 export interface DialogueEntry {
@@ -118,6 +125,7 @@ export interface AVGCanvasProps {
   characterImage?: string;
   characterPosition?: Position;
   onCanvasReady: () => void;
+  style?: import('react-native').ViewStyle;
 }
 
 export interface AVGDialogueBoxProps {
@@ -129,12 +137,14 @@ export interface AVGChoicePanelProps {
   choices: Choice[];
   onChoiceSelect: (choice: Choice) => void;
   visible: boolean;
+  style?: import('react-native').ViewStyle;
 }
 
 export interface AVGInputPanelProps {
   visible: boolean;
   onSubmit: (text: string) => void;
   onCancel: () => void;
+  style?: import('react-native').ViewStyle;
 }
 
 // Store State Interface

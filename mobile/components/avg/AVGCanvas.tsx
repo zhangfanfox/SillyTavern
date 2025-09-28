@@ -13,6 +13,7 @@ const AVGCanvas = forwardRef<WebView, AVGCanvasProps>(({
   characterImage,
   characterPosition,
   onCanvasReady,
+  style,
 }, ref) => {
   const webViewRef = useRef<WebView>(null);
 
@@ -643,7 +644,7 @@ const AVGCanvas = forwardRef<WebView, AVGCanvasProps>(({
   `;
 
   return (
-    <View style={[styles.container, { height: dimensions.height }]}>
+    <View style={[styles.container, { height: dimensions.height }, style]}>
       <WebView
         ref={webViewRef}
         source={{ html: htmlContent }}

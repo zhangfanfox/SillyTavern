@@ -190,8 +190,8 @@ export class AVGAssetService implements AssetLoader {
    * Get placeholder background image
    */
   getPlaceholderBackground(): AssetInfo {
-    return {
-      uri: 'data:image/svg+xml;base64,' + btoa(`
+    // Use Buffer for base64 encoding in React Native
+    const svgContent = `
         <svg width="1920" height="1080" xmlns="http://www.w3.org/2000/svg">
           <defs>
             <linearGradient id="bg" x1="0%" y1="0%" x2="0%" y2="100%">
@@ -207,7 +207,10 @@ export class AVGAssetService implements AssetLoader {
           <circle cx="1500" cy="700" r="70" fill="rgba(255,255,255,0.2)"/>
           <text x="960" y="540" text-anchor="middle" font-family="Arial" font-size="48" fill="rgba(255,255,255,0.8)">默认背景</text>
         </svg>
-      `),
+      `;
+    
+    return {
+      uri: 'data:image/svg+xml;base64,' + Buffer.from(svgContent).toString('base64'),
       width: 1920,
       height: 1080,
       type: 'background',
@@ -218,8 +221,7 @@ export class AVGAssetService implements AssetLoader {
    * Get placeholder character image
    */
   getPlaceholderCharacter(): AssetInfo {
-    return {
-      uri: 'data:image/svg+xml;base64,' + btoa(`
+    const svgContent = `
         <svg width="512" height="1024" xmlns="http://www.w3.org/2000/svg">
           <rect width="100%" height="100%" fill="transparent"/>
           <g fill="rgba(100,100,100,0.8)">
@@ -236,11 +238,41 @@ export class AVGAssetService implements AssetLoader {
           </g>
           <text x="256" y="800" text-anchor="middle" font-family="Arial" font-size="32" fill="rgba(100,100,100,0.8)">默认角色</text>
         </svg>
-      `),
+      `;
+    
+    return {
+      uri: 'data:image/svg+xml;base64,' + Buffer.from(svgContent).toString('base64'),
       width: 512,
       height: 1024,
       type: 'character',
     };
+  }
+
+  /**
+   * Load any asset with automatic type detection
+   */
+  async loadAsset(path: string): Promise<{ success: boolean; asset?: AssetInfo; error?: string }> {
+    try {
+      console.log('[AVG Assets] Loading asset:', path);
+
+      // Determine asset type based on path
+      const isCharacter = path.includes('character') || path.includes('sprite');
+      const assetType: 'background' | 'character' = isCharacter ? 'character' : 'background';
+
+      // Load using appropriate method
+      const asset = await this.loadImageWithFallback(path, assetType);
+
+      return {
+        success: true,
+        asset,
+      };
+    } catch (error) {
+      console.error('[AVG Assets] Failed to load asset:', path, error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown asset loading error',
+      };
+    }
   }
 
   /**

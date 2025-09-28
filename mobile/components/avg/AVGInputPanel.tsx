@@ -18,6 +18,7 @@ export default function AVGInputPanel({
   visible,
   onSubmit,
   onCancel,
+  style,
 }: AVGInputPanelProps) {
   const { startStreamingResponse, setInputPanelVisible } = useAVGStore();
   const [text, setText] = useState('');
@@ -171,7 +172,7 @@ export default function AVGInputPanel({
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      style={styles.keyboardAvoid}
+      style={[styles.keyboardAvoid, style]}
     >
       <Animated.View
         style={[

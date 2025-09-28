@@ -8,6 +8,7 @@ export default function AVGChoicePanel({
   choices,
   onChoiceSelect,
   visible,
+  style,
 }: AVGChoicePanelProps) {
   const { startStreamingResponse, setChoicePanelVisible } = useAVGStore();
   const fadeAnim = useRef(new Animated.Value(0)).current;
@@ -78,6 +79,7 @@ export default function AVGChoicePanel({
           opacity: fadeAnim,
           transform: [{ translateY: slideAnim }],
         },
+        style,
       ]}
     >
       <Card style={styles.card}>

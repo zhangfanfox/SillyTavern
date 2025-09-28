@@ -1,23 +1,39 @@
 import React, { useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, Animated, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, Animated, TouchableOpacity, ViewStyle } from 'react-native';
 import { Card } from 'react-native-paper';
 import { useStreamingDialogue } from '../../src/hooks/useStreamingDialogue';
 
 interface AVGDialogueBoxProps {
+  speaker?: string;
+  text?: string;
+  isStreaming?: boolean;
   visible?: boolean;
   onComplete?: () => void;
+  style?: ViewStyle;
 }
 
 export default function AVGDialogueBox({
+  speaker,
+  text,
+  isStreaming = false,
   visible = true,
   onComplete,
+  style,
 }: AVGDialogueBoxProps) {
-  const { state, skipAnimation } = useStreamingDialogue();
   const cursorOpacity = useRef(new Animated.Value(1)).current;
+
+  // Use props if provided, otherwise fall back to streaming dialogue hook
+  const { state, skipAnimation } = useStreamingDialogue();
+  
+  // Determine actual values to use
+  const actualSpeaker = speaker || state.speaker || 'Assistant';
+  const actualText = text || state.displayText || '';
+  const actualIsStreaming = isStreaming || state.isStreaming;
+  const canSkip = state.canSkip && actualIsStreaming;
 
   // Cursor blinking animation
   useEffect(() => {
-    if (state.isStreaming || state.isAnimating) {
+    if (actualIsStreaming) {
       const blinkAnimation = Animated.loop(
         Animated.sequence([
           Animated.timing(cursorOpacity, {
@@ -37,33 +53,34 @@ export default function AVGDialogueBox({
     } else {
       cursorOpacity.setValue(0);
     }
-  }, [state.isStreaming, state.isAnimating, cursorOpacity]);
+  }, [actualIsStreaming, cursorOpacity]);
 
-  // Call onComplete when animation finishes
+  // Call onComplete when streaming finishes
   useEffect(() => {
-    if (!state.isStreaming && !state.isAnimating && onComplete) {
-      onComplete();
+    if (!actualIsStreaming && onComplete && actualText) {
+      const timer = setTimeout(onComplete, 500); // Small delay for better UX
+      return () => clearTimeout(timer);
     }
-  }, [state.isStreaming, state.isAnimating, onComplete]);
+  }, [actualIsStreaming, onComplete, actualText]);
 
-  if (!visible || (!state.displayText && !state.isStreaming)) {
+  if (!visible || (!actualText && !actualIsStreaming)) {
     return null;
   }
 
-  const showCursor = state.isStreaming || state.isAnimating;
+  const showCursor = actualIsStreaming;
 
   return (
     <TouchableOpacity 
-      style={styles.container} 
-      onPress={skipAnimation}
-      activeOpacity={state.canSkip ? 0.7 : 1}
-      disabled={!state.canSkip}
+      style={[styles.container, style]} 
+      onPress={canSkip ? skipAnimation : undefined}
+      activeOpacity={canSkip ? 0.7 : 1}
+      disabled={!canSkip}
     >
       <Card style={styles.card}>
         <Card.Content style={styles.content}>
           <View style={styles.header}>
-            <Text style={styles.speaker}>{state.speaker}</Text>
-            {state.canSkip && (
+            <Text style={styles.speaker}>{actualSpeaker}</Text>
+            {canSkip && (
               <View style={styles.skipHint}>
                 <Text style={styles.skipText}>轻触跳过</Text>
               </View>
@@ -71,7 +88,7 @@ export default function AVGDialogueBox({
           </View>
           <View style={styles.textContainer}>
             <Text style={styles.text}>
-              {state.displayText}
+              {actualText}
               {showCursor && (
                 <Animated.Text 
                   style={[styles.cursor, { opacity: cursorOpacity }]}
