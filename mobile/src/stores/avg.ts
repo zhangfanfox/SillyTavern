@@ -201,8 +201,8 @@ export const useAVGStore = create<AVGState>()(
 
       listGameSaves: async () => {
         const listResult = await avgSaveManager.listSaves();
-        if (listResult.success) {
-          return listResult.saves || [];
+        if (listResult.success && listResult.saves) {
+          return listResult.saves.map(save => save.id);
         } else {
           console.error('[AVG] Failed to list saves:', listResult.error);
           return [];
@@ -216,7 +216,15 @@ export const useAVGStore = create<AVGState>()(
       getSaveMetadata: async (sessionId: string) => {
         const metadataResult = await avgSaveManager.getSaveMetadata(sessionId);
         if (metadataResult.success && metadataResult.metadata) {
-          return metadataResult.metadata;
+          const metadata = metadataResult.metadata;
+          return {
+            sessionId,
+            title: metadata.title || `游戏 ${sessionId.slice(-8)}`,
+            characterName: metadata.gameConfig?.characterName || '未知角色',
+            createdAt: metadata.createdAt || new Date().toISOString(),
+            updatedAt: metadata.updatedAt || new Date().toISOString(),
+            dialogueCount: 0, // We don't load full dialogue history for metadata
+          };
         } else {
           console.error('[AVG] Failed to get save metadata:', metadataResult.error);
           return null;

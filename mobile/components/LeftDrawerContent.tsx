@@ -1,16 +1,21 @@
 import React, { useEffect } from 'react';
-import { View, StyleSheet, Modal as RNModal } from 'react-native';
-import { Button, Divider, IconButton, List, Text, Surface } from 'react-native-paper';
+import { View, StyleSheet, Modal as RNModal, ScrollView } from 'react-native';
+import { Button, Divider, IconButton, List, Text, Surface, SegmentedButtons } from 'react-native-paper';
 import { useChatStore } from '../src/stores/chat';
+import { useAVGStore } from '../src/stores/avg';
 import { Link, useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRolesStore } from '../src/stores/roles';
+import { SaveMetadata } from '../src/types/avg';
 
 export default function LeftDrawerContent() {
   const { sessions, currentId, loadAllSessions, createSession } = useChatStore();
+  const { listGameSaves, deleteGameSave, getSaveMetadata } = useAVGStore();
   const router = useRouter();
   const [confirmId, setConfirmId] = React.useState<string | null>(null);
   const [rolePickerOpen, setRolePickerOpen] = React.useState(false);
+  const [sessionType, setSessionType] = React.useState<'chat' | 'avg'>('chat');
+  const [avgSessions, setAvgSessions] = React.useState<SaveMetadata[]>([]);
   const roles = useRolesStore((s) => s.roles);
   const loadAllRoles = useRolesStore((s) => s.loadAllRoles);
 
@@ -24,6 +29,60 @@ export default function LeftDrawerContent() {
     })();
   }, [loadAllSessions, createSession, loadAllRoles]);
 
+  useEffect(() => {
+    // Load AVG sessions when switching to AVG tab
+    if (sessionType === 'avg') {
+      loadAVGSessions();
+    }
+  }, [sessionType]);
+
+  const loadAVGSessions = async () => {
+    try {
+      const saves = await listGameSaves();
+      const savesWithMetadata = await Promise.all(
+        saves.map(async (sessionId) => {
+          const metadata = await getSaveMetadata(sessionId);
+          return metadata || {
+            sessionId,
+            title: `游戏 ${sessionId.slice(-8)}`,
+            characterName: '未知角色',
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+            dialogueCount: 0,
+          };
+        })
+      );
+      setAvgSessions(savesWithMetadata);
+    } catch (error) {
+      console.error('Failed to load AVG sessions:', error);
+    }
+  };
+
+  const handleDeleteAVGSession = async (sessionId: string) => {
+    try {
+      const success = await deleteGameSave(sessionId);
+      if (success) {
+        await loadAVGSessions(); // Refresh the list
+      }
+    } catch (error) {
+      console.error('Failed to delete AVG session:', error);
+    }
+    setConfirmId(null);
+  };
+
+  const formatDate = (dateString: string) => {
+    try {
+      return new Date(dateString).toLocaleDateString('zh-CN', {
+        month: 'short',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+      });
+    } catch {
+      return '未知时间';
+    }
+  };
+
   return (
     <SafeAreaView style={styles.safeArea} edges={['top', 'bottom']}>
       <View style={styles.container}>
@@ -31,39 +90,86 @@ export default function LeftDrawerContent() {
           <Text variant="titleMedium">会话</Text>
           <IconButton
             icon="plus"
-            onPress={() => setRolePickerOpen(true)}
-            accessibilityLabel="从角色开始会话"
+            onPress={() => {
+              if (sessionType === 'chat') {
+                setRolePickerOpen(true);
+              } else {
+                // Create new AVG session
+                const sessionId = `avg-${Date.now()}`;
+                router.push(`/avg/game/${sessionId}`);
+              }
+            }}
+            accessibilityLabel={sessionType === 'chat' ? "从角色开始会话" : "开始新AVG游戏"}
           />
         </View>
+
+        <SegmentedButtons
+          value={sessionType}
+          onValueChange={(value) => setSessionType(value as 'chat' | 'avg')}
+          buttons={[
+            { value: 'chat', label: '聊天', icon: 'chat' },
+            { value: 'avg', label: 'AVG', icon: 'book-open-variant' },
+          ]}
+          style={styles.segmentedButtons}
+        />
+
         <Divider style={styles.mb8} />
 
-        <View style={styles.list}>
-          {sessions.length === 0 ? (
-            <Text style={styles.empty}>暂无会话</Text>
+        <ScrollView style={styles.list}>
+          {sessionType === 'chat' ? (
+            sessions.length === 0 ? (
+              <Text style={styles.empty}>暂无聊天会话</Text>
+            ) : (
+              sessions.map((s) => (
+                <View key={s.id} style={styles.sessionRow}>
+                  <View style={styles.sessionMain}>
+                    <List.Item
+                      title={s.title || s.id}
+                      description={`${s.characterName}${currentId === s.id ? ' · 当前' : ''}`}
+                      onPress={() => {
+                        useChatStore.setState({ currentId: s.id });
+                        router.push('/chat');
+                      }}
+                    />
+                  </View>
+                  <IconButton icon="delete" onPress={() => setConfirmId(s.id)} accessibilityLabel="删除会话" />
+                </View>
+              ))
+            )
           ) : (
-            sessions.map((s) => (
-              <View key={s.id} style={styles.sessionRow}>
-                <View style={styles.sessionMain}>
-                  <List.Item
-                    title={s.title || s.id}
-                    description={`${s.characterName}${currentId === s.id ? ' · 当前' : ''}`}
-                    onPress={() => {
-                      useChatStore.setState({ currentId: s.id });
-                      router.push('/chat');
-                    }}
+            avgSessions.length === 0 ? (
+              <Text style={styles.empty}>暂无AVG会话</Text>
+            ) : (
+              avgSessions.map((save) => (
+                <View key={save.sessionId} style={styles.sessionRow}>
+                  <View style={styles.sessionMain}>
+                    <List.Item
+                      title={save.title}
+                      description={`${save.characterName} · ${formatDate(save.updatedAt)}`}
+                      onPress={() => {
+                        router.push(`/avg/game/${save.sessionId}`);
+                      }}
+                    />
+                  </View>
+                  <IconButton 
+                    icon="delete" 
+                    onPress={() => setConfirmId(save.sessionId)} 
+                    accessibilityLabel="删除AVG会话" 
                   />
                 </View>
-                <IconButton icon="delete" onPress={() => setConfirmId(s.id)} accessibilityLabel="删除会话" />
-              </View>
-            ))
+              ))
+            )
           )}
-        </View>
+        </ScrollView>
 
         <Divider style={styles.mv8} />
 
         <View style={styles.bottomButtons}>
           <Link href="/" asChild>
             <Button mode="text">主页</Button>
+          </Link>
+          <Link href="/avg" asChild>
+            <Button mode="text" icon="book-open-variant">AVG 故事</Button>
           </Link>
           <Link href="/connections" asChild>
             <Button mode="text">API 连接</Button>
@@ -82,7 +188,9 @@ export default function LeftDrawerContent() {
         >
           <View style={styles.overlay}>
             <Surface style={styles.dialog} elevation={4}>
-              <Text variant="titleMedium" style={styles.dialogTitle}>删除会话</Text>
+              <Text variant="titleMedium" style={styles.dialogTitle}>
+                删除{sessionType === 'chat' ? '聊天' : 'AVG'}会话
+              </Text>
               <Text style={styles.dialogContent}>确定要删除该会话吗？此操作不可撤销。</Text>
               <View style={styles.dialogActions}>
                 <Button onPress={() => setConfirmId(null)}>取消</Button>
@@ -90,7 +198,11 @@ export default function LeftDrawerContent() {
                   mode="contained"
                   onPress={async () => {
                     if (confirmId) {
-                      await useChatStore.getState().deleteSession(confirmId);
+                      if (sessionType === 'chat') {
+                        await useChatStore.getState().deleteSession(confirmId);
+                      } else {
+                        await handleDeleteAVGSession(confirmId);
+                      }
                     }
                     setConfirmId(null);
                   }}
@@ -149,9 +261,10 @@ const styles = StyleSheet.create({
   safeArea: { flex: 1 },
   container: { flex: 1, padding: 8, paddingTop: 16 },
   headerRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  segmentedButtons: { marginBottom: 8 },
   list: { flex: 1 },
   bottomButtons: { flexDirection: 'row', gap: 8, justifyContent: 'space-between' },
-  empty: { opacity: 0.6 },
+  empty: { opacity: 0.6, padding: 16, textAlign: 'center' },
   mb8: { marginBottom: 8 },
   mv8: { marginVertical: 8 },
   sessionRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },

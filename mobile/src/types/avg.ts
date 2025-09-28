@@ -61,6 +61,15 @@ export interface GameSave {
   version?: string; // For future compatibility
 }
 
+export interface SaveMetadata {
+  sessionId: string;
+  title: string;
+  characterName: string;
+  createdAt: string;
+  updatedAt: string;
+  dialogueCount: number;
+}
+
 // Canvas Renderer Interface
 export interface CanvasRenderer {
   loadBackground(imagePath: string): Promise<void>;
@@ -183,9 +192,9 @@ export interface AVGState {
   
   // Save management actions
   deleteGameSave: (sessionId: string) => Promise<boolean>;
-  listGameSaves: () => Promise<GameSave[]>;
+  listGameSaves: () => Promise<string[]>;
   saveExists: (sessionId: string) => Promise<boolean>;
-  getSaveMetadata: (sessionId: string) => Promise<Partial<GameSave> | null>;
+  getSaveMetadata: (sessionId: string) => Promise<SaveMetadata | null>;
 }
 
 // Default configurations
